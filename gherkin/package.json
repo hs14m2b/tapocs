@@ -1,0 +1,21 @@
+{
+  "name": "gherkinpoc",
+  "version": "1.0.0",
+  "description": "PoC to demonstrate use of Gherkin files in node testing",
+  "scripts": {
+    "test": "npx cucumber-js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hs14m2b/tapocs.git"
+  },
+  "author": "Matthew Brown",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hs14m2b/tapocs/issues"
+  },
+  "homepage": "https://github.com/hs14m2b/tapocs#readme",
+  "devDependencies": {
+    "@cucumber/cucumber": "^8.6.0"
+  }
+}
