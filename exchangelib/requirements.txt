@@ -1,0 +1,2 @@
+exchangelib==4.7.*
+boto3==1.24.*
