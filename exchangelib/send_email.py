@@ -6,31 +6,39 @@ import boto3
 
 client = boto3.client('ssm')
 
-email_address = client.get_parameter(
-    Name='mabr8-ews-email',
-    WithDecryption=False
-)['Parameter']['Value']
+if len(sys.argv) >= 5:
+    email_address=sys.argv[1]
+    email_pwd=sys.argv[2]
+    client_id=sys.argv[3]
+    client_secret=sys.argv[4]
+else:
+    email_address = client.get_parameter(
+        Name='mabr8-ews-email',
+        WithDecryption=False
+    )['Parameter']['Value']
 
-client_id = client.get_parameter(
-    Name='mabr8-ews-client-id',
-    WithDecryption=True
-)['Parameter']['Value']
+    email_pwd = client.get_parameter(
+        Name='mabr8-ews-email-pwd',
+        WithDecryption=True
+    )['Parameter']['Value']
 
-client_secret = client.get_parameter(
-    Name='mabr8-ews-client-token',
-    WithDecryption=True
-)['Parameter']['Value']
+    client_id = client.get_parameter(
+        Name='mabr8-ews-client-id',
+        WithDecryption=True
+    )['Parameter']['Value']
 
-email_pwd = client.get_parameter(
-    Name='mabr8-ews-email-pwd',
-    WithDecryption=True
-)['Parameter']['Value']
-
+    client_secret = client.get_parameter(
+        Name='mabr8-ews-client-token',
+        WithDecryption=True
+    )['Parameter']['Value']
 
 
 to_email_address="matthew.brown1@nhs.net"
 if len(sys.argv) == 2:
     to_email_address=sys.argv[1]
+
+if len(sys.argv) == 6:
+    to_email_address=sys.argv[5]
 
 print(to_email_address)
 
@@ -39,8 +47,8 @@ print(to_email_address)
 #Basic authentication
 credentials = Credentials(username=email_address, password=email_pwd)
 # either of the configuration lines below appears to work fine
-config = Configuration(service_endpoint='https://outlook.office365.com/ews/exchange.asmx', credentials=credentials)
-#config = Configuration(server='outlook.office365.com', credentials=credentials)
+#config = Configuration(service_endpoint='https://outlook.office365.com/ews/exchange.asmx', credentials=credentials)
+config = Configuration(server='outlook.office365.com', credentials=credentials)
 account = Account(primary_smtp_address=email_address, config=config, autodiscover=False, access_type=DELEGATE)
 message = Message(account=account,
     subject='Test Email sent via EWS',
