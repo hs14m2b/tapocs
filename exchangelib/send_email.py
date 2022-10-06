@@ -1,7 +1,7 @@
 from email import message
 from http import client
 import telnetlib
-from exchangelib import Credentials, OAuth2LegacyCredentials, Account, Message 
+from exchangelib import Credentials, OAuth2LegacyCredentials,OAuth2Credentials, Account, Message 
 from exchangelib import Mailbox, Configuration, DELEGATE, IMPERSONATION, Identity
 from exchangelib import OAUTH2
 from azure.identity import ClientSecretCredential, UsernamePasswordCredential
@@ -51,7 +51,7 @@ if len(sys.argv) == 6:
 print(to_email_address)
 
 tenant_id='37c354b2-85b0-47f5-b222-07b48d774ee3'
-basic_auth=True
+basic_auth=False
 send_mail=True
 if basic_auth :
     #Basic authentication
@@ -61,28 +61,17 @@ if basic_auth :
     config = Configuration(server='outlook.office365.com', credentials=credentials)
     #Basic Auth
     account = Account(primary_smtp_address=email_address, config=config, autodiscover=False, access_type=DELEGATE)
+    if send_mail :
+        message = Message(
+            account=account,
+            subject='Test Email sent via EWS',
+            body='This is the body of a test email',
+            to_recipients=[Mailbox(email_address=to_email_address)])
+        message.send()
 else:
     #OAuth2
-    credential = ClientSecretCredential(
-        tenant_id=tenant_id,
-        client_id=client_id,
-        client_secret=client_secret
-    )
-    credential2 = UsernamePasswordCredential(
-        tenant_id=tenant_id,
-        client_id=client_id,
-        client_secret=client_secret,
-        username=email_address,
-        password=email_pwd
-    )
-    print('Checking that the client id and token are correct')
-    #token=credential.get_token(f'{client_id}/.default').token
-    token=credential.get_token('.default').token
-    print(token)
     identity=Identity(primary_smtp_address=email_address)
-    credentials = OAuth2LegacyCredentials(
-        email_address,
-        email_pwd,
+    credentials = OAuth2Credentials(
         client_id=client_id, 
         client_secret=client_secret, 
         tenant_id=tenant_id,
@@ -91,21 +80,15 @@ else:
         server='outlook.office365.com', 
         credentials=credentials, 
         auth_type=OAUTH2)
-    print('successfully created the configuration object')
-    create_account=True
-    if create_account :
-        account = Account(
-            email_address, 
-            config=config, 
-            autodiscover=False, 
-            access_type=DELEGATE)
-
-        print('successfully created the account object')
-
-if send_mail :
-    message = Message(
-        account=account,
-        subject='Test Email sent via EWS',
-        body='This is the body of a test email',
-        to_recipients=[Mailbox(email_address=to_email_address)])
-    message.send()
+    account = Account(
+        email_address, 
+        config=config, 
+        autodiscover=False, 
+        access_type=DELEGATE)
+    if send_mail :
+        message = Message(
+            account=account,
+            subject='Test Email sent via EWS using OAuth2',
+            body='This is the body of a test email sent using OAuth2',
+            to_recipients=[Mailbox(email_address=to_email_address)])
+        message.send()
