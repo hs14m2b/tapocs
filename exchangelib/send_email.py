@@ -4,9 +4,13 @@ import telnetlib
 from exchangelib import Credentials, OAuth2LegacyCredentials, Account, Message 
 from exchangelib import Mailbox, Configuration, DELEGATE, IMPERSONATION, Identity
 from exchangelib import OAUTH2
-from azure.identity import ClientSecretCredential
+from azure.identity import ClientSecretCredential, UsernamePasswordCredential
 import sys
 import boto3
+import logging
+from exchangelib.util import PrettyXmlHandler
+
+#logging.basicConfig(level=logging.DEBUG, handlers=[PrettyXmlHandler()])
 
 client = boto3.client('ssm')
 
@@ -47,7 +51,8 @@ if len(sys.argv) == 6:
 print(to_email_address)
 
 tenant_id='37c354b2-85b0-47f5-b222-07b48d774ee3'
-basic_auth=False
+basic_auth=True
+send_mail=True
 if basic_auth :
     #Basic authentication
     credentials = Credentials(username=email_address, password=email_pwd)
@@ -63,8 +68,16 @@ else:
         client_id=client_id,
         client_secret=client_secret
     )
+    credential2 = UsernamePasswordCredential(
+        tenant_id=tenant_id,
+        client_id=client_id,
+        client_secret=client_secret,
+        username=email_address,
+        password=email_pwd
+    )
     print('Checking that the client id and token are correct')
-    token=credential.get_token(f'{client_id}/.default').token
+    #token=credential.get_token(f'{client_id}/.default').token
+    token=credential.get_token('.default').token
     print(token)
     identity=Identity(primary_smtp_address=email_address)
     credentials = OAuth2LegacyCredentials(
@@ -74,24 +87,25 @@ else:
         client_secret=client_secret, 
         tenant_id=tenant_id,
         identity=identity)
-    #config = Configuration(service_endpoint='https://outlook.office365.com/ews/exchange.asmx', credentials=credentials, auth_type=OAUTH2)
     config = Configuration(
         server='outlook.office365.com', 
         credentials=credentials, 
         auth_type=OAUTH2)
     print('successfully created the configuration object')
+    create_account=True
+    if create_account :
+        account = Account(
+            email_address, 
+            config=config, 
+            autodiscover=False, 
+            access_type=DELEGATE)
 
-    account = Account(
-        primary_smtp_address=email_address, 
-        config=config, 
-        autodiscover=False, 
-        access_type=DELEGATE)
+        print('successfully created the account object')
 
-    print('successfully created the account object')
-
-message = Message(
-    account=account,
-    subject='Test Email sent via EWS',
-    body='This is the body of a test email',
-    to_recipients=[Mailbox(email_address=to_email_address)])
-message.send()
+if send_mail :
+    message = Message(
+        account=account,
+        subject='Test Email sent via EWS',
+        body='This is the body of a test email',
+        to_recipients=[Mailbox(email_address=to_email_address)])
+    message.send()
