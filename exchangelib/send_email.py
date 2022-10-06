@@ -1,6 +1,10 @@
 from email import message
 from http import client
-from exchangelib import Credentials, OAuth2Credentials, Account, Message, Mailbox, Configuration, DELEGATE
+import telnetlib
+from exchangelib import Credentials, OAuth2LegacyCredentials, Account, Message 
+from exchangelib import Mailbox, Configuration, DELEGATE, IMPERSONATION, Identity
+from exchangelib import OAUTH2
+from azure.identity import ClientSecretCredential
 import sys
 import boto3
 
@@ -42,15 +46,51 @@ if len(sys.argv) == 6:
 
 print(to_email_address)
 
-#OAuth2 authentication
-#credentials = OAuth2Credentials(client_id, client_secret)
-#Basic authentication
-credentials = Credentials(username=email_address, password=email_pwd)
-# either of the configuration lines below appears to work fine
-#config = Configuration(service_endpoint='https://outlook.office365.com/ews/exchange.asmx', credentials=credentials)
-config = Configuration(server='outlook.office365.com', credentials=credentials)
-account = Account(primary_smtp_address=email_address, config=config, autodiscover=False, access_type=DELEGATE)
-message = Message(account=account,
+tenant_id='37c354b2-85b0-47f5-b222-07b48d774ee3'
+basic_auth=False
+if basic_auth :
+    #Basic authentication
+    credentials = Credentials(username=email_address, password=email_pwd)
+    # either of the configuration lines below appears to work fine
+    #config = Configuration(service_endpoint='https://outlook.office365.com/ews/exchange.asmx', credentials=credentials)
+    config = Configuration(server='outlook.office365.com', credentials=credentials)
+    #Basic Auth
+    account = Account(primary_smtp_address=email_address, config=config, autodiscover=False, access_type=DELEGATE)
+else:
+    #OAuth2
+    credential = ClientSecretCredential(
+        tenant_id=tenant_id,
+        client_id=client_id,
+        client_secret=client_secret
+    )
+    print('Checking that the client id and token are correct')
+    token=credential.get_token(f'{client_id}/.default').token
+    print(token)
+    identity=Identity(primary_smtp_address=email_address)
+    credentials = OAuth2LegacyCredentials(
+        email_address,
+        email_pwd,
+        client_id=client_id, 
+        client_secret=client_secret, 
+        tenant_id=tenant_id,
+        identity=identity)
+    #config = Configuration(service_endpoint='https://outlook.office365.com/ews/exchange.asmx', credentials=credentials, auth_type=OAUTH2)
+    config = Configuration(
+        server='outlook.office365.com', 
+        credentials=credentials, 
+        auth_type=OAUTH2)
+    print('successfully created the configuration object')
+
+    account = Account(
+        primary_smtp_address=email_address, 
+        config=config, 
+        autodiscover=False, 
+        access_type=DELEGATE)
+
+    print('successfully created the account object')
+
+message = Message(
+    account=account,
     subject='Test Email sent via EWS',
     body='This is the body of a test email',
     to_recipients=[Mailbox(email_address=to_email_address)])

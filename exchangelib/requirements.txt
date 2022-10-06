@@ -1,2 +1,4 @@
-exchangelib==4.7.*
+exchangelib==4.8.*
 boto3==1.24.*
+msgraph-core==0.2.*
+azure-identity==1.1.*

@@ -52,15 +52,17 @@ Opens an SMTP connection, optionally starts TLS, and logs in to the SMTP server
 # local_hostname is required to be provided as smtplib is not working it out
 # properly. See SPII-11953 for more details.
 local_hostname = '127.0.0.1'
-context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 smtpServer = None
 
+#the below appear to require HSCN to successfully send
 #smtp.office365.com
 #send.nhs.net
 
 try:
+    print("about to generate smtp server")
     smtpServer = smtplib.SMTP(
-        "smtp.office365.com",
+        "send.nhs.net",
         587,
         local_hostname=local_hostname,
         timeout=30
