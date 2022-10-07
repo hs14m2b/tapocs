@@ -44,6 +44,7 @@ to_email_address = sys.argv[len(sys.argv)-1] if len(sys.argv) == 2 or len(sys.ar
 
 # hard coded tenant ID for NHSmail
 tenant_id='37c354b2-85b0-47f5-b222-07b48d774ee3'
+
 basic_auth=False
 send_mail=True
 if basic_auth :
