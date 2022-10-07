@@ -48,19 +48,11 @@ basic_auth=False
 send_mail=True
 if basic_auth :
     #Basic authentication
-    credentials = Credentials(username=email_address, password=email_pwd)
-    # either of the configuration lines below appears to work fine
-    #config = Configuration(service_endpoint='https://outlook.office365.com/ews/exchange.asmx', credentials=credentials)
-    config = Configuration(server='outlook.office365.com', credentials=credentials)
-    #Basic Auth
-    account = Account(primary_smtp_address=email_address, config=config, autodiscover=False, access_type=DELEGATE)
-    if send_mail :
-        message = Message(
-            account=account,
-            subject='Test Email sent via EWS',
-            body='This is the body of a test email',
-            to_recipients=[Mailbox(email_address=to_email_address)])
-        message.send()
+    credentials = Credentials(
+        username=email_address, 
+        password=email_pwd)
+    subject='Test Email sent via EWS using Basic Auth'
+    body='This is the body of a test email sent using Basic Auth'
 else:
     #OAuth2
     identity=Identity(primary_smtp_address=email_address)
@@ -69,19 +61,22 @@ else:
         client_secret=client_secret, 
         tenant_id=tenant_id,
         identity=identity)
-    config = Configuration(
-        server='outlook.office365.com', 
-        credentials=credentials, 
-        auth_type=OAUTH2)
-    account = Account(
-        email_address, 
-        config=config, 
-        autodiscover=False, 
-        access_type=DELEGATE)
-    if send_mail :
-        message = Message(
-            account=account,
-            subject='Test Email sent via EWS using OAuth2',
-            body='This is the body of a test email sent using OAuth2',
-            to_recipients=[Mailbox(email_address=to_email_address)])
-        message.send()
+    subject='Test Email sent via EWS using OAuth2'
+    body='This is the body of a test email sent using OAuth2'
+
+config = Configuration(
+    server='outlook.office365.com', 
+    credentials=credentials)
+account = Account(
+    email_address, 
+    config=config, 
+    autodiscover=False, 
+    access_type=DELEGATE)
+    
+if send_mail :
+    message = Message(
+        account=account,
+        subject=subject,
+        body=body,
+        to_recipients=[Mailbox(email_address=to_email_address)])
+    message.send()
