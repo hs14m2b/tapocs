@@ -1,0 +1,14 @@
+{
+	"name": "node-scripts",
+	"version": "0.0.2",
+	"license": "MIT",
+	"description": "This package contains the lambda code for the covid-19 test availability status checker",
+	"dependencies": {
+		"aws-sdk": "^2.903.0",
+		"base64url": "3.0.1",
+		"fast-xml-parser": "~4.0.11",
+		"ms": "2.1.1",
+		"uuid": "^8.3.2",
+		"zlib": "^1.0.5"
+	}
+}
