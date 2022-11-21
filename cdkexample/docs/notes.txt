@@ -1,0 +1,27 @@
+before using cdk need to bootstrap the account to create the relevant S3 bucket.
+So for TA AWS account
+ - cdk bootstrap aws://865198111306/eu-west-2
+
+create directory "hello-cdk" and then cd hello-cdk
+
+initialise a project based on the "app" template
+
+cdk init app --language typescript
+
+change the information in "lib/hello-cdk-stack.ts"
+
+cdk synth 
+to synthesize the cloudformation template
+
+cdk deploy
+to deploy the cloudformation stack
+
+cdk diff
+to see the difference when you make a change
+
+cdk deploy
+again to deploy the changes to the bucket.
+
+finally
+cdk destroy
+to remove the cloudformation stack and resources.
