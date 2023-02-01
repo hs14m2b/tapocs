@@ -5,9 +5,12 @@ export default function FirstPost() {
         <>
         <main className="nhsuk-main-wrapper" id="maincontent" role="main">
             <div className='nhsuk-action-link'><span className="nhsuk-action-link__text">First Post</span>
-            <h2>
+            <p>
+                <Link href="/postlist">Back to list of posts</Link>
+            </p>
+            <p>
                 <Link href="/">Back to home</Link>
-            </h2>
+            </p>
             </div>
         </main>
         </>);

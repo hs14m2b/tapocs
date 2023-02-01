@@ -1,46 +1,21 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { getSortedPostsData } from '../lib/posts';
 
-export async function getStaticProps() {
-  const allPostsData = getSortedPostsData();
-  return {
-    props: {
-      allPostsData,
-    },
-  };
-}
-
-export default function Home({allPostsData}) {
+export default function Home() {
   return (
     <>
       <Head>
         <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/assets/favicons/favicon.ico" />
       </Head>
         <h1 className="nhsuk-heading-xl">
-          Read <Link href="/posts/first-post">this page</Link>
+          Next,js app running in AWS Lambda
         </h1>
 
         <p>
-          Get started by editing <code>pages/index.js</code>
+          Get started by <Link href="/postlist">going to the list of posts</Link>
         </p>
 
-        {/* Add this <section> tag below the existing <section> tag */}
-        <section >
-          <h2 className="nhsuk-heading-l">Blog</h2>
-          <ul className="nhsuk-list">
-            {allPostsData.map(({ id, date, title }) => (
-              <li key={id}>
-                {title}
-                <br />
-                {id}
-                <br />
-                {date}
-              </li>
-            ))}
-          </ul>
-        </section>
     </>
   )
 }
