@@ -1,0 +1,34 @@
+using https://github.com/sladg/nextjs-lambda to package and deploy to AWS.
+
+Some changes made to the index page first to ensure API GW response worked OK
+var server = (0, import_serverless_http.default)(
+  async (req, res) => {
+    console.log("about to call handler");
+    console.log(JSON.stringify(req));
+    //replace /index with /
+    req.url = (req.url=="/index")? "/": req.url;
+    console.log(JSON.stringify(req));
+    await nextHandler(req, res).catch((e) => {
+      console.error(`NextJS request failed due to:`);
+      console.error(e);
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify(getErrMessage(e), null, 3));
+    });
+  },
+  {
+    binary: false,
+    provider: "aws",
+    basePath: process.env.NEXTJS_LAMBDA_BASE_PATH
+  }
+);
+
+deploying to AWS using the inbuild CDK
+
+Options
+
+--stackName mabr8-nextjsStack-dev  --region eu-west-2 --hostedZone nhsdta.com --domainNamePrefix mabr8nextjs
+
+npx --package @sladg/nextjs-lambda cli deploy --stackName mabr8-nextjsStack-dev  --region eu-west-2 --hostedZone nhsdta.com --domainNamePrefix mabr8nextjs
+
+
+npx --package @sladg/nextjs-lambda cli remove --stackName mabr8-nextjsStack-dev  --region eu-west-2
