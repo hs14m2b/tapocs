@@ -1,0 +1,358 @@
+{
+  "version": "29.0.0",
+  "artifacts": {
+    "mabr8-nextjsStack-dev.assets": {
+      "type": "cdk:asset-manifest",
+      "properties": {
+        "file": "mabr8-nextjsStack-dev.assets.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+      }
+    },
+    "mabr8-nextjsStack-dev": {
+      "type": "aws:cloudformation:stack",
+      "environment": "aws://865198111306/eu-west-2",
+      "properties": {
+        "templateFile": "mabr8-nextjsStack-dev.template.json",
+        "validateOnSynth": false,
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::865198111306:role/cdk-hnb659fds-deploy-role-865198111306-eu-west-2",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::865198111306:role/cdk-hnb659fds-cfn-exec-role-865198111306-eu-west-2",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-865198111306-eu-west-2/5b793198e172a4459d56a12b9da002ce045d81c807f25f84f7cd2243930e3ecd.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
+        "additionalDependencies": [
+          "mabr8-nextjsStack-dev.assets"
+        ],
+        "lookupRole": {
+          "arn": "arn:${AWS::Partition}:iam::865198111306:role/cdk-hnb659fds-lookup-role-865198111306-eu-west-2",
+          "requiresBootstrapStackVersion": 8,
+          "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+        }
+      },
+      "dependencies": [
+        "mabr8-nextjsStack-dev.assets"
+      ],
+      "metadata": {
+        "/mabr8-nextjsStack-dev/NextAssetsBucket/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NextAssetsBucketE90B748B"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/NextAssetsBucket/Policy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NextAssetsBucketPolicy80579573"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/NextAssetsBucket/AutoDeleteObjectsCustomResource/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NextAssetsBucketAutoDeleteObjectsCustomResourceBFF703D7"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/assetsBucketUrl": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "assetsBucketUrl"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/assetsBucketName": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "assetsBucketName"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/ImageOptimizationLayer/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ImageOptimizationLayer7CAC44EC"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/ImageOptimizationNextJs/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ImageOptimizationNextJsServiceRole0E529317"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/ImageOptimizationNextJs/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ImageOptimizationNextJsServiceRoleDefaultPolicyB9CF40BB"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/ImageOptimizationNextJs/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ImageOptimizationNextJsB167CF66"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/imageLambdaArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "imageLambdaArn"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/DepsLayer/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DepsLayerA0D7F79A"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/DefaultNextJs/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DefaultNextJsServiceRole212D0D74"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/DefaultNextJs/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DefaultNextJs29C386F1"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/serverLambdaArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "serverLambdaArn"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/ServerProxy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ServerProxy6FB610BB"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/ServerProxy/DefaultStage/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ServerProxyDefaultStage53B5F1A0"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/ServerProxy/ANY--_server--{proxy+}/LambdaApigwIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ServerProxyANYserverproxyLambdaApigwIntegration62958C7E"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/ServerProxy/ANY--_server--{proxy+}/LambdaApigwIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ServerProxyANYserverproxyLambdaApigwIntegrationPermission7E4A1FD2"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/ServerProxy/ANY--_server--{proxy+}/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ServerProxyANYserverproxyE28877B8"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/ServerProxy/ANY--_image--{proxy+}/ImagesApigwIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ServerProxyANYimageproxyImagesApigwIntegration8A0A8B2C"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/ServerProxy/ANY--_image--{proxy+}/ImagesApigwIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ServerProxyANYimageproxyImagesApigwIntegrationPermissionD6E7A0CD"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/ServerProxy/ANY--_image--{proxy+}/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ServerProxyANYimageproxy1E1C9B52"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/apiGwUrlServerUrl": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "apiGwUrlServerUrl"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/apiGwUrlImageUrl": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "apiGwUrlImageUrl"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/Certificate/CertificateRequestorFunction/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CertificateCertificateRequestorFunctionServiceRoleC04C13DA"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/Certificate/CertificateRequestorFunction/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CertificateCertificateRequestorFunctionServiceRoleDefaultPolicy3C8845BC"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/Certificate/CertificateRequestorFunction/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CertificateCertificateRequestorFunction5E845413"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/Certificate/CertificateRequestorResource/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CertificateCertificateRequestorResource2890C6B7"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/certificateArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "certificateArn"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/NextImageCachePolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NextImageCachePolicyCA20E4DC"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/NextServerCachePolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NextServerCachePolicy2569E676"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/NextApiCachePolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NextApiCachePolicyBF0D32CD"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/NextPublicCachePolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NextPublicCachePolicy847D6DE1"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/CfnDistro/Origin3/S3Origin/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CfnDistroOrigin3S3OriginE4F187FC"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/CfnDistro/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CfnDistro7542D3FE"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/cfnDistroUrl": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "cfnDistroUrl"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/cfnDistroId": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "cfnDistroId"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/PublicFilesDeployment/AwsCliLayer/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "PublicFilesDeploymentAwsCliLayerD81BD940"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/PublicFilesDeployment/CustomResource/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "PublicFilesDeploymentCustomResource991F6CBC"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRoleDefaultPolicy88902FDF"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C81C01536"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/AAliasRecord/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AAliasRecordAB14B3DB"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/AWSCloudFrontPartitionHostedZoneIdMap": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AWSCloudFrontPartitionHostedZoneIdMap"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/AaaaAliasRecord/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AaaaAliasRecord35812F2F"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/dns_A_Record": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "dnsARecord"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/dns_AAAA_Record": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "dnsAAAARecord"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/CDKMetadata/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadata"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/BootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BootstrapVersion"
+          }
+        ],
+        "/mabr8-nextjsStack-dev/CheckBootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CheckBootstrapVersion"
+          }
+        ]
+      },
+      "displayName": "mabr8-nextjsStack-dev"
+    },
+    "Tree": {
+      "type": "cdk:tree",
+      "properties": {
+        "file": "tree.json"
+      }
+    }
+  }
+}
