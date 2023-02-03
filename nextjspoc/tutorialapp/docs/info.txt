@@ -28,6 +28,8 @@ Options
 
 --stackName mabr8-nextjsStack-dev  --region eu-west-2 --hostedZone nhsdta.com --domainNamePrefix mabr8nextjs
 
+npx --package @sladg/nextjs-lambda cli pack
+
 npx --package @sladg/nextjs-lambda cli deploy --stackName mabr8-nextjsStack-dev  --region eu-west-2 --hostedZone nhsdta.com --domainNamePrefix mabr8nextjs
 
 
