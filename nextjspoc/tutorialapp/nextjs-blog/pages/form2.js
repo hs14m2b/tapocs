@@ -87,10 +87,6 @@ export default function Home() {
       <Head>
         <title>Next App form</title>
         <link rel="icon" href="/assets/favicons/favicon.ico" />
-        <script id="form2ClientScript" src="/assets/js/form2Client.js" onLoad={() => {
-          console.log('Script 2 has loaded');
-          populateForm2();
-        }}></script>
       </Head>
       <h1 className="nhsuk-heading-xl">
         A form for submitting data and "remembering" the answer
