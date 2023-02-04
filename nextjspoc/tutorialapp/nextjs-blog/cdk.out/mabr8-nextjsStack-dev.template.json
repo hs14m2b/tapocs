@@ -330,12 +330,12 @@
    "Properties": {
     "Content": {
      "S3Bucket": "cdk-hnb659fds-assets-865198111306-eu-west-2",
-     "S3Key": "b57dc852764544524fa3aa720bb719104622a7d454f242600e6c795f5bc647c6.zip"
+     "S3Key": "c9ae95536641ba3fb97c839f0a184e10f8e613d32872047cc990a5e0ff58e080.zip"
     }
    },
    "Metadata": {
     "aws:cdk:path": "mabr8-nextjsStack-dev/DepsLayer/Resource",
-    "aws:asset:path": "asset.b57dc852764544524fa3aa720bb719104622a7d454f242600e6c795f5bc647c6.zip",
+    "aws:asset:path": "asset.c9ae95536641ba3fb97c839f0a184e10f8e613d32872047cc990a5e0ff58e080.zip",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Content"
    }
@@ -379,7 +379,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-865198111306-eu-west-2",
-     "S3Key": "50eb1b6d7b19f4b6d65bb43ab4002cf380ccdbcd99423b51544074f32e9644e1.zip"
+     "S3Key": "b00102a929398c97fbd33acaf9d1ab877a0c6930934bbca59820a823ec23f2eb.zip"
     },
     "Role": {
      "Fn::GetAtt": [
@@ -407,7 +407,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "mabr8-nextjsStack-dev/DefaultNextJs/Resource",
-    "aws:asset:path": "asset.50eb1b6d7b19f4b6d65bb43ab4002cf380ccdbcd99423b51544074f32e9644e1.zip",
+    "aws:asset:path": "asset.b00102a929398c97fbd33acaf9d1ab877a0c6930934bbca59820a823ec23f2eb.zip",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -1079,7 +1079,7 @@
      "cdk-hnb659fds-assets-865198111306-eu-west-2"
     ],
     "SourceObjectKeys": [
-     "8a8168db41d85998cb15fa76244ae81ae5e07c982926c3fa436caaf348fe41c5.zip"
+     "b8e4d20920fbb71127bbc47d8abeb1b4ba71c7d4f6ee08975e511fbddbe73c49.zip"
     ],
     "DestinationBucketName": {
      "Ref": "NextAssetsBucketE90B748B"

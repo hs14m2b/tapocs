@@ -92,7 +92,7 @@ export default function Home() {
         A form for submitting data and "remembering" the answer
       </h1>
 
-      <form action="/api/form2" method="post" className="form" id="addressform" onSubmit={(e) => { checkForm2Data(e) }}>
+      <form action="/api/formprocessor" method="post" className="form" id="addressform" onSubmit={(e) => { checkForm2Data(e) }}>
 
         <fieldset className="nhsuk-fieldset">
           <legend className="nhsuk-fieldset__legend nhsuk-fieldset__legend--l">
@@ -112,6 +112,7 @@ export default function Home() {
           </div>
 
         </fieldset>
+        <input className="nhsuk-hidden" type="hidden" id="nextpage" name="nextpage" value="/confirmdata" />
         <button className="nhsuk-button" data-module="nhsuk-button" type="submit">
           Save and continue
         </button>

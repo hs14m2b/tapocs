@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import bodyParser from "body-parser";
 import util from "util";
+const FORMDATACOOKIENAME = "formdata";
 
 const getBody = util.promisify(bodyParser.urlencoded());
 
@@ -77,19 +78,18 @@ export async function getServerSideProps({ req, res }) {
   {
     console.log("processing cookies");
     const cookies = new Cookies(req, res);
-    const postcodeCookie = decodeURIComponent(cookies.get('postcode-cookie'));
-    const personnameCookie = decodeURIComponent(cookies.get('personname-cookie'));
-    console.log(personnameCookie);
-    console.log(JSON.stringify(postcodeCookie));
-    let personNameObject = JSON.parse(personnameCookie);
+    const formdataCookie = decodeURIComponent(cookies.get(FORMDATACOOKIENAME));
+    console.log(formdataCookie);
+    console.log(JSON.stringify(formdataCookie));
+    let formdataObject = JSON.parse(formdataCookie);
     const allData = {
       "hasData": true,
-      "postcode": postcodeCookie,
+      "postcode": formdataObject['address-postcode'].toUpperCase(),
       "postcodeerror": false,
-      "givenname": personNameObject.givenname,
-      "familyname": personNameObject.familyname
+      "givenname": formdataObject['givenname'],
+      "familyname": formdataObject['familyname']
     };
-    if (!valid_postcode(postcodeCookie)) allData.postcodeerror = true;
+    if (!valid_postcode(formdataObject['address-postcode'].toUpperCase())) allData.postcodeerror = true;
     return {
       props: {
         allData,

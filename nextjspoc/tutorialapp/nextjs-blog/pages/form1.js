@@ -85,7 +85,7 @@ export default function Home() {
         A set of forms for submitting data and "remembering" the answer
       </h1>
 
-      <form action="/api/form1" method="post" className="form" id="nameform" noValidate onSubmit={(e) => { if (checkForm1Data(e)) { router.push('/form2'); } else { return false; } }}>
+      <form action="/api/formprocessor" method="post" className="form" id="nameform" noValidate onSubmit={(e) => { if (checkForm1Data(e)) { router.push('/form2'); } else { return false; } }}>
 
         <fieldset className="nhsuk-fieldset">
           <legend className="nhsuk-fieldset__legend nhsuk-fieldset__legend--l">
@@ -113,6 +113,7 @@ export default function Home() {
             <input className="nhsuk-input" id="familyname" name="familyname" type="text" minLength="2"/>
           </div>
         </fieldset>
+        <input className="nhsuk-hidden" type="hidden" id="nextpage" name="nextpage" value="/form2" />
         <button className="nhsuk-button" data-module="nhsuk-button" type="submit">
           Save and continue
         </button>
