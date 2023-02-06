@@ -1,10 +1,51 @@
 import Head from 'next/head';
+import Hiddenform from '../components/hiddenform';
 import Link from 'next/link';
 import Script from 'next/script';
 import { useRouter } from 'next/router';
 
 export default function Home() {
+  const CONFIRMDATAROUTE = "/confirmdata";
+  const FORMDATACOOKIENAME = "formdata";
   const router = useRouter();
+
+  function getCookie(cname) {
+    let name = cname + "=";
+    let decodedCookie = decodeURIComponent(document.cookie);
+    let ca = decodedCookie.split(';');
+    for(let i = 0; i <ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+  
+  function sendToConfirmScreen()
+  {
+    addDataToCookie();
+    //push to route
+    router.push(CONFIRMDATAROUTE);
+  }
+
+  function addDataToCookie() {
+    //get FORMDATACOOKIENAME
+    let formdataCookie = getCookie(FORMDATACOOKIENAME);
+    console.log(formdataCookie);
+    //parse to object
+    let formdataCookieObject = (formdataCookie == "") ? {} : JSON.parse(formdataCookie);
+    console.log(formdataCookieObject);
+    //override name fields
+    let addresspostcode = document.getElementById('address-postcode');
+    console.log(addresspostcode.value );
+    formdataCookieObject["address-postcode"] = addresspostcode.value;
+    //save cookie again
+    document.cookie = FORMDATACOOKIENAME + "=" + JSON.stringify(formdataCookieObject) + "; path=/";
+  }
 
   function resetForm() {
       let addresspostcode = document.getElementById('address-postcode');
@@ -20,25 +61,26 @@ export default function Home() {
   }
 
   function checkForm2Data(e) {
-      resetForm();
-      e.preventDefault();
-      console.log("saving answers in state");
-      let addresspostcode = document.getElementById('address-postcode');
-      console.log(addresspostcode.value);
-      addresspostcode.value = addresspostcode.value.toUpperCase();
-      localStorage.setItem("addresspostcode", addresspostcode.value);
-      console.log("have set values in local storage");
-      //check if postcode matches regex
-      let result = valid_postcode(addresspostcode.value);
-      if (!result || addresspostcode.value == null || addresspostcode.value == "")
-      {
-          document.getElementById("postcode-error").classList.remove("nhsuk-hidden");
-          document.getElementById("address-postcode-form-group").classList.add("nhsuk-form-group--error");
-          addresspostcode.classList.add("nhsuk-input--error");
-          result = false;
-      }
-      if (result) populateHiddenForm();
-      return result;
+    resetForm();
+    e.preventDefault();
+    console.log("saving answers in state");
+    let addresspostcode = document.getElementById('address-postcode');
+    console.log(addresspostcode.value);
+    addresspostcode.value = addresspostcode.value.toUpperCase();
+    localStorage.setItem("addresspostcode", addresspostcode.value);
+    console.log("have set values in local storage");
+    addDataToCookie();
+    //check if postcode matches regex
+    let result = valid_postcode(addresspostcode.value);
+    if (!result || addresspostcode.value == null || addresspostcode.value == "")
+    {
+        document.getElementById("postcode-error").classList.remove("nhsuk-hidden");
+        document.getElementById("address-postcode-form-group").classList.add("nhsuk-form-group--error");
+        addresspostcode.classList.add("nhsuk-input--error");
+        result = false;
+    }
+    if (result) populateHiddenForm();
+    return result;
   }
 
   function populateForm2() {
@@ -119,13 +161,7 @@ export default function Home() {
       </form>
       <Link href="/form1">Back to previous question</Link>
 
-      <span className="nhsuk-hidden">
-        <form action="/confirmdata" method="post" className="form" id="completesubmission">
-          <input id="postcodehdn" name="postcodehdn" type="hidden" />
-          <input id="givennamehdn" name="givennamehdn" type="hidden" />
-          <input id="familynamehdn" name="familynamehdn" type="hidden" />
-        </form>
-      </span>
+      <Hiddenform></Hiddenform>
     </>
   )
 }

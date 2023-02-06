@@ -2,6 +2,7 @@ import Cookies from 'cookies';
 import Head from 'next/head';
 import Link from 'next/link';
 import bodyParser from "body-parser";
+import { serialize } from "cookie";
 import util from "util";
 const FORMDATACOOKIENAME = "formdata";
 
@@ -90,6 +91,12 @@ export async function getServerSideProps({ req, res }) {
       "familyname": formdataObject['familyname']
     };
     if (!valid_postcode(formdataObject['address-postcode'].toUpperCase())) allData.postcodeerror = true;
+    formdataObject['confirmScreenShown'] = true;
+    const cookie = serialize(FORMDATACOOKIENAME, JSON.stringify(formdataObject), {
+      httpOnly: false,
+      path: "/",
+    });
+    res.setHeader("Set-Cookie", cookie);
     return {
       props: {
         allData,
@@ -107,6 +114,16 @@ export async function getServerSideProps({ req, res }) {
       "familyname": req.body.familynamehdn
     };
     if (!valid_postcode(req.body.postcodehdn)) allData.postcodeerror = true;
+    let formdataObject = {};
+    formdataObject['address-postcode'] = req.body.postcodehdn;
+    formdataObject['givenname'] = req.body.givennamehdn;
+    formdataObject['familyname'] = req.body.familynamehdn;
+    formdataObject['confirmScreenShown'] = true;
+    const cookie = serialize(FORMDATACOOKIENAME, JSON.stringify(formdataObject), {
+      httpOnly: false,
+      path: "/",
+    });
+    res.setHeader("Set-Cookie", cookie);
     return {
       props: {
         allData,

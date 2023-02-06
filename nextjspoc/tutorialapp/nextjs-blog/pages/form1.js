@@ -1,10 +1,62 @@
 import Head from 'next/head';
+import Hiddenform from '../components/hiddenform';
 import Link from 'next/link';
 import Script from 'next/script';
 import { useRouter } from 'next/router';
 
 export default function Home() {
+  const CONFIRMDATAROUTE = "/confirmdata";
+  const FORMDATACOOKIENAME = "formdata";
   const router = useRouter();
+
+  function getCookie(cname) {
+    let name = cname + "=";
+    let decodedCookie = decodeURIComponent(document.cookie);
+    let ca = decodedCookie.split(';');
+    for(let i = 0; i <ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+  
+  function populateHiddenForm() {
+      console.log("populating hidden form");
+      let addresspostcode = document.getElementById('postcodehdn');
+      let givenname = document.getElementById('givennamehdn');
+      let familyname = document.getElementById('familynamehdn');
+      let addresspostcodeLS = localStorage.getItem('addresspostcode');
+      let givennameLS = localStorage.getItem('givenname');
+      let familynameLS = localStorage.getItem('familyname');
+      addresspostcode.value = (addresspostcodeLS != null) ? addresspostcodeLS : "";
+      givenname.value = (givennameLS != null) ? givennameLS : "";
+      familyname.value = (familynameLS != null) ? familynameLS : "";
+      console.log("submitting hidden form");
+      let nameform = document.getElementById('completesubmission');
+      nameform.submit();
+  }
+
+  function addDataToCookie() {
+    //get FORMDATACOOKIENAME
+    let formdataCookie = getCookie(FORMDATACOOKIENAME);
+    console.log(formdataCookie);
+    //parse to object
+    let formdataCookieObject = (formdataCookie == "") ? {} : JSON.parse(formdataCookie);
+    console.log(formdataCookieObject);
+    //override name fields
+    let givenname = document.getElementById('givenname');
+    let familyname = document.getElementById('familyname');
+    console.log(givenname.value + " " + familyname.value);
+    formdataCookieObject["givenname"] = givenname.value;
+    formdataCookieObject["familyname"] = familyname.value;
+    //save cookie again
+    document.cookie = FORMDATACOOKIENAME + "=" + JSON.stringify(formdataCookieObject) + "; path=/";
+  }
 
   function resetForm() {
       let givenname = document.getElementById('givenname');
@@ -18,34 +70,53 @@ export default function Home() {
   }
 
   function checkForm1Data(e) {
-      //nhsuk-form-group--error
-      //nhsuk-input--error
-      resetForm();
-      e.preventDefault();
-      console.log("saving answers in state");
-      let givenname = document.getElementById('givenname');
-      let familyname = document.getElementById('familyname');
-      console.log(givenname.value + " " + familyname.value);
-      localStorage.setItem("givenname", givenname.value);
-      localStorage.setItem("familyname", familyname.value);
-      console.log("have set values in local storage");
-      //check if both populated
-      let result = true;
-      if (givenname.value == null || givenname.value == "")
+    //nhsuk-form-group--error
+    //nhsuk-input--error
+    resetForm();
+    e.preventDefault();
+    console.log("saving answers in state");
+    let givenname = document.getElementById('givenname');
+    let familyname = document.getElementById('familyname');
+    console.log(givenname.value + " " + familyname.value);
+    localStorage.setItem("givenname", givenname.value);
+    localStorage.setItem("familyname", familyname.value);
+    console.log("have set values in local storage");
+    addDataToCookie();
+    //check if both populated
+    let result = true;
+    if (givenname.value == null || givenname.value == "")
+    {
+        document.getElementById("givenname-error").classList.remove("nhsuk-hidden");
+        document.getElementById("givenname-form-group").classList.add("nhsuk-form-group--error");
+        givenname.classList.add("nhsuk-input--error");
+        result = false;
+    }
+    if (familyname.value == null || familyname.value == "")
+    {
+        document.getElementById("familyname-error").classList.remove("nhsuk-hidden");
+        document.getElementById("familyname-form-group").classList.add("nhsuk-form-group--error");
+        familyname.classList.add("nhsuk-input--error");
+        result = false;
+    }
+    if (result)
+    {
+      //get FORMDATACOOKIENAME
+      let formdataCookie = getCookie(FORMDATACOOKIENAME);
+      console.log(formdataCookie);
+      //parse to object
+      let formdataCookieObject = (formdataCookie == "") ? {} : JSON.parse(formdataCookie);
+      let confirmScreenShown = (formdataCookieObject.confirmScreenShown) ? formdataCookieObject.confirmScreenShown : false;
+      console.log(confirmScreenShown);
+      if (confirmScreenShown && confirmScreenShown != "")
       {
-          document.getElementById("givenname-error").classList.remove("nhsuk-hidden");
-          document.getElementById("givenname-form-group").classList.add("nhsuk-form-group--error");
-          givenname.classList.add("nhsuk-input--error");
-          result = false;
+        console.log("sending to confirm screen");
+        populateHiddenForm();
       }
-      if (familyname.value == null || familyname.value == "")
-      {
-          document.getElementById("familyname-error").classList.remove("nhsuk-hidden");
-          document.getElementById("familyname-form-group").classList.add("nhsuk-form-group--error");
-          familyname.classList.add("nhsuk-input--error");
-          result = false;
+      else {
+        router.push("/form2");
       }
-      return result;
+    }
+    return false;
   }
 
   function populateForm1() {
@@ -85,7 +156,7 @@ export default function Home() {
         A set of forms for submitting data and "remembering" the answer
       </h1>
 
-      <form action="/api/formprocessor" method="post" className="form" id="nameform" noValidate onSubmit={(e) => { if (checkForm1Data(e)) { router.push('/form2'); } else { return false; } }}>
+      <form action="/api/formprocessor" method="post" className="form" id="nameform" noValidate onSubmit={(e) => { checkForm1Data(e); return false;  }}>
 
         <fieldset className="nhsuk-fieldset">
           <legend className="nhsuk-fieldset__legend nhsuk-fieldset__legend--l">
@@ -118,6 +189,7 @@ export default function Home() {
           Save and continue
         </button>
       </form>
+      <Hiddenform></Hiddenform>
     </>
   )
 }

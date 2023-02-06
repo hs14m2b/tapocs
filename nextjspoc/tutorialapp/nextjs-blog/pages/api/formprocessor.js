@@ -55,8 +55,15 @@ export default function handler(req, res) {
   res.setHeader("Set-Cookie", cookie);
   console.log("have set cookie header");
   let foundRedirect = false;
+  let confirmScreenShown = (formdataCookie.confirmScreenShown) ? true : false;
+  console.log("has confirm screen been shown yet? " + confirmScreenShown);
   // Sends a HTTP success code
-  if (referer != UNKNOWN) {
+  if (confirmScreenShown) {
+    console.log("confirm screen has been shown - sending user back to confirm screen");
+    foundRedirect = true;
+    res.redirect(302, DEFAULTROUTE);
+  }
+  else if (referer != UNKNOWN) {
     console.log("referer is known");
     for (let key in REFERERMAP) {
       //if (REFERERMAP.hasOwnProperty(key)) {
