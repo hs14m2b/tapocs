@@ -2,61 +2,12 @@ import Head from 'next/head';
 import Hiddenform from '../components/hiddenform';
 import Link from 'next/link';
 import Script from 'next/script';
+import formFunctions from '../utils/formfunctions';
+import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 
 export default function Home() {
-  const CONFIRMDATAROUTE = "/confirmdata";
-  const FORMDATACOOKIENAME = "formdata";
   const router = useRouter();
-
-  function getCookie(cname) {
-    let name = cname + "=";
-    let decodedCookie = decodeURIComponent(document.cookie);
-    let ca = decodedCookie.split(';');
-    for(let i = 0; i <ca.length; i++) {
-      let c = ca[i];
-      while (c.charAt(0) == ' ') {
-        c = c.substring(1);
-      }
-      if (c.indexOf(name) == 0) {
-        return c.substring(name.length, c.length);
-      }
-    }
-    return "";
-  }
-  
-  function populateHiddenForm() {
-      console.log("populating hidden form");
-      let addresspostcode = document.getElementById('postcodehdn');
-      let givenname = document.getElementById('givennamehdn');
-      let familyname = document.getElementById('familynamehdn');
-      let addresspostcodeLS = localStorage.getItem('addresspostcode');
-      let givennameLS = localStorage.getItem('givenname');
-      let familynameLS = localStorage.getItem('familyname');
-      addresspostcode.value = (addresspostcodeLS != null) ? addresspostcodeLS : "";
-      givenname.value = (givennameLS != null) ? givennameLS : "";
-      familyname.value = (familynameLS != null) ? familynameLS : "";
-      console.log("submitting hidden form");
-      let nameform = document.getElementById('completesubmission');
-      nameform.submit();
-  }
-
-  function addDataToCookie() {
-    //get FORMDATACOOKIENAME
-    let formdataCookie = getCookie(FORMDATACOOKIENAME);
-    console.log(formdataCookie);
-    //parse to object
-    let formdataCookieObject = (formdataCookie == "") ? {} : JSON.parse(formdataCookie);
-    console.log(formdataCookieObject);
-    //override name fields
-    let givenname = document.getElementById('givenname');
-    let familyname = document.getElementById('familyname');
-    console.log(givenname.value + " " + familyname.value);
-    formdataCookieObject["givenname"] = givenname.value;
-    formdataCookieObject["familyname"] = familyname.value;
-    //save cookie again
-    document.cookie = FORMDATACOOKIENAME + "=" + JSON.stringify(formdataCookieObject) + "; path=/";
-  }
 
   function resetForm() {
       let givenname = document.getElementById('givenname');
@@ -74,14 +25,14 @@ export default function Home() {
     //nhsuk-input--error
     resetForm();
     e.preventDefault();
+    let formdata = {};
     console.log("saving answers in state");
     let givenname = document.getElementById('givenname');
     let familyname = document.getElementById('familyname');
     console.log(givenname.value + " " + familyname.value);
-    localStorage.setItem("givenname", givenname.value);
-    localStorage.setItem("familyname", familyname.value);
-    console.log("have set values in local storage");
-    addDataToCookie();
+    formdata["givenname"] = givenname.value;
+    formdata["familyname"] = familyname.value;
+    formFunctions.saveDataLocally(formdata);
     //check if both populated
     let result = true;
     if (givenname.value == null || givenname.value == "")
@@ -100,17 +51,11 @@ export default function Home() {
     }
     if (result)
     {
-      //get FORMDATACOOKIENAME
-      let formdataCookie = getCookie(FORMDATACOOKIENAME);
-      console.log(formdataCookie);
-      //parse to object
-      let formdataCookieObject = (formdataCookie == "") ? {} : JSON.parse(formdataCookie);
-      let confirmScreenShown = (formdataCookieObject.confirmScreenShown) ? formdataCookieObject.confirmScreenShown : false;
-      console.log(confirmScreenShown);
+      let confirmScreenShown = formFunctions.confirmScreenShown();
       if (confirmScreenShown && confirmScreenShown != "")
       {
         console.log("sending to confirm screen");
-        populateHiddenForm();
+        formFunctions.populateHiddenForm();
       }
       else {
         router.push("/form2");
@@ -123,29 +68,14 @@ export default function Home() {
       console.log("populating form");
       let givenname = document.getElementById('givenname');
       let familyname = document.getElementById('familyname');
-      let givennameLS = localStorage.getItem('givenname');
-      let familynameLS = localStorage.getItem('familyname');
+      let givennameLS = formFunctions.getSavedItem('givenname');
+      let familynameLS = formFunctions.getSavedItem('familyname');
       givenname.value = (givennameLS != null) ? givennameLS : "";
       familyname.value = (familynameLS != null) ? familynameLS : "";
   }
 
-  function overrideFormBehaviour()
-  {
-      let nameform = document.getElementById('nameform');
-      if (typeof nameform != "undefined") {
-          console.log("got the form - will override action");
-          //nameform.action="#";
-          //nameform.removeAttribute("method");
-          //console.log("have set action to blank");
-          //nameform.addEventListener("submit", checkForm1Data);
-          //console.log("added event listener to form");
-          //populateForm1();
-      }
-  }
+  useEffect(() => { populateForm1() });  
 
-  setTimeout(populateForm1, 1000);
-  setTimeout(overrideFormBehaviour, 1000);
-  
   return (
     <>
       <Head>
