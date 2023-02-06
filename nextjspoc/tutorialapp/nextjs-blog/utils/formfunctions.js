@@ -7,11 +7,13 @@ module.exports.populateHiddenForm = function () {
     let addresspostcode = document.getElementById('postcodehdn');
     let givenname = document.getElementById('givennamehdn');
     let familyname = document.getElementById('familynamehdn');
+    let favcolour = document.getElementById('favcolourhdn');
     let formdataCookie = getCookie(FORMDATACOOKIENAME, JSON.stringify({}));
     let formdataCookieObject = (formdataCookie == "") ? {} : JSON.parse(formdataCookie);
     addresspostcode.value = (formdataCookieObject['address-postcode'] && typeof formdataCookieObject['address-postcode'] == "string") ? formdataCookieObject['address-postcode'] : "";
     givenname.value = (formdataCookieObject['givenname'] && typeof formdataCookieObject['givenname'] == "string") ? formdataCookieObject['givenname'] : "";
     familyname.value = (formdataCookieObject['familyname'] && typeof formdataCookieObject['familyname'] == "string") ? formdataCookieObject['familyname'] : "";
+    favcolour.value = (formdataCookieObject['favcolour'] && typeof formdataCookieObject['favcolour'] == "string") ? formdataCookieObject['favcolour'] : "";
     console.log("submitting hidden form");
     let nameform = document.getElementById('completesubmission');
     nameform.submit();
@@ -31,7 +33,7 @@ module.exports.saveDataLocally = function(formdata) {
     }
     //save cookie again as well as localstorage
     document.cookie = FORMDATACOOKIENAME + "=" + JSON.stringify(formdataCookieObject) + "; path=/";
-    localStorage.setItem(FORMDATACOOKIENAME, JSON.stringify(formdataCookieObject));
+    sessionStorage.setItem(FORMDATACOOKIENAME, JSON.stringify(formdataCookieObject));
 }
 
 module.exports.getSavedItem = function(itemName) {

@@ -45,7 +45,7 @@ export default function Home({ allData }) {
             {allData.postcode}
           </dd>
           <dd className="nhsuk-summary-list__actions">
-            <a href="/form2">
+            <a href="/formx">
               Change
             </a>
           </dd>
@@ -60,6 +60,19 @@ export default function Home({ allData }) {
           <dd className="nhsuk-summary-list__actions">
             <a href="/form1">
               Change<span > name</span>
+            </a>
+          </dd>
+        </div>
+        <div className="nhsuk-summary-list__row">
+          <dt className="nhsuk-summary-list__key">
+            Favourite Colour
+          </dt>
+          <dd className="nhsuk-summary-list__value">
+            {(allData.favcolour)? allData.favcolour : ""}
+          </dd>
+          <dd className="nhsuk-summary-list__actions">
+            <a href="/form2">
+              Change
             </a>
           </dd>
         </div>
@@ -88,7 +101,8 @@ export async function getServerSideProps({ req, res }) {
       "postcode": formdataObject['address-postcode'].toUpperCase(),
       "postcodeerror": false,
       "givenname": formdataObject['givenname'],
-      "familyname": formdataObject['familyname']
+      "familyname": formdataObject['familyname'],
+      "favcolour":formdataObject['favcolour']
     };
     if (!valid_postcode(formdataObject['address-postcode'].toUpperCase())) allData.postcodeerror = true;
     formdataObject['confirmScreenShown'] = true;
@@ -109,15 +123,18 @@ export async function getServerSideProps({ req, res }) {
     console.log("processing a body")
     const allData = {
       "hasData": true,
-      "postcode": req.body.postcodehdn,
+      "postcode": req.body.postcodehdn.toUpperCase(),
+      "postcodeerror": false,
       "givenname": req.body.givennamehdn,
-      "familyname": req.body.familynamehdn
+      "familyname": req.body.familynamehdn,
+      "favcolour": req.body.favcolourhdn
     };
-    if (!valid_postcode(req.body.postcodehdn)) allData.postcodeerror = true;
+    if (!valid_postcode(req.body.postcodehdn.toUpperCase())) allData.postcodeerror = true;
     let formdataObject = {};
-    formdataObject['address-postcode'] = req.body.postcodehdn;
+    formdataObject['address-postcode'] = req.body.postcodehdn.toUpperCase();
     formdataObject['givenname'] = req.body.givennamehdn;
     formdataObject['familyname'] = req.body.familynamehdn;
+    formdataObject['favcolour'] = req.body.favcolourhdn;
     formdataObject['confirmScreenShown'] = true;
     const cookie = serialize(FORMDATACOOKIENAME, JSON.stringify(formdataObject), {
       httpOnly: false,

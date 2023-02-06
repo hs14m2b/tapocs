@@ -4,7 +4,8 @@ import { serialize } from "cookie";
 const FORMDATACOOKIENAME = "formdata";
 const REFERERMAP = {
   "/form1": "/form2",
-  "/form2": "/confirmdata"
+  "/form2": "/formx",
+  "/formx": "/confirmdata"
 }
 const DEFAULTROUTE = "/confirmdata";
 const UNKNOWN = "unknown";

@@ -6,6 +6,7 @@ export default function Hiddenform() {
           <input id="postcodehdn" name="postcodehdn" type="hidden" />
           <input id="givennamehdn" name="givennamehdn" type="hidden" />
           <input id="familynamehdn" name="familynamehdn" type="hidden" />
+          <input id="favcolourhdn" name="favcolourhdn" type="hidden" />
         </form>
     </span>
   )
