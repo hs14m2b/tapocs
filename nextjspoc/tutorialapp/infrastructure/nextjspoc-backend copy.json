@@ -1,0 +1,726 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Transform": "AWS::Serverless-2016-10-31",
+    "Parameters" : {
+      "AWSREGIONNAME" : {
+        "Type" : "String",
+        "Default": "eu-west-2",
+        "Description" : "The AWS region name"
+      },
+      "BEDOMAIN": {
+        "Type" : "String",
+        "Default": "nextjspocbe",
+        "Description" : "Back end domain identifier"
+      },
+      "BRANCHNAME": {
+        "Type" : "String",
+        "Default": "main",
+        "Description" : "The branchname to derive fqdn"
+      },
+      "CFCERTARN": {
+        "Type" : "String",
+        "Description" : "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+        "Default":"arn:aws:acm:us-east-1:865198111306:certificate/a707a2d1-5966-4ac3-abe6-e17e71a41f4a"
+      },
+      "CERTIFICATEARN" : {
+        "Type" : "String",
+        "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/1445ff7f-f847-48fe-b9d7-aaf7f37414d2",
+        "Description" : "The certificate ARN for the domain"
+      },
+      "DEPLOYMENTSTAGENAME" : {
+        "Type" : "String",
+        "Default": "prod",
+        "Description" : "The stage deployment name"
+      },
+      "FEDOMAIN" :  {
+        "Type" : "String",
+        "Default": "nextjspocfe",
+        "Description" : "The frontend domain identifier"
+      },
+      "HOSTEDZONEID" :  {
+        "Type" : "String",
+        "Default": "Z1075FNTZPAM5I",
+        "Description" : "The ID of the Route53 hosted zone"
+      },
+      "ROOTDOMAIN" :  {
+        "Type" : "String",
+        "Default": "nhsdta.com",
+        "Description" : "The root domain name"
+      },
+      "SHORTCODE" : {
+        "Type" : "String",
+        "Default": "mabr8",
+        "Description" : "The shortcode for tags"
+      }
+    },
+    "Globals": {
+        "Function": {
+            "Tags": {
+               "shortcode": { "Ref" : "SHORTCODE" }
+            },
+            "Environment" : {
+                "Variables" : {
+                    "ROOTDOMAIN": {"Ref" : "ROOTDOMAIN"},
+                    "BRANCHNAME": {"Ref" : "BRANCHNAME"},
+                    "FEDOMAIN": {"Ref" : "FEDOMAIN"},
+                    "APIMDOMAIN": {"Ref" : "APIMDOMAIN"}
+                }
+            },
+            "Timeout" : 300
+        }
+    },
+    "Resources": {
+        "nextjspocbeLambdaRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties" : {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Action": "sts:AssumeRole",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            }
+                        }
+                    ]
+                },
+                "ManagedPolicyArns" : [ "arn:aws:iam::aws:policy/AmazonSNSFullAccess", "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole", "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess", "arn:aws:iam::aws:policy/AmazonS3FullAccess", "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess", "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB" ],
+                "Path": "/service-role/",
+                "RoleName" : {"Fn::Join": ["", [{"Ref": "BRANCHNAME"}, "-", "nextjspocbeLambdaRole-001"]]}
+            }
+        },
+        "nextjspocbeCWRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties" : {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Action": "sts:AssumeRole",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "events.amazonaws.com"
+                            }
+                        }
+                    ]
+                },
+                "ManagedPolicyArns" : [ "arn:aws:iam::aws:policy/CloudWatchEventsFullAccess"],
+                "Path": "/service-role/",
+                "RoleName" : {"Fn::Join": ["", [{"Ref": "BRANCHNAME"}, "-", "nextjspocbeCWRole"]]}
+            }
+        },
+        "nextjspocbeAPI": {
+            "Type": "AWS::ApiGateway::RestApi",
+            "Properties" : {
+                "Name" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "BRANCHNAME"
+                            },
+                            "-nextjspocbeAPI"
+                        ]
+                    ]
+                },
+                "Description" : "This is the REST API to support calls to the Lambda functions",
+                "EndpointConfiguration" : {
+                    "Types" : ["REGIONAL"]
+                }
+            }
+        },
+        "nextjspocbeAPIDeployment": {
+            "Type": "AWS::ApiGateway::Deployment",
+            "Properties": {
+                "RestApiId": { "Ref": "nextjspocbeAPI" },
+                "StageName" : {"Ref": "DEPLOYMENTSTAGENAME"},
+                "Description": {"Fn::Join": ["",["Automatic API Deployment by Cloudformation ", {"Ref": "DEPLOYMENTSTAGENAME"}]]}
+            },
+            "DependsOn": [
+                "startAuthnAPIMethodOPTIONSCORS", 
+                "startAuthnAPIMethodGET"
+            ]
+        },
+        "nhsukCFAPIKey": {
+            "Type" : "AWS::ApiGateway::ApiKey",
+            "Properties" : {
+                "Description" : "API Key for use by CloudFront",
+                "Enabled" : true,
+                "StageKeys" : [ {
+                    "RestApiId": { "Ref": "nextjspocbeAPI" },
+                    "StageName" : {"Ref": "DEPLOYMENTSTAGENAME"}
+                }],
+                "Tags" : [ {
+                    "Key" : "shortcode",
+                    "Value" : { "Ref" : "SHORTCODE" }
+                }]
+            }
+        },
+        "forceCaptchaFunction": {
+            "Type": "AWS::Serverless::Function",
+            "Properties": {
+                "Description" : "The lambda function that starts the authentication request",
+                "FunctionName" : {"Fn::Join": ["", [{"Ref": "BRANCHNAME"}, "-forceCaptcha"]]},
+                "Handler" : "forceCaptcha.handler",
+                "Role" : {"Fn::GetAtt" : ["nextjspocbeLambdaRole", "Arn"] },
+                "Runtime" : "nodejs16.x",
+                "Timeout" : 300
+            },
+            "DependsOn": [
+                "nextjspocbeLambdaRole"
+            ]
+        },
+        "forceCaptchaAPIPath": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+                "ParentId": { "Ref": "apiBasePath" },
+                "PathPart": "forceCaptcha",
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+             "DependsOn": [
+                "forceCaptchaFunction", "nextjspocbeAPI"
+            ]
+        },
+        "forceCaptchaFunctionLambdaPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:invokeFunction",
+                "FunctionName": {"Ref": "forceCaptchaFunction"},
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "nextjspocbeAPI"}, "/*"]]}
+            }
+        },
+        "forceCaptchaAPIMethodGET": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "AuthorizationType": "NONE",
+                "ApiKeyRequired" : true,
+                "HttpMethod" : "GET",
+                "Integration" : {
+                    "IntegrationHttpMethod" : "POST",
+                    "Type": "AWS_PROXY",
+                    "Uri": {"Fn::Join" : ["", ["arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["forceCaptchaFunction", "Arn"]}, "/invocations"]]}
+                },
+                "ResourceId": { "Ref": "forceCaptchaAPIPath" },
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+            "DependsOn": [
+                "forceCaptchaAPIPath", "forceCaptchaFunctionLambdaPermission"
+            ]
+        },
+        "forceCaptchaAPIMethodOPTIONSCORS": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "AuthorizationType": "NONE",
+                "ApiKeyRequired" : true,
+                "HttpMethod" : "OPTIONS",
+                "Integration" : {
+                    "Type": "MOCK",
+                    "IntegrationResponses" : [
+                        {
+                            "ResponseParameters": {
+                                "method.response.header.Access-Control-Allow-Headers": "'content-type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                                "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                                "method.response.header.Access-Control-Allow-Credentials": "'true'",
+                                "method.response.header.Access-Control-Allow-Origin": {"Fn::Join": ["",["'https://",{"Ref": "BRANCHNAME"},"-",{"Ref": "FEDOMAIN"},".",{"Ref": "ROOTDOMAIN"},"'"]]}
+                            },
+                            "ResponseTemplates": {
+                                "application/json": ""
+                            },
+                            "StatusCode": "200"
+                        }
+                    ],
+                    "PassthroughBehavior": "NEVER",
+                    "RequestTemplates" : {
+                        "application/json": "{\n    \"statusCode\": 200\n}"
+                    }
+                },
+                "MethodResponses" : [
+                    {
+                        "ResponseModels" : {
+                            "application/json" : "Empty"
+                        },
+                        "ResponseParameters" : {
+                            "method.response.header.Access-Control-Allow-Headers": true,
+                            "method.response.header.Access-Control-Allow-Methods": true,
+                            "method.response.header.Access-Control-Allow-Credentials": true,
+                            "method.response.header.Access-Control-Allow-Origin": true
+                        },
+                        "StatusCode": "200"
+                    }
+                ],
+                "ResourceId": { "Ref": "forceCaptchaAPIPath" },
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+            "DependsOn": [
+                "forceCaptchaAPIMethodGET"
+            ]
+        },
+        "apiBasePath": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+                "ParentId": { "Fn::GetAtt": ["nextjspocbeAPI", "RootResourceId"] },
+                "PathPart": "api",
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+             "DependsOn": [
+                "nextjspocbeAPI"
+            ]
+        },
+        "startAuthnFunction": {
+            "Type": "AWS::Serverless::Function",
+            "Properties": {
+                "Description" : "The lambda function that starts the authentication request",
+                "FunctionName" : {"Fn::Join": ["", [{"Ref": "BRANCHNAME"}, "-startAuthn"]]},
+                "Handler" : "startAuthn.handler",
+                "Role" : {"Fn::GetAtt" : ["nextjspocbeLambdaRole", "Arn"] },
+                "Runtime" : "nodejs16.x",
+                "Timeout" : 300
+            },
+            "DependsOn": [
+                "nextjspocbeLambdaRole"
+            ]
+        },
+        "startAuthnAPIPath": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+                "ParentId": { "Ref": "apiBasePath" },
+                "PathPart": "startAuthn",
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+             "DependsOn": [
+                "startAuthnFunction", "nextjspocbeAPI"
+            ]
+        },
+        "startAuthnFunctionLambdaPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:invokeFunction",
+                "FunctionName": {"Ref": "startAuthnFunction"},
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "nextjspocbeAPI"}, "/*"]]}
+            }
+        },
+        "startAuthnAPIMethodGET": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "AuthorizationType": "NONE",
+                "ApiKeyRequired" : true,
+                "HttpMethod" : "GET",
+                "Integration" : {
+                    "IntegrationHttpMethod" : "POST",
+                    "Type": "AWS_PROXY",
+                    "Uri": {"Fn::Join" : ["", ["arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["startAuthnFunction", "Arn"]}, "/invocations"]]}
+                },
+                "ResourceId": { "Ref": "startAuthnAPIPath" },
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+            "DependsOn": [
+                "startAuthnAPIPath", "startAuthnFunctionLambdaPermission"
+            ]
+        },
+        "startAuthnAPIMethodOPTIONSCORS": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "AuthorizationType": "NONE",
+                "ApiKeyRequired" : true,
+                "HttpMethod" : "OPTIONS",
+                "Integration" : {
+                    "Type": "MOCK",
+                    "IntegrationResponses" : [
+                        {
+                            "ResponseParameters": {
+                                "method.response.header.Access-Control-Allow-Headers": "'content-type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                                "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                                "method.response.header.Access-Control-Allow-Credentials": "'true'",
+                                "method.response.header.Access-Control-Allow-Origin": {"Fn::Join": ["",["'https://",{"Ref": "BRANCHNAME"},"-",{"Ref": "FEDOMAIN"},".",{"Ref": "ROOTDOMAIN"},"'"]]}
+                            },
+                            "ResponseTemplates": {
+                                "application/json": ""
+                            },
+                            "StatusCode": "200"
+                        }
+                    ],
+                    "PassthroughBehavior": "NEVER",
+                    "RequestTemplates" : {
+                        "application/json": "{\n    \"statusCode\": 200\n}"
+                    }
+                },
+                "MethodResponses" : [
+                    {
+                        "ResponseModels" : {
+                            "application/json" : "Empty"
+                        },
+                        "ResponseParameters" : {
+                            "method.response.header.Access-Control-Allow-Headers": true,
+                            "method.response.header.Access-Control-Allow-Methods": true,
+                            "method.response.header.Access-Control-Allow-Credentials": true,
+                            "method.response.header.Access-Control-Allow-Origin": true
+                        },
+                        "StatusCode": "200"
+                    }
+                ],
+                "ResourceId": { "Ref": "startAuthnAPIPath" },
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+            "DependsOn": [
+                "startAuthnAPIMethodGET"
+            ]
+        },
+        "serverGetTokensStubFunction": {
+            "Type": "AWS::Serverless::Function",
+            "Properties": {
+                "Description" : "Pretend secure server for retrieving tokens using jwt bearer authorization",
+                "FunctionName" : {"Fn::Join": ["", [{"Ref": "BRANCHNAME"}, "-serverGetTokens"]]},
+                "Handler" : "serverGetTokens.handler",
+                "Role" : {"Fn::GetAtt" : ["nextjspocbeLambdaRole", "Arn"] },
+                "Runtime" : "nodejs16.x",
+                "Timeout" : 300
+            },
+            "DependsOn": [
+                "nextjspocbeLambdaRole"
+            ]
+        },
+        "serverGetTokensAPIPath": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+                "ParentId": { "Ref": "apiBasePath" },
+                "PathPart": "serverGetTokens",
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+             "DependsOn": [
+                "serverGetTokensStubFunction", "nextjspocbeAPI"
+            ]
+        },
+        "serverGetTokensStubFunctionLambdaPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:invokeFunction",
+                "FunctionName": {"Ref": "serverGetTokensStubFunction"},
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "nextjspocbeAPI"}, "/*"]]}
+            }
+        },
+        "serverGetTokensAPIMethodGET": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "AuthorizationType": "NONE",
+                "ApiKeyRequired" : true,
+                "HttpMethod" : "GET",
+                "Integration" : {
+                    "IntegrationHttpMethod" : "POST",
+                    "Type": "AWS_PROXY",
+                    "Uri": {"Fn::Join" : ["", ["arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["serverGetTokensStubFunction", "Arn"]}, "/invocations"]]}
+                },
+                "ResourceId": { "Ref": "serverGetTokensAPIPath" },
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+            "DependsOn": [
+                "serverGetTokensAPIPath", "serverGetTokensStubFunctionLambdaPermission"
+            ]
+        },
+        "serverGetTokensAPIMethodPOST": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "AuthorizationType": "NONE",
+                "ApiKeyRequired" : true,
+                "HttpMethod" : "POST",
+                "Integration" : {
+                    "IntegrationHttpMethod" : "POST",
+                    "Type": "AWS_PROXY",
+                    "Uri": {"Fn::Join" : ["", ["arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["serverGetTokensStubFunction", "Arn"]}, "/invocations"]]}
+                },
+                "ResourceId": { "Ref": "serverGetTokensAPIPath" },
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+            "DependsOn": [
+                "serverGetTokensAPIPath", "serverGetTokensStubFunctionLambdaPermission"
+            ]
+        },
+        "serverGetTokensAPIMethodOPTIONSCORS": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "AuthorizationType": "NONE",
+                "ApiKeyRequired" : true,
+                "HttpMethod" : "OPTIONS",
+                "Integration" : {
+                    "Type": "MOCK",
+                    "IntegrationResponses" : [
+                        {
+                            "ResponseParameters": {
+                                "method.response.header.Access-Control-Allow-Headers": "'content-type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
+                                "method.response.header.Access-Control-Allow-Credentials": "'true'",
+                                "method.response.header.Access-Control-Allow-Origin": {"Fn::Join": ["",["'https://",{"Ref": "BRANCHNAME"},"-",{"Ref": "FEDOMAIN"},".",{"Ref": "ROOTDOMAIN"},"'"]]}
+                            },
+                            "ResponseTemplates": {
+                                "application/json": ""
+                            },
+                            "StatusCode": "200"
+                        }
+                    ],
+                    "PassthroughBehavior": "NEVER",
+                    "RequestTemplates" : {
+                        "application/json": "{\n    \"statusCode\": 200\n}"
+                    }
+                },
+                "MethodResponses" : [
+                    {
+                        "ResponseModels" : {
+                            "application/json" : "Empty"
+                        },
+                        "ResponseParameters" : {
+                            "method.response.header.Access-Control-Allow-Headers": true,
+                            "method.response.header.Access-Control-Allow-Methods": true,
+                            "method.response.header.Access-Control-Allow-Credentials": true,
+                            "method.response.header.Access-Control-Allow-Origin": true
+                        },
+                        "StatusCode": "200"
+                    }
+                ],
+                "ResourceId": { "Ref": "serverGetTokensAPIPath" },
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+            "DependsOn": [
+                "serverGetTokensAPIMethodGET"
+            ]
+        },
+        "getVaccsRecordsStubFunction": {
+            "Type": "AWS::Serverless::Function",
+            "Properties": {
+                "Description" : "Lambda for retrieving covid-19 vaccination information from the Immunisations History API",
+                "FunctionName" : {"Fn::Join": ["", [{"Ref": "BRANCHNAME"}, "-getVaccsRecords"]]},
+                "Handler" : "getVaccsRecords.handler",
+                "Role" : {"Fn::GetAtt" : ["nextjspocbeLambdaRole", "Arn"] },
+                "Runtime" : "nodejs16.x",
+                "Timeout" : 300
+            },
+            "DependsOn": [
+                "nextjspocbeLambdaRole"
+            ]
+        },
+        "getVaccsRecordsAPIPath": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+                "ParentId": { "Ref": "apiBasePath" },
+                "PathPart": "getVaccsRecords",
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+             "DependsOn": [
+                "getVaccsRecordsStubFunction", "nextjspocbeAPI"
+            ]
+        },
+        "getVaccsRecordsStubFunctionLambdaPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:invokeFunction",
+                "FunctionName": {"Ref": "getVaccsRecordsStubFunction"},
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "nextjspocbeAPI"}, "/*"]]}
+            }
+        },
+        "getVaccsRecordsAPIMethodGET": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "AuthorizationType": "NONE",
+                "ApiKeyRequired" : true,
+                "HttpMethod" : "GET",
+                "Integration" : {
+                    "IntegrationHttpMethod" : "POST",
+                    "Type": "AWS_PROXY",
+                    "Uri": {"Fn::Join" : ["", ["arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["getVaccsRecordsStubFunction", "Arn"]}, "/invocations"]]}
+                },
+                "ResourceId": { "Ref": "getVaccsRecordsAPIPath" },
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+            "DependsOn": [
+                "getVaccsRecordsAPIPath", "getVaccsRecordsStubFunctionLambdaPermission"
+            ]
+        },
+        "getVaccsRecordsAPIMethodPOST": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "AuthorizationType": "NONE",
+                "ApiKeyRequired" : true,
+                "HttpMethod" : "POST",
+                "Integration" : {
+                    "IntegrationHttpMethod" : "POST",
+                    "Type": "AWS_PROXY",
+                    "Uri": {"Fn::Join" : ["", ["arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["getVaccsRecordsStubFunction", "Arn"]}, "/invocations"]]}
+                },
+                "ResourceId": { "Ref": "getVaccsRecordsAPIPath" },
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+            "DependsOn": [
+                "getVaccsRecordsAPIPath", "getVaccsRecordsStubFunctionLambdaPermission"
+            ]
+        },
+        "getVaccsRecordsAPIMethodOPTIONSCORS": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "AuthorizationType": "NONE",
+                "ApiKeyRequired" : true,
+                "HttpMethod" : "OPTIONS",
+                "Integration" : {
+                    "Type": "MOCK",
+                    "IntegrationResponses" : [
+                        {
+                            "ResponseParameters": {
+                                "method.response.header.Access-Control-Allow-Headers": "'content-type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
+                                "method.response.header.Access-Control-Allow-Credentials": "'true'",
+                                "method.response.header.Access-Control-Allow-Origin": {"Fn::Join": ["",["'https://",{"Ref": "BRANCHNAME"},"-",{"Ref": "FEDOMAIN"},".",{"Ref": "ROOTDOMAIN"},"'"]]}
+                            },
+                            "ResponseTemplates": {
+                                "application/json": ""
+                            },
+                            "StatusCode": "200"
+                        }
+                    ],
+                    "PassthroughBehavior": "NEVER",
+                    "RequestTemplates" : {
+                        "application/json": "{\n    \"statusCode\": 200\n}"
+                    }
+                },
+                "MethodResponses" : [
+                    {
+                        "ResponseModels" : {
+                            "application/json" : "Empty"
+                        },
+                        "ResponseParameters" : {
+                            "method.response.header.Access-Control-Allow-Headers": true,
+                            "method.response.header.Access-Control-Allow-Methods": true,
+                            "method.response.header.Access-Control-Allow-Credentials": true,
+                            "method.response.header.Access-Control-Allow-Origin": true
+                        },
+                        "StatusCode": "200"
+                    }
+                ],
+                "ResourceId": { "Ref": "getVaccsRecordsAPIPath" },
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+            "DependsOn": [
+                "getVaccsRecordsAPIMethodGET"
+            ]
+        },
+        "getTestResultsStubFunction": {
+            "Type": "AWS::Serverless::Function",
+            "Properties": {
+                "Description" : "Lambda for retrieving covid-19 test results from the test results API",
+                "FunctionName" : {"Fn::Join": ["", [{"Ref": "BRANCHNAME"}, "-getTestResults"]]},
+                "Handler" : "getTestResults.handler",
+                "Role" : {"Fn::GetAtt" : ["nextjspocbeLambdaRole", "Arn"] },
+                "Runtime" : "nodejs16.x",
+                "Timeout" : 300
+            },
+            "DependsOn": [
+                "nextjspocbeLambdaRole"
+            ]
+        },
+        "getTestResultsAPIPath": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+                "ParentId": { "Ref": "apiBasePath" },
+                "PathPart": "getTestResults",
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+             "DependsOn": [
+                "getTestResultsStubFunction", "nextjspocbeAPI"
+            ]
+        },
+        "getTestResultsStubFunctionLambdaPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:invokeFunction",
+                "FunctionName": {"Ref": "getTestResultsStubFunction"},
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "nextjspocbeAPI"}, "/*"]]}
+            }
+        },
+        "getTestResultsAPIMethodGET": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "AuthorizationType": "NONE",
+                "ApiKeyRequired" : true,
+                "HttpMethod" : "GET",
+                "Integration" : {
+                    "IntegrationHttpMethod" : "POST",
+                    "Type": "AWS_PROXY",
+                    "Uri": {"Fn::Join" : ["", ["arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["getTestResultsStubFunction", "Arn"]}, "/invocations"]]}
+                },
+                "ResourceId": { "Ref": "getTestResultsAPIPath" },
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+            "DependsOn": [
+                "getTestResultsAPIPath", "getTestResultsStubFunctionLambdaPermission"
+            ]
+        },
+        "getTestResultsAPIMethodPOST": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "AuthorizationType": "NONE",
+                "ApiKeyRequired" : true,
+                "HttpMethod" : "POST",
+                "Integration" : {
+                    "IntegrationHttpMethod" : "POST",
+                    "Type": "AWS_PROXY",
+                    "Uri": {"Fn::Join" : ["", ["arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["getTestResultsStubFunction", "Arn"]}, "/invocations"]]}
+                },
+                "ResourceId": { "Ref": "getTestResultsAPIPath" },
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+            "DependsOn": [
+                "getTestResultsAPIPath", "getTestResultsStubFunctionLambdaPermission"
+            ]
+        },
+        "getTestResultsAPIMethodOPTIONSCORS": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "AuthorizationType": "NONE",
+                "ApiKeyRequired" : true,
+                "HttpMethod" : "OPTIONS",
+                "Integration" : {
+                    "Type": "MOCK",
+                    "IntegrationResponses" : [
+                        {
+                            "ResponseParameters": {
+                                "method.response.header.Access-Control-Allow-Headers": "'content-type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
+                                "method.response.header.Access-Control-Allow-Credentials": "'true'",
+                                "method.response.header.Access-Control-Allow-Origin": {"Fn::Join": ["",["'https://",{"Ref": "BRANCHNAME"},"-",{"Ref": "FEDOMAIN"},".",{"Ref": "ROOTDOMAIN"},"'"]]}
+                            },
+                            "ResponseTemplates": {
+                                "application/json": ""
+                            },
+                            "StatusCode": "200"
+                        }
+                    ],
+                    "PassthroughBehavior": "NEVER",
+                    "RequestTemplates" : {
+                        "application/json": "{\n    \"statusCode\": 200\n}"
+                    }
+                },
+                "MethodResponses" : [
+                    {
+                        "ResponseModels" : {
+                            "application/json" : "Empty"
+                        },
+                        "ResponseParameters" : {
+                            "method.response.header.Access-Control-Allow-Headers": true,
+                            "method.response.header.Access-Control-Allow-Methods": true,
+                            "method.response.header.Access-Control-Allow-Credentials": true,
+                            "method.response.header.Access-Control-Allow-Origin": true
+                        },
+                        "StatusCode": "200"
+                    }
+                ],
+                "ResourceId": { "Ref": "getTestResultsAPIPath" },
+                "RestApiId": { "Ref": "nextjspocbeAPI" }
+            },
+            "DependsOn": [
+                "getTestResultsAPIMethodGET"
+            ]
+        }
+    }
+} 

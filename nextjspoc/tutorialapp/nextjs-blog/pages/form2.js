@@ -89,7 +89,7 @@ export default function Home() {
           </div>
 
         </fieldset>
-        <input className="nhsuk-hidden" type="hidden" id="nextpage" name="nextpage" value="/confirmdata" />
+        <input className="nhsuk-hidden" type="hidden" id="nextpage" name="nextpage" value="/formx" />
         <button className="nhsuk-button" data-module="nhsuk-button" type="submit">
           Save and continue
         </button>
