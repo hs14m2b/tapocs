@@ -1,0 +1,272 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+  
+    "Description" : "Cloudformation template to create shared S3 bucket for overall service",
+    "Parameters" : {
+        "APIGWDOMAIN": {
+            "Type": "String",
+            "Description": "The domain name for the API Gateway",
+            "Default": "5vdb12f8lh.execute-api.eu-west-2.amazonaws.com"
+        },
+        "SHORTCODE" : {
+            "Type" : "String",
+            "Description" : "The shortcode for tags",
+            "Default": "mabr8"
+        },
+        "BRANCHNAME" : {
+            "Type" : "String",
+            "Default": "main",
+            "Description" : "Branchname for the deployment"
+        },
+        "CERTARN": {
+            "Type" : "String",
+            "Description" : "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+            "Default":"arn:aws:acm:us-east-1:865198111306:certificate/a707a2d1-5966-4ac3-abe6-e17e71a41f4a"
+        },
+        "HOSTEDZONEID": {
+            "Type" : "String",
+            "Description" : "NHSD TA Hosted Zone identifier for DNS entries",
+            "Default": "Z1075FNTZPAM5I"
+        },
+        "HOSTEDZONESUFFIX": {
+            "Type" : "String",
+            "Description" : "Hosted Zone DNS suffix",
+            "Default": "nhsdta.com"
+        }
+    },
+    
+    "Resources" : {
+        "S3StaticBucket":{
+            "Type" : "AWS::S3::Bucket",
+            "Properties" : {
+                "BucketEncryption" : {
+                    "ServerSideEncryptionConfiguration" : [ {
+                        "BucketKeyEnabled" : true,
+                        "ServerSideEncryptionByDefault" : {
+                            "SSEAlgorithm" : "AES256"
+                          }
+                          
+                    }]
+                },
+                "BucketName" : {"Fn::Join": ["-",[{"Ref": "BRANCHNAME"},{"Ref": "SHORTCODE"},"nextjsassets"]]},
+                "ObjectLockEnabled" : false,
+                "PublicAccessBlockConfiguration" : {
+                    "BlockPublicAcls" : true,
+                    "BlockPublicPolicy" : true,
+                    "IgnorePublicAcls" : true,
+                    "RestrictPublicBuckets" : true
+                },
+                "Tags" : [ {"Key": "shortcode", "Value": { "Ref" : "SHORTCODE" }} ],
+                "VersioningConfiguration" : {
+                    "Status" : "Suspended"
+                }
+            }
+        },
+        "S3LogBucket":{
+            "Type" : "AWS::S3::Bucket",
+            "Properties" : {
+                "BucketEncryption" : {
+                    "ServerSideEncryptionConfiguration" : [ {
+                        "BucketKeyEnabled" : true,
+                        "ServerSideEncryptionByDefault" : {
+                            "SSEAlgorithm" : "AES256"
+                          }
+                          
+                    }]
+                },
+                "BucketName" : {"Fn::Join": ["-",[{"Ref": "BRANCHNAME"},"nextjsassetslogs"]]},
+                "ObjectLockEnabled" : false,
+                "OwnershipControls": {
+                    "Rules" : [ {
+                        "ObjectOwnership" : "ObjectWriter"
+                    }]
+                },
+                "PublicAccessBlockConfiguration" : {
+                    "BlockPublicAcls" : true,
+                    "BlockPublicPolicy" : true,
+                    "IgnorePublicAcls" : true,
+                    "RestrictPublicBuckets" : true
+                },
+                "Tags" : [ {"Key": "shortcode", "Value": { "Ref" : "SHORTCODE" }} ],
+                "VersioningConfiguration" : {
+                    "Status" : "Suspended"
+                }
+            }
+        },
+        "CFAPIOrigReqPolicy":{
+            "Type" : "AWS::CloudFront::OriginRequestPolicy",
+            "Properties" : {
+                "OriginRequestPolicyConfig" : {
+                    "Comment" : "Pass querystrings to origin",
+                    "CookiesConfig" : {
+                        "CookieBehavior" : "all"
+                    },
+                    "HeadersConfig" : {
+                        "HeaderBehavior" : "allViewer"
+                    },
+                    "Name" : {"Fn::Join": ["-",[{"Ref": "BRANCHNAME"},"api","nextjsoriginpolicy"]]},
+                    "QueryStringsConfig" : {
+                        "QueryStringBehavior" : "all"
+                    }
+                }
+            }
+        },
+        "CFStaticDistnCachePolicy": {
+            "Type" : "AWS::CloudFront::CachePolicy",
+            "Properties" : {
+                "CachePolicyConfig" : {
+                    "Comment" : "Cache Policy for Basic CF Distribution for NextJS PoC",
+                    "DefaultTTL" : 60,
+                    "MaxTTL" : 3600,
+                    "MinTTL" : 10,
+                    "Name" : {"Fn::Join": ["-",[{"Ref": "BRANCHNAME"},"nextjsassets","cachepolicy"]]},
+                    "ParametersInCacheKeyAndForwardedToOrigin" : {
+                        "CookiesConfig" : {
+                            "CookieBehavior" : "none"
+                        },
+                        "EnableAcceptEncodingBrotli" : true,
+                        "EnableAcceptEncodingGzip" : true,
+                        "HeadersConfig" : {
+                            "HeaderBehavior" : "none"
+                        },
+                        "QueryStringsConfig" : {
+                            "QueryStringBehavior" : "all"
+                        }
+                    }
+                }
+            }
+        },
+        "CFStaticDistnOriginAccessID": {
+            "Type" : "AWS::CloudFront::CloudFrontOriginAccessIdentity",
+            "Properties" : {
+                "CloudFrontOriginAccessIdentityConfig" : {
+                    "Comment" : "This is the Origin Access Identity to lock down the Nextjs PoC S3 bucket to CF access only"
+                }
+            }
+        },
+        "CFStaticDistn": {
+            "Type" : "AWS::CloudFront::Distribution",
+            "Properties" : {
+                "DistributionConfig" : {
+                    "Aliases" : [{ "Fn::Join": ["",[{"Ref": "BRANCHNAME"},"-nextjsfe.",{"Ref": "HOSTEDZONESUFFIX"}]]}],
+                    "CacheBehaviors" : [{
+                        "AllowedMethods" : [ "GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE" ],
+                        "CachedMethods" : [ "GET", "HEAD" ],
+                        "CachePolicyId" : {"Ref": "CFStaticDistnCachePolicy"},
+                        "Compress" : true,
+                        "OriginRequestPolicyId": {"Ref": "CFAPIOrigReqPolicy"},
+                        "PathPattern" : "/assets/*",
+                        "TargetOriginId" : {"Fn::Join": ["-",[{"Ref": "BRANCHNAME"},"s3origin"]]},
+                        "ViewerProtocolPolicy" : "https-only"
+                      },
+                      {
+                        "AllowedMethods" : [ "GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE" ],
+                        "CachedMethods" : [ "GET", "HEAD" ],
+                        "CachePolicyId" : {"Ref": "CFStaticDistnCachePolicy"},
+                        "Compress" : true,
+                        "OriginRequestPolicyId": {"Ref": "CFAPIOrigReqPolicy"},
+                        "PathPattern" : "/_next/*",
+                        "TargetOriginId" : {"Fn::Join": ["-",[{"Ref": "BRANCHNAME"},"s3origin"]]},
+                        "ViewerProtocolPolicy" : "https-only"
+                      }],
+                    "Comment" : "Nextjs PoC distribution using S3 and API",
+                    "DefaultCacheBehavior" : {
+                        "AllowedMethods" : [ "GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE" ],
+                        "CachedMethods" : [ "GET", "HEAD", "OPTIONS" ],
+                        "CachePolicyId" : "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+                        "Compress" : true,
+                        "OriginRequestPolicyId": "216adef6-5c7f-47e4-b989-5492eafa07d3",
+                        "TargetOriginId": {"Fn::Join": ["-",[{"Ref": "BRANCHNAME"},"apigworigin"]]},
+                        "ViewerProtocolPolicy": "https-only"
+                    },
+                    "DefaultRootObject" : "index",
+                    "Enabled" : true,
+                    "HttpVersion" : "http2and3",
+                    "IPV6Enabled" : false,
+                    "Logging": {
+                        "Bucket" : {"Fn::GetAtt" : ["S3LogBucket", "DomainName"]},
+                        "IncludeCookies" : true,
+                        "Prefix" : "nextjspoc/cflogs/"
+                    },
+                    "Origins" : [ {
+                        "ConnectionAttempts" : 3,
+                        "ConnectionTimeout" : 10,
+                        "DomainName" : {"Fn::GetAtt": ["S3StaticBucket", "DomainName"]},
+                        "Id" : {"Fn::Join": ["-",[{"Ref": "BRANCHNAME"},"s3origin"]]},
+                        "S3OriginConfig" : {
+                            "OriginAccessIdentity" : {"Fn::Join": ["/",["origin-access-identity","cloudfront",{"Fn::GetAtt": ["CFStaticDistnOriginAccessID", "Id"]}]]}
+                        }
+                    },
+                    {
+                        "ConnectionAttempts" : 3,
+                        "ConnectionTimeout" : 10,
+                        "DomainName" : {"Ref": "APIGWDOMAIN"},
+                        "Id" : {"Fn::Join": ["-",[{"Ref": "BRANCHNAME"},"apigworigin"]]},
+                        "CustomOriginConfig" : {
+                            "HTTPSPort" : 443,
+                            "OriginKeepaliveTimeout" : 5,
+                            "OriginProtocolPolicy" : "https-only",
+                            "OriginReadTimeout" : 25,
+                            "OriginSSLProtocols" : [ "TLSv1.2" ]
+                        },
+                        "OriginPath": "/_server"
+                    }],
+                    "ViewerCertificate" : {
+                        "AcmCertificateArn" : {"Ref": "CERTARN"},
+                        "MinimumProtocolVersion" : "TLSv1.2_2021",
+                        "SslSupportMethod" : "sni-only"
+                    }
+                },
+                "Tags" : [ {"Key": "shortcode", "Value": { "Ref" : "SHORTCODE" }} ]
+            }
+        },
+        "S3StaticBucketPolicy": {
+            "Type" : "AWS::S3::BucketPolicy",
+            "Properties" : {
+                "Bucket" : {"Ref": "S3StaticBucket"},
+                "PolicyDocument" : {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "CloudFrontRead",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": {"Fn::Join": ["",["arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ",{"Fn::GetAtt": ["CFStaticDistnOriginAccessID", "Id"]}]]}
+                            },
+                            "Action": [
+                                "s3:GetObject",
+                                "s3:GetObjectVersion"
+                            ],
+                            "Resource": {"Fn::Join": ["",["arn:aws:s3:::",{"Ref": "S3StaticBucket"},"/*"]]}
+                        }
+                    ]
+                }
+            }
+        },
+        "staticContentR53Alias" : {
+            "Type" : "AWS::Route53::RecordSet",
+            "Properties" : {
+                "AliasTarget" : {
+                    "DNSName" : { "Fn::GetAtt": ["CFStaticDistn", "DomainName"] },
+                    "EvaluateTargetHealth" : "false",
+                    "HostedZoneId" : "Z2FDTNDATAQYW2"
+                },
+                "Comment" : "DNS entry pointing at Cloudfront distribution for static content",
+                "HostedZoneId" : { "Ref" : "HOSTEDZONEID" },
+                "Name" : { "Fn::Join": ["",[{"Ref": "BRANCHNAME"},"-nextjsfe.",{"Ref": "HOSTEDZONESUFFIX"}]]},
+                "Type" : "A"
+            },
+            "DependsOn": ["CFStaticDistn"]
+        }
+    },
+    "Outputs" : {
+        "StaticWebsiteURL" : {
+          "Description" : "URL for static website",
+          "Value" : {"Fn::Join":["",["https://",{"Ref": "BRANCHNAME"},"-nextjsfe.",{"Ref": "HOSTEDZONESUFFIX"}]]}
+        },
+        "CloudFrontdirectURL" : {
+            "Description" : "URL for CloudFront direct",
+            "Value" : {"Fn::Join":["",["https://",{"Fn::GetAtt": ["CFStaticDistn","DomainName"]}]]}
+          }
+      }
+}
