@@ -11,14 +11,12 @@ export default function Home() {
       </Head>
       <Script>{`localStorage.clear();`}</Script>
         <h1 className="nhsuk-heading-xl">
-          Next,js app running in AWS Lambda
+          Next.js app running in AWS Lambda
         </h1>
-
         <p>
-          Get started by <Link href="/postlist">going to the list of posts</Link>
-        </p>
-        <p>
-          Access the <Link href="/form1">forms demo</Link>
+        Access the <Link href="/form1">forms demo</Link>
+        <Link className="nhsuk-u-visually-hidden" href="/form2" />
+        <Link className="nhsuk-hidden" href="/formx" />
         </p>
 
     </>

@@ -45,9 +45,9 @@ export default function Home({ allData }) {
             {allData.postcode}
           </dd>
           <dd className="nhsuk-summary-list__actions">
-            <a href="/formx">
+            <Link href="/formx">
               Change
-            </a>
+            </Link>
           </dd>
         </div>
         <div className="nhsuk-summary-list__row">
@@ -58,9 +58,9 @@ export default function Home({ allData }) {
             {allData.givenname + " " + allData.familyname}
           </dd>
           <dd className="nhsuk-summary-list__actions">
-            <a href="/form1">
+            <Link href="/form1">
               Change<span > name</span>
-            </a>
+            </Link>
           </dd>
         </div>
         <div className="nhsuk-summary-list__row">
@@ -71,9 +71,9 @@ export default function Home({ allData }) {
             {(allData.favcolour)? allData.favcolour : ""}
           </dd>
           <dd className="nhsuk-summary-list__actions">
-            <a href="/form2">
+            <Link href="/form2">
               Change
-            </a>
+            </Link>
           </dd>
         </div>
       </dl>

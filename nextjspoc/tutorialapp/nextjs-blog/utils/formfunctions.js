@@ -10,7 +10,7 @@ module.exports.populateHiddenForm = function () {
     let favcolour = document.getElementById('favcolourhdn');
     let formdataCookie = getCookie(FORMDATACOOKIENAME, JSON.stringify({}));
     let formdataCookieObject = (formdataCookie == "") ? {} : JSON.parse(formdataCookie);
-    addresspostcode.value = (formdataCookieObject['address-postcode'] && typeof formdataCookieObject['address-postcode'] == "string") ? formdataCookieObject['address-postcode'] : "";
+    addresspostcode.value = (formdataCookieObject['addresspostcode'] && typeof formdataCookieObject['addresspostcode'] == "string") ? formdataCookieObject['addresspostcode'] : "";
     givenname.value = (formdataCookieObject['givenname'] && typeof formdataCookieObject['givenname'] == "string") ? formdataCookieObject['givenname'] : "";
     familyname.value = (formdataCookieObject['familyname'] && typeof formdataCookieObject['familyname'] == "string") ? formdataCookieObject['familyname'] : "";
     favcolour.value = (formdataCookieObject['favcolour'] && typeof formdataCookieObject['favcolour'] == "string") ? formdataCookieObject['favcolour'] : "";
