@@ -30,7 +30,7 @@ export default function Document() {
                 </svg>
 
                 <span className="nhsuk-header__service-name">
-                  Test Next.js Service
+                  Test Next.js Service<noscript> running without Javascript</noscript>
                 </span>
               </Link>
             </div>

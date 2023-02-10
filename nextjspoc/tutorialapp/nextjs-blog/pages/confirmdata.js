@@ -98,13 +98,13 @@ export async function getServerSideProps({ req, res }) {
     let formdataObject = JSON.parse(formdataCookie);
     const allData = {
       "hasData": true,
-      "postcode": formdataObject['address-postcode'].toUpperCase(),
+      "postcode": formdataObject['addresspostcode'].toUpperCase(),
       "postcodeerror": false,
       "givenname": formdataObject['givenname'],
       "familyname": formdataObject['familyname'],
       "favcolour":formdataObject['favcolour']
     };
-    if (!valid_postcode(formdataObject['address-postcode'].toUpperCase())) allData.postcodeerror = true;
+    if (!valid_postcode(formdataObject['addresspostcode'].toUpperCase())) allData.postcodeerror = true;
     formdataObject['confirmScreenShown'] = true;
     const cookie = serialize(FORMDATACOOKIENAME, JSON.stringify(formdataObject), {
       httpOnly: false,
@@ -131,7 +131,7 @@ export async function getServerSideProps({ req, res }) {
     };
     if (!valid_postcode(req.body.postcodehdn.toUpperCase())) allData.postcodeerror = true;
     let formdataObject = {};
-    formdataObject['address-postcode'] = req.body.postcodehdn.toUpperCase();
+    formdataObject['addresspostcode'] = req.body.postcodehdn.toUpperCase();
     formdataObject['givenname'] = req.body.givennamehdn;
     formdataObject['familyname'] = req.body.familynamehdn;
     formdataObject['favcolour'] = req.body.favcolourhdn;
