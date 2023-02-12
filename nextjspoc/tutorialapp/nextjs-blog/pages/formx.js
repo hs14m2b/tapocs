@@ -21,12 +21,6 @@ function Home(props) {
       addresspostcode.classList.remove("nhsuk-input--error");
   }
 
-  function valid_postcode(postcode) {
-      postcode = postcode.replace(/\s/g, "");
-      const regex = /^[A-Z]{1,2}[0-9]{1,2}[A-Z]{0,1} ?[0-9][A-Z]{2}$/i;
-      return regex.test(postcode);
-  }
-
   function checkFormXData(e) {
     resetForm();
     e.preventDefault();
@@ -36,7 +30,7 @@ function Home(props) {
     formdata["addresspostcode"] = addresspostcode.value;
     formFunctions.saveDataLocally(formdata);
     //check if postcode matches regex
-    let result = valid_postcode(addresspostcode.value);
+    let result = formFunctions.valid_postcode(addresspostcode.value);
     if (!result || addresspostcode.value == null || addresspostcode.value == "")
     {
       document.getElementById("postcode-error").classList.remove("nhsuk-hidden");
@@ -45,18 +39,9 @@ function Home(props) {
       addresspostcode.value = addresspostcode.value.toUpperCase();      
       result = false;
     }
-    if (result) formFunctions.populateHiddenForm();
+    if (result) router.push("/confirmdata"); //formFunctions.populateHiddenForm();
     return result;
   }
-
-  function populateFormX() {
-      console.log("populating form");
-      let addresspostcode = document.getElementById('addresspostcode');
-      let addresspostcodeLS = formFunctions.getSavedItem('addresspostcode');
-      addresspostcode.value = (addresspostcodeLS != null) ? addresspostcodeLS : "";
-  }
-
-  useEffect(() => { populateFormX() });  
 
   return (
     <>
@@ -112,13 +97,14 @@ Home.getInitialProps = async (ctx) => {
     console.log(ctx.req.method);
   }
   else {
-    props["execlocation"] = "client";    
+    props["execlocation"] = "client";
+    props["addresspostcode"] = formFunctions.getSavedItem('addresspostcode');
     return props;
   }
   //check if POST or GET
   const cookies = new Cookies(ctx.req, ctx.res);
   const formdataCookieRaw = cookies.get(FORMDATACOOKIENAME);
-  let formdataCookie = (formdataCookieRaw == null || typeof formdataCookieRaw == "undefined") ? {} : JSON.parse(decodeURIComponent(formdataCookieRaw));
+  let formdataCookie = (formdataCookieRaw == null || typeof formdataCookieRaw == "undefined" || formdataCookieRaw=="") ? {} : JSON.parse(decodeURIComponent(formdataCookieRaw));
   console.log(JSON.stringify(formdataCookie));
   if (ctx.req.method == "GET") {
     const { addresspostcode } = formdataCookie;
@@ -131,10 +117,7 @@ Home.getInitialProps = async (ctx) => {
     console.log('BODY', data);
     const { addresspostcode, nextpost } = data;
     props["addresspostcode"] = addresspostcode;
-    //TODO - create single function for validating postocde
-    let postcode = addresspostcode.replace(/\s/g, "");
-    const regex = /^[A-Z]{1,2}[0-9]{1,2}[A-Z]{0,1} ?[0-9][A-Z]{2}$/i;
-    if (! regex.test(postcode)) props.pcerror = true;
+    props = formFunctions.checkData(props);
     if (props.pcerror ) return props;
     //no error in the form data. Add it to a response cookie
     for (let key in data) {

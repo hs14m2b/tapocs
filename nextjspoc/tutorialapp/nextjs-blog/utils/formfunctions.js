@@ -76,3 +76,19 @@ function getCookie(cname, defaultReturnValue) {
     }
     return retVal;
 }
+
+module.exports.valid_postcode =  function(postcode) {
+    postcode = postcode.replace(/\s/g, "");
+    const regex = /^[A-Z]{1,2}[0-9]{1,2}[A-Z]{0,1} ?[0-9][A-Z]{2}$/i;
+    return regex.test(postcode);
+}
+
+module.exports.checkData = function (formdata) {
+    let { givenname, familyname, addresspostcode, favcolour } = formdata;
+    let formdataResponse = formdata;
+    (givenname == "" || !givenname || typeof givenname == "undefined") ? formdataResponse['gnerror'] = true : formdataResponse['gnerror'] = false;
+    (familyname == "" || !familyname || typeof familyname == "undefined") ? formdataResponse['fnerror'] = true : formdataResponse['fnerror'] = false;
+    (favcolour == "" || !favcolour || typeof favcolour == "undefined") ? formdataResponse['fcerror'] = true : formdataResponse['fcerror'] = false;
+    (addresspostcode == "" || !addresspostcode || typeof addresspostcode == "undefined" || !this.valid_postcode(addresspostcode)) ? formdataResponse['pcerror'] = true : formdataResponse['pcerror'] = false;
+    return formdataResponse;
+}

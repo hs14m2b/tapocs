@@ -1,6 +1,7 @@
 import Cookies from 'cookies';
 import Head from 'next/head';
 import Hiddenform from '../components/hiddenform';
+import Link from 'next/link';
 import formFunctions from '../utils/formfunctions';
 import parse from 'urlencoded-body-parser';
 import { serialize } from "cookie";
@@ -58,7 +59,8 @@ function Home( props ) {
       if (confirmScreenShown && confirmScreenShown != "")
       {
         console.log("sending to confirm screen");
-        formFunctions.populateHiddenForm();
+        router.push("/confirmdata");
+        //formFunctions.populateHiddenForm();
       }
       else {
         router.push("/form2");
@@ -66,18 +68,6 @@ function Home( props ) {
     }
     return false;
   }
-
-  function populateForm1() {
-      console.log("populating form");
-      let givenname = document.getElementById('givenname');
-      let familyname = document.getElementById('familyname');
-      let givennameLS = formFunctions.getSavedItem('givenname');
-      let familynameLS = formFunctions.getSavedItem('familyname');
-      givenname.value = (givennameLS != null) ? givennameLS : "";
-      familyname.value = (familynameLS != null) ? familynameLS : "";
-  }
-
-  useEffect(() => { populateForm1() });  
 
   return (
     <>
@@ -141,13 +131,16 @@ Home.getInitialProps = async (ctx) => {
     console.log(ctx.req.method);
   }
   else {
-    props["execlocation"] = "client";    
+    props["execlocation"] = "client";
+    props["givenname"] = formFunctions.getSavedItem('givenname');
+    props["familyname"] = formFunctions.getSavedItem('familyname');
     return props;
   }
   //check if POST or GET
   const cookies = new Cookies(ctx.req, ctx.res);
   const formdataCookieRaw = cookies.get(FORMDATACOOKIENAME);
-  let formdataCookie = (formdataCookieRaw == null || typeof formdataCookieRaw == "undefined") ? {} : JSON.parse(decodeURIComponent(formdataCookieRaw));
+  console.log(formdataCookieRaw);
+  let formdataCookie = (formdataCookieRaw == null || typeof formdataCookieRaw == "undefined" || formdataCookieRaw=="") ? {} : JSON.parse(decodeURIComponent(formdataCookieRaw));
   console.log(JSON.stringify(formdataCookie));
   if (ctx.req.method == "GET") {
     const { givenname, familyname } = formdataCookie;
@@ -161,9 +154,8 @@ Home.getInitialProps = async (ctx) => {
     console.log('BODY', data);
     const { givenname, familyname, nextpost } = data;
     props["givenname"] = givenname;
-    if (givenname == "") props.gnerror = true;
     props["familyname"] = familyname;
-    if (familyname == "") props.fnerror = true;
+    props = formFunctions.checkData(props);
     if (props.fnerror || props.gnerror) return props;
     //no error in the form data. Add it to a response cookie
     for (let key in data) {
