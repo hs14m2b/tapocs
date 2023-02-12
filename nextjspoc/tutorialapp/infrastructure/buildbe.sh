@@ -26,5 +26,8 @@ aws cloudformation deploy --template-file ${TIMESTAMP}nextjspoc-backend.json --s
 
 mkdir assets
 unzip ${TIMESTAMP}assetsLayer.zip -d assets
+mkdir code
+unzip ${TIMESTAMP}code.zip -d code
+cp ./code/.next/server/pages/*.html ./assets/
 cd assets
 aws s3 sync . s3://main-mabr8-nextjsassets
