@@ -1,6 +1,5 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import Script from 'next/script';
 const FORMDATACOOKIENAME = "formdata";
 
 export default function Home() {
@@ -23,7 +22,6 @@ export default function Home() {
         <Link className="nhsuk-u-visually-hidden" href="/form2" />
         <Link className="nhsuk-u-visually-hidden" href="/formx" />
         <Link className="nhsuk-u-visually-hidden" href="/confirmdata" />
-        <Link className="nhsuk-u-visually-hidden" href="/home" />
       </p>
       <button className="nhsuk-button" data-module="nhsuk-button" onClick={clearData}>
           Clear Saved Data

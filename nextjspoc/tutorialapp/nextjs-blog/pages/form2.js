@@ -46,7 +46,8 @@ function Home( props ) {
       let confirmScreenShown = formFunctions.confirmScreenShown();
       if (confirmScreenShown && confirmScreenShown != "") {
         console.log("sending to confirm screen");
-        formFunctions.populateHiddenForm();
+        router.push("/confirmdata");
+//        formFunctions.populateHiddenForm();
       }
       else {
         router.push("/formx");
@@ -54,15 +55,6 @@ function Home( props ) {
       return result;
     }
   }
-
-  function populateForm2() {
-      console.log("populating form");
-      let favcolour = document.getElementById('favcolour');
-      let favcolourLS = formFunctions.getSavedItem('favcolour');
-      favcolour.value = (favcolourLS != null) ? favcolourLS : "";
-  }
-
-  useEffect(() => { populateForm2() });  
 
   return (
     <>
@@ -119,12 +111,13 @@ Home.getInitialProps = async (ctx) => {
   }
   else {
     props["execlocation"] = "client";    
+    props["favcolour"] = formFunctions.getSavedItem('favcolour');
     return props;
   }
   //check if POST or GET
   const cookies = new Cookies(ctx.req, ctx.res);
   const formdataCookieRaw = cookies.get(FORMDATACOOKIENAME);
-  let formdataCookie = (formdataCookieRaw == null || typeof formdataCookieRaw == "undefined") ? {} : JSON.parse(decodeURIComponent(formdataCookieRaw));
+  let formdataCookie = (formdataCookieRaw == null || typeof formdataCookieRaw == "undefined" || formdataCookieRaw=="") ? {} : JSON.parse(decodeURIComponent(formdataCookieRaw));
   console.log(JSON.stringify(formdataCookie));
   if (ctx.req.method == "GET") {
     const { favcolour } = formdataCookie;
@@ -137,7 +130,7 @@ Home.getInitialProps = async (ctx) => {
     console.log('BODY', data);
     const { favcolour, nextpost } = data;
     props["favcolour"] = favcolour;
-    if (favcolour == "") props.fcerror = true;
+    props = formFunctions.checkData(props);
     if (props.fcerror ) return props;
     //no error in the form data. Add it to a response cookie
     for (let key in data) {

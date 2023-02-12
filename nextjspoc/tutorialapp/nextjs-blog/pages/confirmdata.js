@@ -1,26 +1,26 @@
 import Cookies from 'cookies';
 import Head from 'next/head';
 import Link from 'next/link';
-import bodyParser from "body-parser";
+import formFunctions from '../utils/formfunctions';
+import parse from 'urlencoded-body-parser';
 import { serialize } from "cookie";
-import util from "util";
 const FORMDATACOOKIENAME = "formdata";
 
-const getBody = util.promisify(bodyParser.urlencoded());
 
-export default function Home({ allData }) {
-  const hasData = allData.hasData;
+
+function Home( props ) {
+  const hasData = props.hasData;
   return (
     <>
       <Head>
-        <title>Next App form</title>
+        <title>Next App summary page rendered on { props.execlocation }</title>
         <link rel="icon" href="/assets/favicons/favicon.ico" />
       </Head>
       <h1 className="nhsuk-heading-xl">
         A page that shows the data collected from the user
       </h1>
       
-      <div className={(!hasData || allData.postcodeerror) ? "nhsuk-error-summary" : "nhsuk-error-summary nhsuk-hidden"} aria-labelledby="error-summary-title" role="alert" tabIndex="-1">
+      <div className={(!hasData || props.postcodeerror) ? "nhsuk-error-summary" : "nhsuk-error-summary nhsuk-hidden"} aria-labelledby="error-summary-title" role="alert" tabIndex="-1">
         <h2 className="nhsuk-error-summary__title" id="error-summary-title">
           There is a problem
         </h2>
@@ -42,7 +42,7 @@ export default function Home({ allData }) {
             Postcode
           </dt>
           <dd className="nhsuk-summary-list__value">
-            {allData.postcode}
+            {props.addresspostcode}
           </dd>
           <dd className="nhsuk-summary-list__actions">
             <Link href="/formx">
@@ -55,7 +55,7 @@ export default function Home({ allData }) {
             Name
           </dt>
           <dd className="nhsuk-summary-list__value">
-            {allData.givenname + " " + allData.familyname}
+            {props.givenname + " " + props.familyname}
           </dd>
           <dd className="nhsuk-summary-list__actions">
             <Link href="/form1">
@@ -68,7 +68,7 @@ export default function Home({ allData }) {
             Favourite Colour
           </dt>
           <dd className="nhsuk-summary-list__value">
-            {(allData.favcolour)? allData.favcolour : ""}
+            {(props.favcolour)? props.favcolour : ""}
           </dd>
           <dd className="nhsuk-summary-list__actions">
             <Link href="/form2">
@@ -83,74 +83,74 @@ export default function Home({ allData }) {
   )
 }
 
-export async function getServerSideProps({ req, res }) {
-  // Get data submitted in request's body.
-  const method = req.method;
-  console.log(method);
-  //either processing cookies or a posted body
-  if (method=="GET")
-  {
-    console.log("processing cookies");
-    const cookies = new Cookies(req, res);
-    const formdataCookie = decodeURIComponent(cookies.get(FORMDATACOOKIENAME));
-    console.log(formdataCookie);
-    console.log(JSON.stringify(formdataCookie));
-    let formdataObject = JSON.parse(formdataCookie);
-    const allData = {
-      "hasData": true,
-      "postcode": formdataObject['addresspostcode'].toUpperCase(),
-      "postcodeerror": false,
-      "givenname": formdataObject['givenname'],
-      "familyname": formdataObject['familyname'],
-      "favcolour":formdataObject['favcolour']
-    };
-    if (!valid_postcode(formdataObject['addresspostcode'].toUpperCase())) allData.postcodeerror = true;
-    formdataObject['confirmScreenShown'] = true;
-    const cookie = serialize(FORMDATACOOKIENAME, JSON.stringify(formdataObject), {
-      httpOnly: false,
-      path: "/",
-    });
-    res.setHeader("Set-Cookie", cookie);
-    return {
-      props: {
-        allData,
-      },
-    };
+Home.getInitialProps = async (ctx) => {
+  console.log("in initial props");
+  let props = {
+    "hasData": true,
+    "execlocation": "server",
+    "givenname": "",
+    "familyname": "",
+    "gnerror": false,
+    "fnerror": false,
+    "favcolour": "",
+    "fcerror": false,
+    "addresspostcode": "",
+    "pcerror": false,
+  };
+  if (ctx.req) {
+    console.log("running on server");
+    console.log(ctx.req.method);
   }
   else {
-    await getBody(req, res);
-    console.log(req.method, req.body);
-    console.log("processing a body")
-    const allData = {
-      "hasData": true,
-      "postcode": req.body.postcodehdn.toUpperCase(),
-      "postcodeerror": false,
-      "givenname": req.body.givennamehdn,
-      "familyname": req.body.familynamehdn,
-      "favcolour": req.body.favcolourhdn
-    };
-    if (!valid_postcode(req.body.postcodehdn.toUpperCase())) allData.postcodeerror = true;
-    let formdataObject = {};
-    formdataObject['addresspostcode'] = req.body.postcodehdn.toUpperCase();
-    formdataObject['givenname'] = req.body.givennamehdn;
-    formdataObject['familyname'] = req.body.familynamehdn;
-    formdataObject['favcolour'] = req.body.favcolourhdn;
-    formdataObject['confirmScreenShown'] = true;
-    const cookie = serialize(FORMDATACOOKIENAME, JSON.stringify(formdataObject), {
-      httpOnly: false,
-      path: "/",
-    });
-    res.setHeader("Set-Cookie", cookie);
-    return {
-      props: {
-        allData,
-      },
-    };
+    console.log("running on client");
+    props["execlocation"] = "client";
+    props["addresspostcode"] = formFunctions.getSavedItem('addresspostcode');
+    props["givenname"] = formFunctions.getSavedItem('givenname');
+    props["familyname"] = formFunctions.getSavedItem('familyname');
+    props["favcolour"] = formFunctions.getSavedItem('favcolour');
+    props['confirmScreenShown'] = true;
+    props = formFunctions.checkData(props);
+    formFunctions.saveDataLocally(props);
+    return props;
   }
+  //check if POST or GET
+  const cookies = new Cookies(ctx.req, ctx.res);
+  const formdataCookieRaw = cookies.get(FORMDATACOOKIENAME);
+  let formdataCookie = (formdataCookieRaw == null || typeof formdataCookieRaw == "undefined") ? {} : JSON.parse(decodeURIComponent(formdataCookieRaw));
+  console.log(JSON.stringify(formdataCookie));
+  if (ctx.req.method == "GET") {
+    const { givenname, familyname, addresspostcode, favcolour } = formdataCookie;
+    props["givenname"] = givenname;
+    props["familyname"] = familyname;
+    props["addresspostcode"] = addresspostcode;
+    props["favcolour"] = favcolour;
+  }
+  else if (ctx.req.method == "POST")
+  {
+    //no situation in which this will be triggered - all requests are redirects or client side
+    const data = await parse(ctx.req);
+    console.log('BODY', data);
+    const { givennamehdn, familynamehdn, postcodehdn, favcolourhdn } = data;
+    props["givenname"] = givennamehdn;
+    props["familyname"] = familynamehdn;
+    props["addresspostcode"] = postcodehdn;
+    props["favcolour"] = favcolourhdn;
+  }
+  else {
+    //unanticipated method - just return
+  }
+  formdataCookie['addresspostcode'] = props["addresspostcode"].toUpperCase();
+  formdataCookie['givenname'] = props["givenname"];
+  formdataCookie['familyname'] = props["familyname"];
+  formdataCookie['favcolour'] = props["favcolour"];
+  formdataCookie['confirmScreenShown'] = true;
+  const cookie = serialize(FORMDATACOOKIENAME, JSON.stringify(formdataCookie), {
+    httpOnly: false,
+    path: "/",
+  });
+  ctx.res.setHeader("Set-Cookie", cookie);
+  props = formFunctions.checkData(props);
+  return props;
 }
+ export default Home
 
-function valid_postcode(postcode) {
-    postcode = postcode.replace(/\s/g, "");
-    const regex = /^[A-Z]{1,2}[0-9]{1,2}[A-Z]{0,1} ?[0-9][A-Z]{2}$/i;
-    return regex.test(postcode);
-}
