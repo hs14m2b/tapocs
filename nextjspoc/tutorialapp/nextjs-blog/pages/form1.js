@@ -134,7 +134,8 @@ Home.getInitialProps = async (ctx) => {
     props["execlocation"] = "client";
     props["givenname"] = formFunctions.getSavedItem('givenname');
     props["familyname"] = formFunctions.getSavedItem('familyname');
-    return props;
+
+return props;
   }
   //check if POST or GET
   const cookies = new Cookies(ctx.req, ctx.res);
