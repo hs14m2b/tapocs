@@ -4,12 +4,20 @@ import Link from 'next/link';
 import formFunctions from '../utils/formfunctions';
 import parse from 'urlencoded-body-parser';
 import { serialize } from "cookie";
+import { useRouter } from 'next/router';
 const FORMDATACOOKIENAME = "formdata";
 
 
 
 function Home( props ) {
+  const router = useRouter();
   const hasData = props.hasData;
+  function navToCheckData(e) {
+    e.preventDefault();
+    router.push("/checkdata");
+    return true;
+  }
+
   return (
     <>
       <Head>
@@ -36,48 +44,58 @@ function Home( props ) {
         </div>
       </div>
       
-      <dl className="nhsuk-summary-list">
-        <div className="nhsuk-summary-list__row">
-          <dt className="nhsuk-summary-list__key">
-            Postcode
-          </dt>
-          <dd className="nhsuk-summary-list__value">
-            {props.addresspostcode}
-          </dd>
-          <dd className="nhsuk-summary-list__actions">
-            <Link href="/formx">
-              Change
-            </Link>
-          </dd>
-        </div>
-        <div className="nhsuk-summary-list__row">
-          <dt className="nhsuk-summary-list__key">
-            Name
-          </dt>
-          <dd className="nhsuk-summary-list__value">
-            {props.givenname + " " + props.familyname}
-          </dd>
-          <dd className="nhsuk-summary-list__actions">
-            <Link href="/form1">
-              Change<span > name</span>
-            </Link>
-          </dd>
-        </div>
-        <div className="nhsuk-summary-list__row">
-          <dt className="nhsuk-summary-list__key">
-            Favourite Colour
-          </dt>
-          <dd className="nhsuk-summary-list__value">
-            {(props.favcolour)? props.favcolour : ""}
-          </dd>
-          <dd className="nhsuk-summary-list__actions">
-            <Link href="/form2">
-              Change
-            </Link>
-          </dd>
-        </div>
-      </dl>
+      <form action="/checkdata" method="post" className="form" id="checkdata" onSubmit={(e) => { navToCheckData(e) }}>
+        <dl className="nhsuk-summary-list">
+          <div className="nhsuk-summary-list__row">
+            <dt className="nhsuk-summary-list__key">
+              Postcode
+            </dt>
+            <dd className="nhsuk-summary-list__value">
+              {props.addresspostcode}
+            </dd>
+            <dd className="nhsuk-summary-list__actions">
+              <Link href="/formx">
+                Change
+              </Link>
+            </dd>
+          </div>
+          <div className="nhsuk-summary-list__row">
+            <dt className="nhsuk-summary-list__key">
+              Name
+            </dt>
+            <dd className="nhsuk-summary-list__value">
+              {props.givenname + " " + props.familyname}
+            </dd>
+            <dd className="nhsuk-summary-list__actions">
+              <Link href="/form1">
+                Change<span > name</span>
+              </Link>
+            </dd>
+          </div>
+          <div className="nhsuk-summary-list__row">
+            <dt className="nhsuk-summary-list__key">
+              Favourite Colour
+            </dt>
+            <dd className="nhsuk-summary-list__value">
+              {(props.favcolour)? props.favcolour : ""}
+            </dd>
+            <dd className="nhsuk-summary-list__actions">
+              <Link href="/form2">
+                Change
+              </Link>
+            </dd>
+          </div>
+        </dl>
 
+        <input id="addresspostcode" name="addresspostcode" value={props.addresspostcode} type="hidden" />
+        <input id="givenname" name="givenname" value={ props.givenname } type="hidden" />
+        <input id="familyname" name="familyname" value={ props.familyname } type="hidden" />
+        <input id="favcolour" name="favcolour" value={ props.favcolour } type="hidden" />
+        <button className="nhsuk-button" data-module="nhsuk-button" type="submit">
+          Check data
+        </button>
+      </form>
+      <p />
       <Link href="/form1">Back to the start</Link>
     </>
   )

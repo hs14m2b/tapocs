@@ -14,10 +14,23 @@ cd next.out
 cp assetsLayer.zip ${TIMESTAMP}assetsLayer.zip
 cp code.zip ${TIMESTAMP}code.zip
 cp dependenciesLayer.zip ${TIMESTAMP}dependenciesLayer.zip
+# build lambda code
+cd ..
+cd ..
+cd lambdas
+npm install
+zip -qr ${TIMESTAMP}nextjspocapilambdas.zip ./*
+cd ..
+cd nextjs-blog
+cd next.out
+cp ../../lambdas/${TIMESTAMP}nextjspocapilambdas.zip ${TIMESTAMP}nextjspocapilambdas.zip
+rm ../../lambdas/${TIMESTAMP}nextjspocapilambdas.zip
+# update cloudformation templates
 cp ../../infrastructure/nextjspoc-backend.json nextjspoc-backend.json
 cp ../../infrastructure/nextjspoc-frontend.json ${TIMESTAMP}nextjspoc-frontend.json
 sed -i "s/code\.zip/${TIMESTAMP}code\.zip/g" nextjspoc-backend.json
 sed -i "s/dependenciesLayer\.zip/${TIMESTAMP}dependenciesLayer\.zip/g" nextjspoc-backend.json
+sed -i "s/nextjspocapilambdas\.zip/${TIMESTAMP}nextjspocapilambdas\.zip/g" nextjspoc-backend.json
 
 aws cloudformation package --use-json --template-file nextjspoc-backend.json --s3-bucket ${S3CODEBUCKET} --output-template-file ${TIMESTAMP}nextjspoc-backend.json
 aws cloudformation deploy --template-file ${TIMESTAMP}nextjspoc-backend.json --stack-name main-mabr8-nextjspocbestack --capabilities "CAPABILITY_NAMED_IAM"

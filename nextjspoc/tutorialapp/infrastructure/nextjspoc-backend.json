@@ -1,163 +1,213 @@
 {
-    "AWSTemplateFormatVersion": "2010-09-09",
-    "Transform": "AWS::Serverless-2016-10-31",
-    "Parameters" : {
-      "AWSREGIONNAME" : {
-        "Type" : "String",
-        "Default": "eu-west-2",
-        "Description" : "The AWS region name"
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Parameters": {
+    "AWSREGIONNAME": {
+      "Type": "String",
+      "Default": "eu-west-2",
+      "Description": "The AWS region name"
+    },
+    "BEDOMAIN": {
+      "Type": "String",
+      "Default": "nextjspocbe",
+      "Description": "Back end domain identifier"
+    },
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "The branchname to derive fqdn"
+    },
+    "CFCERTARN": {
+      "Type": "String",
+      "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/a707a2d1-5966-4ac3-abe6-e17e71a41f4a"
+    },
+    "CERTIFICATEARN": {
+      "Type": "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/1445ff7f-f847-48fe-b9d7-aaf7f37414d2",
+      "Description": "The certificate ARN for the nhsdta.com domain"
+    },
+    "DEPLOYMENTSTAGENAME": {
+      "Type": "String",
+      "Default": "prod",
+      "Description": "The stage deployment name"
+    },
+    "FEDOMAIN": {
+      "Type": "String",
+      "Default": "nextjspocfe",
+      "Description": "The frontend domain identifier"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Default": "Z1075FNTZPAM5I",
+      "Description": "The ID of the Route53 hosted zone"
+    },
+    "ROOTDOMAIN": {
+      "Type": "String",
+      "Default": "nhsdta.com",
+      "Description": "The root domain name"
+    },
+    "SHORTCODE": {
+      "Type": "String",
+      "Default": "mabr8",
+      "Description": "The shortcode for tags"
+    }
+  },
+  "Globals": {
+    "Function": {
+      "Tags": {
+        "shortcode": { "Ref": "SHORTCODE" }
       },
-      "BEDOMAIN": {
-        "Type" : "String",
-        "Default": "nextjspocbe",
-        "Description" : "Back end domain identifier"
+      "Environment": {
+        "Variables": {
+          "ROOTDOMAIN": { "Ref": "ROOTDOMAIN" },
+          "BRANCHNAME": { "Ref": "BRANCHNAME" },
+          "FEDOMAIN": { "Ref": "FEDOMAIN" }
+        }
       },
-      "BRANCHNAME": {
-        "Type" : "String",
-        "Default": "main",
-        "Description" : "The branchname to derive fqdn"
-      },
-      "CFCERTARN": {
-        "Type" : "String",
-        "Description" : "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
-        "Default":"arn:aws:acm:us-east-1:865198111306:certificate/a707a2d1-5966-4ac3-abe6-e17e71a41f4a"
-      },
-      "CERTIFICATEARN" : {
-        "Type" : "String",
-        "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/1445ff7f-f847-48fe-b9d7-aaf7f37414d2",
-        "Description" : "The certificate ARN for the nhsdta.com domain"
-      },
-      "DEPLOYMENTSTAGENAME" : {
-        "Type" : "String",
-        "Default": "prod",
-        "Description" : "The stage deployment name"
-      },
-      "FEDOMAIN" :  {
-        "Type" : "String",
-        "Default": "nextjspocfe",
-        "Description" : "The frontend domain identifier"
-      },
-      "HOSTEDZONEID" :  {
-        "Type" : "String",
-        "Default": "Z1075FNTZPAM5I",
-        "Description" : "The ID of the Route53 hosted zone"
-      },
-      "ROOTDOMAIN" :  {
-        "Type" : "String",
-        "Default": "nhsdta.com",
-        "Description" : "The root domain name"
-      },
-      "SHORTCODE" : {
-        "Type" : "String",
-        "Default": "mabr8",
-        "Description" : "The shortcode for tags"
+      "Timeout": 300
+    }
+  },
+  "Resources": {
+    "nextjspocbeLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess",
+          "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+          "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+          "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB"
+        ],
+        "Path": "/service-role/",
+        "RoleName": {
+          "Fn::Join": [
+            "",
+            [{ "Ref": "BRANCHNAME" }, "-", "nextjspocbeLambdaRole-001"]
+          ]
+        }
       }
     },
-    "Globals": {
-        "Function": {
-            "Tags": {
-               "shortcode": { "Ref" : "SHORTCODE" }
-            },
-            "Environment" : {
-                "Variables" : {
-                    "ROOTDOMAIN": {"Ref" : "ROOTDOMAIN"},
-                    "BRANCHNAME": {"Ref" : "BRANCHNAME"},
-                    "FEDOMAIN": {"Ref" : "FEDOMAIN"}
-                }
-            },
-            "Timeout" : 300
+    "nextjspocbeCWRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/CloudWatchEventsFullAccess"
+        ],
+        "Path": "/service-role/",
+        "RoleName": {
+          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-", "nextjspocbeCWRole"]]
         }
+      }
     },
-    "Resources": {
-        "nextjspocbeLambdaRole": {
-            "Type": "AWS::IAM::Role",
-            "Properties" : {
-                "AssumeRolePolicyDocument": {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Action": "sts:AssumeRole",
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": "lambda.amazonaws.com"
-                            }
-                        }
-                    ]
-                },
-                "ManagedPolicyArns" : [ "arn:aws:iam::aws:policy/AmazonSNSFullAccess", "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole", "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess", "arn:aws:iam::aws:policy/AmazonS3FullAccess", "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess", "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB" ],
-                "Path": "/service-role/",
-                "RoleName" : {"Fn::Join": ["", [{"Ref": "BRANCHNAME"}, "-", "nextjspocbeLambdaRole-001"]]}
-            }
+    "nextjsServerFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "code.zip",
+        "Description": "The lambda function that starts the nextjs server and handles requests from the API gateway",
+        "Environment": {
+          "Variables": {
+            "NEXTJS_LAMBDA_BASE_PATH": "_server"
+          }
         },
-        "nextjspocbeCWRole": {
-            "Type": "AWS::IAM::Role",
-            "Properties" : {
-                "AssumeRolePolicyDocument": {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Action": "sts:AssumeRole",
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": "events.amazonaws.com"
-                            }
-                        }
-                    ]
-                },
-                "ManagedPolicyArns" : [ "arn:aws:iam::aws:policy/CloudWatchEventsFullAccess"],
-                "Path": "/service-role/",
-                "RoleName" : {"Fn::Join": ["", [{"Ref": "BRANCHNAME"}, "-", "nextjspocbeCWRole"]]}
-            }
-        },
-        "nextjsServerFunction": {
-            "Type": "AWS::Serverless::Function",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
             "Properties": {
-                "CodeUri": "code.zip",
-                "Description" : "The lambda function that starts the nextjs server and handles requests from the API gateway",
-                "Environment" : {
-                    "Variables" : {
-                        "NEXTJS_LAMBDA_BASE_PATH": "_server"
-                    }
-                },
-                "Events": {
-                    "Api" : {
-                        "Type": "HttpApi",
-                        "Properties" : {
-                            "ApiId": {"Ref": "nextjsHttpApi"},
-                            "Method": "ANY",
-                            "Path": "/_server/{proxy+}",
-                            "TimeoutInMillis": 29000,
-                            "PayloadFormatVersion": "2.0"
-                        }
-                    }
-                },
-                "FunctionName" : {"Fn::Join": ["", [{"Ref": "BRANCHNAME"}, "-nextjsServer"]]},
-                "Handler" : "index.handler",
-                "Layers": [{"Ref": "nextjsServerFunctionLayer"}],
-                "Role" : {"Fn::GetAtt" : ["nextjspocbeLambdaRole", "Arn"] },
-                "Runtime" : "nodejs16.x",
-                "Timeout" : 300
-            },
-            "DependsOn": [
-                "nextjspocbeLambdaRole"
-            ]
-        },
-        "nextjsServerFunctionLayer" : {
-            "Type": "AWS::Serverless::LayerVersion",
-            "Properties": {
-                "ContentUri": "dependenciesLayer.zip",
-                "Description" : "The lambda layer containing the dependencies for the Lambda",
-                "LayerName" : {"Fn::Join": ["", [{"Ref": "BRANCHNAME"}, "-nextjsServerDependencies"]]},
-                "RetentionPolicy" : "Delete"
+              "ApiId": { "Ref": "nextjsHttpApi" },
+              "Method": "ANY",
+              "Path": "/_server/{proxy+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
             }
+          }
         },
-        "nextjsHttpApi" : {
-            "Type": "AWS::Serverless::HttpApi",
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-nextjsServer"]]
+        },
+        "Handler": "index.handler",
+        "Layers": [{ "Ref": "nextjsServerFunctionLayer" }],
+        "Role": { "Fn::GetAtt": ["nextjspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs16.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjspocbeLambdaRole"]
+    },
+    "nextjsServerFunctionLayer": {
+      "Type": "AWS::Serverless::LayerVersion",
+      "Properties": {
+        "ContentUri": "dependenciesLayer.zip",
+        "Description": "The lambda layer containing the dependencies for the Lambda",
+        "LayerName": {
+          "Fn::Join": [
+            "",
+            [{ "Ref": "BRANCHNAME" }, "-nextjsServerDependencies"]
+          ]
+        },
+        "RetentionPolicy": "Delete"
+      }
+    },
+    "checkFavColourFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjspocapilambdas.zip",
+        "Description": "The lambda function that checks submitted favourite colour and randomly returns true or false",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
             "Properties": {
-                "Description": "HTTP API for the nextjs server requests",
-                "Name" : {"Fn::Join": ["", [{"Ref": "BRANCHNAME"}, "-nextjsHttpApi"]]},
-                "StageName" : "$default"
+              "ApiId": { "Ref": "nextjsHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/checkfavcolour",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
             }
-        }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-checkFavColourFunction"]]
+        },
+        "Handler": "checkfavcolour.handler",
+        "Role": { "Fn::GetAtt": ["nextjspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs16.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjspocbeLambdaRole"]
+    },
+    "nextjsHttpApi": {
+      "Type": "AWS::Serverless::HttpApi",
+      "Properties": {
+        "Description": "HTTP API for the nextjs server requests",
+        "Name": {
+          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-nextjsHttpApi"]]
+        },
+        "StageName": "$default"
+      }
     }
-} 
+  }
+}
