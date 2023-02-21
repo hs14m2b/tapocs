@@ -1,6 +1,5 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import Script from 'next/script';
 const FORMDATACOOKIENAME = "formdata";
 
 export default function Home() {
