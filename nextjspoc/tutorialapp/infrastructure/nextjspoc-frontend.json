@@ -198,6 +198,22 @@
               "ConnectionTimeout": 10,
               "DomainName": { "Ref": "APIGWDOMAIN" },
               "Id": {
+                "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, "startsessionorigin"]]
+              },
+              "CustomOriginConfig": {
+                "HTTPSPort": 443,
+                "OriginKeepaliveTimeout": 5,
+                "OriginProtocolPolicy": "https-only",
+                "OriginReadTimeout": 25,
+                "OriginSSLProtocols": ["TLSv1.2"]
+              },
+              "OriginPath": "/extapi/startsession"
+            },
+            {
+              "ConnectionAttempts": 3,
+              "ConnectionTimeout": 10,
+              "DomainName": { "Ref": "APIGWDOMAIN" },
+              "Id": {
                 "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, "nextjsorigin"]]
               },
               "CustomOriginConfig": {
@@ -224,9 +240,29 @@
               "CachedMethods": ["GET", "HEAD", "OPTIONS"],
               "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
               "Compress": true,
+              "OriginRequestPolicyId": { "Ref": "CFAPIOrigReqPolicy" },
               "PathPattern": "extapi/*",
               "TargetOriginId": {
                 "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, "apiorigin"]]
+              },
+              "ViewerProtocolPolicy": "https-only"
+            },
+            {
+              "AllowedMethods": [
+                "GET",
+                "HEAD",
+                "OPTIONS",
+                "PUT",
+                "POST",
+                "PATCH",
+                "DELETE"
+              ],
+              "CachedMethods": ["GET", "HEAD", "OPTIONS"],
+              "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+              "Compress": true,
+              "PathPattern": "startsession/*",
+              "TargetOriginId": {
+                "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, "startsessionorigin"]]
               },
               "ViewerProtocolPolicy": "https-only"
             },
@@ -278,6 +314,12 @@
             "CachedMethods": ["GET", "HEAD", "OPTIONS"],
             "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
             "Compress": true,
+            "LambdaFunctionAssociations": [{
+              "EventType" : "origin-request",
+              "IncludeBody" : false,
+              "LambdaFunctionARN" : "arn:aws:lambda:us-east-1:865198111306:function:main-rewriteUrlFunction-001:2"
+            }
+            ],
             "OriginRequestPolicyId": { "Ref": "CFAPIOrigReqPolicy" },
             "TargetOriginId": {
               "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, "nextjsorigin"]]
