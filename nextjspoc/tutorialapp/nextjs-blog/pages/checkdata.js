@@ -1,3 +1,4 @@
+import { ApiError } from 'next/dist/server/api-utils';
 import Cookies from 'cookies';
 import Head from 'next/head';
 import Hiddenform from '../components/hiddenform';
@@ -10,37 +11,60 @@ import { useRouter } from 'next/router';
 const FORMDATACOOKIENAME = "formdata";
 const DEFAULTROUTE = "/confirmdata";
 
+async function getResult(url, body = {}, apitimeout = 1000) {
+  const timeout = apitimeout;
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  let apiResult = await fetch(url, { method: "POST", cache: "no-cache", body: body, signal: controller.signal });
+  clearTimeout(id);
+  if (apiResult.status != "200") {
+    console.log("response status is " + apiResult.status);
+    throw new Error("API response error " + apiResult.status);
+  }
+  let apiResultJson = await apiResult.json();
+  console.log(JSON.stringify(apiResultJson));
+  let result = (apiResultJson.result) ? apiResultJson.result == "true" : false;
+  return result;
+}
+
+async function checkResultLoop() {
+  let retrievedResult = formFunctions.getSavedItem("retrievedResult");
+  console.log("retrievedResult is " + retrievedResult);
+  let loopNo = 1;
+  let props = {};
+  props["addresspostcode"] = formFunctions.getSavedItem('addresspostcode');
+  props["givenname"] = formFunctions.getSavedItem('givenname');
+  props["familyname"] = formFunctions.getSavedItem('familyname');
+  props["favcolour"] = formFunctions.getSavedItem('favcolour');
+  let body = new URLSearchParams(props).toString();
+  while (!retrievedResult)
+  {
+    console.log("in loop number " + loopNo);
+    try {
+      let result = await getResult("/extapi/checkfavcolour", body, loopNo * 1000);
+      retrievedResult = true;
+      document.getElementById("checkingMessage").classList.add("nhsuk-hidden");
+      if (result) {
+        document.getElementById("yesMessage").classList.remove("nhsuk-hidden");
+      }
+      else
+      {
+        document.getElementById("noMessage").classList.remove("nhsuk-hidden");
+      }
+    } catch (error) {
+      console.log("caught error - incrementing loop number");
+      loopNo++;
+      if (loopNo > 10) retrieveResult=true;
+    }
+  }
+}
+
 function Home(props) {
   const router = useRouter();
-
-  function resetForm() {
-      let addresspostcode = document.getElementById('addresspostcode');
-      document.getElementById("postcode-error").classList.add("nhsuk-hidden");
-      document.getElementById("addresspostcode-form-group").classList.remove("nhsuk-form-group--error");
-      addresspostcode.classList.remove("nhsuk-input--error");
-  }
-
-  function checkFormXData(e) {
-    resetForm();
-    e.preventDefault();
-    let formdata = {};
-    console.log("saving answers in state");
-    let addresspostcode = document.getElementById('addresspostcode');
-    formdata["addresspostcode"] = addresspostcode.value;
-    formFunctions.saveDataLocally(formdata);
-    //check if postcode matches regex
-    let result = formFunctions.valid_postcode(addresspostcode.value);
-    if (!result || addresspostcode.value == null || addresspostcode.value == "")
-    {
-      document.getElementById("postcode-error").classList.remove("nhsuk-hidden");
-      document.getElementById("addresspostcode-form-group").classList.add("nhsuk-form-group--error");
-      addresspostcode.classList.add("nhsuk-input--error");
-      addresspostcode.value = addresspostcode.value.toUpperCase();      
-      result = false;
-    }
-    if (result) router.push("/confirmdata"); //formFunctions.populateHiddenForm();
-    return result;
-  }
+  useEffect(() => { 
+    console.log("in useEffect");
+    setTimeout(checkResultLoop, 1000);
+  });
 
   return (
     <>
@@ -48,16 +72,16 @@ function Home(props) {
         <title>Next App form rendered on { props.execlocation }</title>
         <link rel="icon" href="/assets/favicons/favicon.ico" />
       </Head>
-      <h1 className="nhsuk-heading-xl">
+      <h2 className="nhsuk-heading-l">
         A page the invokes an external API to check the supplied data
-      </h1>
+      </h2>
 
-      <div className={(! props.result) ? "nhsuk-error-summary" : "nhsuk-error-summary nhsuk-hidden"} aria-labelledby="error-summary-title" role="alert" tabIndex="-1">
-        <h2 className="nhsuk-error-summary__title" id="error-summary-title">
+      <div id="noMessage" className={(props.retrievedResult && ! props.result) ? "nhsuk-error-summary" : "nhsuk-error-summary nhsuk-hidden"} aria-labelledby="error-summary-title" role="alert" tabIndex="-1">
+        <h3 className="nhsuk-error-summary__title" id="error-summary-title">
           There is a problem
-        </h2>
+        </h3>
         <div className="nhsuk-error-summary__body">
-          <p>
+          <p class="nhsuk-u-font-size-32">
             {props.favcolour} is not {props.givenname + " " + props.familyname}'s favourite colour
           </p>
           <ul className="nhsuk-list nhsuk-error-summary__list" role="list">
@@ -67,10 +91,16 @@ function Home(props) {
           </ul>
         </div>
       </div>
-      <div className={(props.result) ? "" : "nhsuk-hidden"}>
-        <h1 className="nhsuk-heading-xl">
+      <div id="yesMessage" className={(props.retrievedResult && props.result) ? "" : "nhsuk-hidden"}>
+        <p className="nhsuk-u-font-size-32">
           Yes, {props.favcolour} is {props.givenname + " " + props.familyname}'s favourite colour!
-        </h1>
+        </p>
+      </div>
+      <div id="checkingMessage" className={(! props.retrievedResult) ? "" : "nhsuk-hidden"}>
+        <p className="nhsuk-u-font-size-32">
+          Checking that {props.favcolour} is {props.givenname + " " + props.familyname}'s favourite colour...
+          <span class="nhsuk-loader"></span>
+        </p>
       </div>
       <Link href="/form1">Back to start</Link>
 
@@ -93,6 +123,7 @@ Home.getInitialProps = async (ctx) => {
     "addresspostcode": "",
     "pcerror": false,
     "result": false,
+    "retrievedResult": false,
   };
   if (ctx.req) {
     console.log("running on server");
@@ -108,11 +139,15 @@ Home.getInitialProps = async (ctx) => {
     props['confirmScreenShown'] = true;
     props = formFunctions.checkData(props);
     //call the API to get the result
-    
-    let apiResult = await fetch('https://main-nextjsfe.nhsdta.com/extapi/checkfavcolour', { method: "POST", cache: "no-cache", body: new URLSearchParams(props).toString() });
-    let apiResultJson = await apiResult.json();
-    console.log(JSON.stringify(apiResultJson));
-    props['result'] = apiResultJson.result=="true";
+    try {
+      let apiResult = await getResult("/extapi/checkfavcolour", new URLSearchParams(props).toString(),200);
+      props['result'] = apiResult.result == "true";
+      props.retrievedResult = true;
+    } catch (error) {
+      console.log("caught error in calling API");
+      props.retrievedResult = false;
+    }
+    formFunctions.saveDataLocally(props);
     return props;
   }
   //check if POST or GET
@@ -143,10 +178,24 @@ Home.getInitialProps = async (ctx) => {
     return props;
   }
   //call the API to get the result
-  let apiResult = await fetch('https://main-nextjsfe.nhsdta.com/extapi/checkfavcolour', { method: "POST", cache: "no-cache", body: new URLSearchParams(props).toString() });
-  let apiResultJson = await apiResult.json();
-  console.log(JSON.stringify(apiResultJson));
-  props['result'] = apiResultJson.result=="true";
+  let retrievedResult = false;
+  let loopNo = 1;
+  let body = new URLSearchParams(props).toString();
+  props.retrievedResult = false;
+  while (!retrievedResult)
+  {
+    console.log("in loop number " + loopNo);
+    try {
+      let result = await getResult("https://main-nextjsfe.nhsdta.com/extapi/checkfavcolour", body, loopNo * 1000);
+      retrievedResult = true;
+      props['result'] = result;
+      props.retrievedResult = true;
+    } catch (error) {
+      console.log("caught error - incrementing loop number");
+      loopNo++;
+      if (loopNo > 10) retrieveResult=true;
+    }
+  }
   return props;
 }
 

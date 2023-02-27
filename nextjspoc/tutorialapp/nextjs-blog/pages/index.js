@@ -14,10 +14,10 @@ export default function Home() {
         <title>Create Next App</title>
         <link rel="icon" href="/assets/favicons/favicon.ico" />
       </Head>
-        <h1 className="nhsuk-heading-xl">
+      <h2 className="nhsuk-heading-l">
           Next.js app running in AWS Lambda
-        </h1>
-        <p>
+      </h2>
+      <p>
         Access the <Link href="/form1">forms demo</Link>
         <Link className="nhsuk-u-visually-hidden" href="/form2" />
         <Link className="nhsuk-u-visually-hidden" href="/formx" />

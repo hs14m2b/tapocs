@@ -2,11 +2,9 @@ import Cookies from 'cookies';
 import Head from 'next/head';
 import Hiddenform from '../components/hiddenform';
 import Link from 'next/link';
-import Script from 'next/script';
 import formFunctions from '../utils/formfunctions';
 import parse from 'urlencoded-body-parser';
 import { serialize } from "cookie";
-import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 const FORMDATACOOKIENAME = "formdata";
 const DEFAULTROUTE = "/confirmdata";
@@ -49,9 +47,9 @@ function Home(props) {
         <title>Next App form rendered on { props.execlocation }</title>
         <link rel="icon" href="/assets/favicons/favicon.ico" />
       </Head>
-      <h1 className="nhsuk-heading-xl">
+      <h2 className="nhsuk-heading-l">
         A form for submitting data and "remembering" the answer
-      </h1>
+      </h2>
 
       <form action="/formx" method="post" className="form" id="addressform" onSubmit={(e) => { checkFormXData(e) }}>
 
@@ -69,7 +67,8 @@ function Home(props) {
             <span className={(props.pcerror)? "nhsuk-error-message": "nhsuk-hidden nhsuk-error-message"} id="postcode-error">
                 <span className="nhsuk-hidden nhsuk-input--error">Error:</span> Please enter a valid postcode
             </span>
-            <input className="nhsuk-input nhsuk-input--width-10" id="addresspostcode" name="addresspostcode" type="text" defaultValue={ props.addresspostcode }/>
+            <input className="nhsuk-input nhsuk-input--width-10" id="addresspostcode" name="addresspostcode"
+              type="text" defaultValue={props.addresspostcode} />
           </div>
 
         </fieldset>
@@ -121,10 +120,8 @@ Home.getInitialProps = async (ctx) => {
     if (props.pcerror ) return props;
     //no error in the form data. Add it to a response cookie
     for (let key in data) {
-      //if (body.hasOwnProperty(key)) {
         console.log("adding " + key + " -> " + data[key] + " to cookie");
         formdataCookie[key] = data[key];
-      //}
     }
     console.log("cookie is now " + JSON.stringify(formdataCookie));
     const cookie = serialize(FORMDATACOOKIENAME, JSON.stringify(formdataCookie), {
@@ -142,7 +139,7 @@ Home.getInitialProps = async (ctx) => {
     }
     else
     {
-      ctx.res.setHeader("Location", DEFAULTROUTE);
+      ctx.res.setHeader("Location", NEXTFORM);
       ctx.res.statusCode=302;
     }
     return props;
