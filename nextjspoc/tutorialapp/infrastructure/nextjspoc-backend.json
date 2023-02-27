@@ -199,6 +199,33 @@
       },
       "DependsOn": ["nextjspocbeLambdaRole"]
     },
+    "startSessionFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjspocapilambdas.zip",
+        "Description": "The lambda function that receives the initial http request, creates a session and sets the session cookie",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/startsession/{odsinfo+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-startSessionFunction"]]
+        },
+        "Handler": "startsession.handler",
+        "Role": { "Fn::GetAtt": ["nextjspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs16.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjspocbeLambdaRole"]
+    },
     "nextjsHttpApi": {
       "Type": "AWS::Serverless::HttpApi",
       "Properties": {

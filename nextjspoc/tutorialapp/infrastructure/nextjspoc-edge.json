@@ -1,0 +1,113 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters": {
+    "AWSREGIONNAME": {
+      "Type": "String",
+      "Default": "eu-west-2",
+      "Description": "The AWS region name"
+    },
+    "BEDOMAIN": {
+      "Type": "String",
+      "Default": "nextjspocbe",
+      "Description": "Back end domain identifier"
+    },
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "The branchname to derive fqdn"
+    },
+    "CFCERTARN": {
+      "Type": "String",
+      "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/a707a2d1-5966-4ac3-abe6-e17e71a41f4a"
+    },
+    "CERTIFICATEARN": {
+      "Type": "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/1445ff7f-f847-48fe-b9d7-aaf7f37414d2",
+      "Description": "The certificate ARN for the nhsdta.com domain"
+    },
+    "DEPLOYMENTSTAGENAME": {
+      "Type": "String",
+      "Default": "prod",
+      "Description": "The stage deployment name"
+    },
+    "FEDOMAIN": {
+      "Type": "String",
+      "Default": "nextjspocfe",
+      "Description": "The frontend domain identifier"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Default": "Z1075FNTZPAM5I",
+      "Description": "The ID of the Route53 hosted zone"
+    },
+    "ROOTDOMAIN": {
+      "Type": "String",
+      "Default": "nhsdta.com",
+      "Description": "The root domain name"
+    },
+    "SHORTCODE": {
+      "Type": "String",
+      "Default": "mabr8",
+      "Description": "The shortcode for tags"
+    }
+  },
+  "Resources": {
+    "nextjspocedgeLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": ["lambda.amazonaws.com", "edgelambda.amazonaws.com", "replicator.lambda.amazonaws.com"]
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+        ],
+        "Policies": [{"PolicyName":"CloudfrontExec","PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": ["lambda:GetFunction","lambda:InvokeFunction", "lambda:EnableReplication*", "logs:*"],
+              "Effect": "Allow",
+              "Resource": "*"
+            }
+          ]}}],
+        "Path": "/service-role/",
+        "RoleName": {
+          "Fn::Join": [
+            "",
+            [{ "Ref": "BRANCHNAME" }, "-", "nextjspocedgeLambdaRole-001"]
+          ]
+        }
+      }
+    },
+    "rewriteUrlFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": "nextjspocapilambdas.zip",
+        "Description": "The lambda at edge function that rewrites the initial URL",
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-rewriteUrlFunction-001"]]
+        },
+        "Handler": "rewriteurl.handler",
+        "Role": { "Fn::GetAtt": ["nextjspocedgeLambdaRole", "Arn"] },
+        "Runtime": "nodejs16.x",
+        "Tags": [{"Key":
+        "shortcode", "Value": { "Ref": "SHORTCODE" }
+        }],
+        "Timeout": 10
+      },
+      "DependsOn": ["nextjspocedgeLambdaRole"]
+    }
+  }
+}
