@@ -75,9 +75,9 @@ function Home( props ) {
         <title>Next App form rendered on { props.execlocation }</title>
         <link rel="icon" href="/assets/favicons/favicon.ico" />
       </Head>
-      <h1 className="nhsuk-heading-xl">
+      <h2 className="nhsuk-heading-l">
         A set of forms for submitting data and "remembering" the answer
-      </h1>
+      </h2>
 
       <form action="/form1" method="post" className="form" id="nameform" noValidate onSubmit={(e) => { checkForm1Data(e); return false;  }}>
 

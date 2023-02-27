@@ -72,16 +72,16 @@ function Home(props) {
         <title>Next App form rendered on { props.execlocation }</title>
         <link rel="icon" href="/assets/favicons/favicon.ico" />
       </Head>
-      <h1 className="nhsuk-heading-xl">
+      <h2 className="nhsuk-heading-l">
         A page the invokes an external API to check the supplied data
-      </h1>
+      </h2>
 
       <div id="noMessage" className={(props.retrievedResult && ! props.result) ? "nhsuk-error-summary" : "nhsuk-error-summary nhsuk-hidden"} aria-labelledby="error-summary-title" role="alert" tabIndex="-1">
-        <h2 className="nhsuk-error-summary__title" id="error-summary-title">
+        <h3 className="nhsuk-error-summary__title" id="error-summary-title">
           There is a problem
-        </h2>
+        </h3>
         <div className="nhsuk-error-summary__body">
-          <p>
+          <p class="nhsuk-u-font-size-32">
             {props.favcolour} is not {props.givenname + " " + props.familyname}'s favourite colour
           </p>
           <ul className="nhsuk-list nhsuk-error-summary__list" role="list">
@@ -92,15 +92,15 @@ function Home(props) {
         </div>
       </div>
       <div id="yesMessage" className={(props.retrievedResult && props.result) ? "" : "nhsuk-hidden"}>
-        <h1 className="nhsuk-heading-xl">
+        <p className="nhsuk-u-font-size-32">
           Yes, {props.favcolour} is {props.givenname + " " + props.familyname}'s favourite colour!
-        </h1>
+        </p>
       </div>
       <div id="checkingMessage" className={(! props.retrievedResult) ? "" : "nhsuk-hidden"}>
-        <h1 className="nhsuk-heading-xl">
+        <p className="nhsuk-u-font-size-32">
           Checking that {props.favcolour} is {props.givenname + " " + props.familyname}'s favourite colour...
           <span class="nhsuk-loader"></span>
-        </h1>
+        </p>
       </div>
       <Link href="/form1">Back to start</Link>
 
@@ -140,7 +140,7 @@ Home.getInitialProps = async (ctx) => {
     props = formFunctions.checkData(props);
     //call the API to get the result
     try {
-      let apiResult = await getResult("/extapi/checkfavcolour", new URLSearchParams(props).toString());
+      let apiResult = await getResult("/extapi/checkfavcolour", new URLSearchParams(props).toString(),200);
       props['result'] = apiResult.result == "true";
       props.retrievedResult = true;
     } catch (error) {

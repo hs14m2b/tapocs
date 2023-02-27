@@ -24,14 +24,14 @@ function Home( props ) {
         <title>Next App summary page rendered on { props.execlocation }</title>
         <link rel="icon" href="/assets/favicons/favicon.ico" />
       </Head>
-      <h1 className="nhsuk-heading-xl">
+      <h2 className="nhsuk-heading-l">
         A page that shows the data collected from the user
-      </h1>
+      </h2>
       
       <div className={(!hasData || props.postcodeerror) ? "nhsuk-error-summary" : "nhsuk-error-summary nhsuk-hidden"} aria-labelledby="error-summary-title" role="alert" tabIndex="-1">
-        <h2 className="nhsuk-error-summary__title" id="error-summary-title">
+        <h3 className="nhsuk-error-summary__title" id="error-summary-title">
           There is a problem
-        </h2>
+        </h3>
         <div className="nhsuk-error-summary__body">
           <p>
             The postcode supplied is not valid
