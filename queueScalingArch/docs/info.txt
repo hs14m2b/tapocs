@@ -1,0 +1,112 @@
+purpose
+ - to demonstrate lambda and SQS scaling and processing
+
+
+
+
+{"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "S3InputBucket"]]}}
+
+
+{
+    "Records": [
+        {
+            "eventVersion": "2.1",
+            "eventSource": "aws:s3",
+            "awsRegion": "eu-west-2",
+            "eventTime": "2023-03-01T08:55:21.903Z",
+            "eventName": "ObjectCreated:Put",
+            "userIdentity": {
+                "principalId": "AWS:AROA4S4OTPJFBC7LFF2AJ:mabr8@hscic.gov.uk"
+            },
+            "requestParameters": {
+                "sourceIPAddress": "194.101.80.11"
+            },
+            "responseElements": {
+                "x-amz-request-id": "731Q7E3RHNHFFBYH",
+                "x-amz-id-2": "LrzAIoFKcOVV8F1gI+JDhg0nG4nxMUZiB0VttRrj4kwT1amfsGWJHi3ia/5vTmI3qCLHZRcuw0VVVnlU5iLGn658HiphK+NQcNCcdtlxrpM="
+            },
+            "s3": {
+                "s3SchemaVersion": "1.0",
+                "configurationId": "4244637e-be04-4902-b080-eb4787f2f52b",
+                "bucket": {
+                    "name": "main-queuescaling-mabr8-inputs",
+                    "ownerIdentity": {
+                        "principalId": "AHGK8SGP7PEL3"
+                    },
+                    "arn": "arn:aws:s3:::main-queuescaling-mabr8-inputs"
+                },
+                "object": {
+                    "key": "input/testData1677660917.csv",
+                    "size": 645,
+                    "eTag": "3b4cb7189788502510609615194b03be",
+                    "sequencer": "0063FF12F9D4881FEA"
+                }
+            }
+        }
+    ]
+}
+
+
+
+{
+    "Records": [
+        {
+            "eventID": "bde2bd3879150b485a826edbe23536ce",
+            "eventName": "INSERT",
+            "eventVersion": "1.1",
+            "eventSource": "aws:dynamodb",
+            "awsRegion": "eu-west-2",
+            "dynamodb": {
+                "ApproximateCreationDateTime": 1677684420,
+                "Keys": {
+                    "request_sort": {
+                        "S": "REQITEM1677684414ece8a128-d774-4495-92c9-f6cf35b5f54a"
+                    },
+                    "request_partition": {
+                        "S": "12345"
+                    }
+                },
+                "NewImage": {
+                    "request_sort": {
+                        "S": "REQITEM1677684414ece8a128-d774-4495-92c9-f6cf35b5f54a"
+                    },
+                    "request_time": {
+                        "S": "1677684414845"
+                    },
+                    "nhs_number": {
+                        "S": "9999999990"
+                    },
+                    "batch_id": {
+                        "S": "1677684414"
+                    },
+                    "request_partition": {
+                        "S": "12345"
+                    },
+                    "request_id": {
+                        "S": "ece8a128-d774-4495-92c9-f6cf35b5f54a"
+                    },
+                    "client_id": {
+                        "S": "12345"
+                    },
+                    "status": {
+                        "S": "ACCEPTED"
+                    }
+                },
+                "SequenceNumber": "1173800000000001697686540",
+                "SizeBytes": 311,
+                "StreamViewType": "NEW_IMAGE"
+            },
+            "eventSourceARN": "arn:aws:dynamodb:eu-west-2:865198111306:table/main-queuescaling-requestsTable/stream/2023-03-01T10:54:41.451"
+        }
+    ],
+    "shardId": "shardId-00000001677683154989-7aeeec5b",
+    "eventSourceARN": "arn:aws:dynamodb:eu-west-2:865198111306:table/main-queuescaling-requestsTable/stream/2023-03-01T10:54:41.451",
+    "window": {
+        "start": "2023-03-01T15:15:00Z",
+        "end": "2023-03-01T15:30:00Z"
+    },
+    "state": {},
+    "isFinalInvokeForWindow": false,
+    "isWindowTerminatedEarly": false
+}
+
