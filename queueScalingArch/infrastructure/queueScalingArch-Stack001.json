@@ -277,7 +277,11 @@
         "Tags" : [ {
             "Key" : "shortcode",
             "Value" : { "Ref" : "SHORTCODE" }
-        }]
+        }],
+        "TimeToLiveSpecification": {
+          "AttributeName" : "valid_until",
+          "Enabled" : true
+        }
       }
     }
 

@@ -7,8 +7,10 @@ const REGION = "eu-west-2";
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const REQUESTSTABLENAME = process.env['REQUESTSTABLENAME'];
-const DELIVERYQUEUEURL = process.env['DELIVERYQUEUEURL'];
+const SMSDELIVERYQUEUEURL = process.env['SMSDELIVERYQUEUEURL'];
+const EMAILDELIVERYQUEUEURL = process.env['EMAILDELIVERYQUEUEURL'];
 const client = new SQSClient();
+const DEFAULTEXPIRY = 600;
 const BATCHSIZE = 0;
 
 function sleep(ms) {
@@ -100,27 +102,31 @@ export const handler = async (event) => {
         //get the routing plan for the message
         console.log("sleeping for retrieval of routing info");
         await sleep(100);
+        let plan1channel = (Math.random() > 0.5) ? "SMS" : "EMAIL";
+        let plan2channel = (plan1channel == "SMS") ? "EMAIL" : "SMS";
         let plan001 = {
             request_partition: messageBody.request_partition["S"],
             request_sort: batch_id + request_id + "001" + "ROUTEPLAN",
             record_type: "ROUTEPLAN",
             record_status: "ACTIVE",
-            channel: "SMS",
+            channel: plan1channel,
             endpoint: "07765432109",
             batch_id: batch_id,
             request_id: request_id,
-            plan_sequence: 1
+            plan_sequence: 1,
+            valid_until: Date.now()+DEFAULTEXPIRY
         };
         let plan002 = {
             request_partition: messageBody.request_partition["S"],
             request_sort: batch_id + request_id + "002" + "ROUTEPLAN",
             record_type: "ROUTEPLAN",
             record_status: "PENDING",
-            channel: "EMAIL",
+            channel: plan2channel,
             endpoint: "me@you.com",
             batch_id: batch_id,
             request_id: request_id,
-            plan_sequence: 2
+            plan_sequence: 2,
+            valid_until: Date.now()+DEFAULTEXPIRY
         };
         let plans = [plan001, plan002];
         //batch insert the items into DDB
@@ -128,8 +134,14 @@ export const handler = async (event) => {
         //publish the event to the "send requests" queue
         let sqsParams = {
             DelaySeconds: 0,
+            MessageAttributes: {
+                "channel": {
+                    "DataType": "String",
+                    "StringValue": plan001.channel
+                }
+            },
             MessageBody: JSON.stringify(plan001),
-            QueueUrl:DELIVERYQUEUEURL
+            QueueUrl: (plan001.channel == "SMS") ? SMSDELIVERYQUEUEURL : EMAILDELIVERYQUEUEURL
         }
         const response = await client.send(new SendMessageCommand(sqsParams));
         console.log(JSON.stringify(response));

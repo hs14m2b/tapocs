@@ -11,6 +11,7 @@ const { DynamoDBDocumentClient, PutCommand, BatchWriteCommand} = require("@aws-s
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const BATCHSIZE = 25;
+const DEFAULTEXPIRY = 600;
 async function getS3Object(params) {
     const response = await s3Client
         .send(new GetObjectCommand(params))
@@ -102,7 +103,8 @@ exports.handler = async (event) => {
                 nhs_number: nhsnumber,
                 request_time: requestTime,
                 request_id: requestId,
-                record_type: "REQITEM"
+                record_type: "REQITEM",
+                valid_until: Date.now()+DEFAULTEXPIRY
             }
             if (BATCHSIZE > 0) {
                 //doing batch write to DDB
@@ -137,7 +139,8 @@ exports.handler = async (event) => {
             batch_id: batchId,
             record_status: "ACCEPTED",
             number_item: itemsAdded,
-            record_type: "REQBATCH"
+            record_type: "REQBATCH",
+            valid_until: Date.now()+DEFAULTEXPIRY
         }
         let response = await putItemDDB(batch_item);
         console.log("have put batch item into ddb");

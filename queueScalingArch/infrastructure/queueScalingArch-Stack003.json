@@ -48,14 +48,29 @@
     }
   },
   "Resources": {
-    "deliveryQueue": {
+    "smsDeliveryQueue": {
       "Type" : "AWS::SQS::Queue",
       "Properties" : {
         "DelaySeconds" : 0,
         "KmsMasterKeyId" : "alias/aws/sqs",
         "MaximumMessageSize" : 262144,
         "MessageRetentionPeriod" : 345600,
-        "QueueName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "deliveryQueue"]]},
+        "QueueName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "smsDeliveryQueue"]]},
+        "Tags" : [ {
+            "Key" : "shortcode",
+            "Value" : { "Ref" : "SHORTCODE" }
+        }],
+        "VisibilityTimeout" : 300
+      }
+    },
+    "emailDeliveryQueue": {
+      "Type" : "AWS::SQS::Queue",
+      "Properties" : {
+        "DelaySeconds" : 0,
+        "KmsMasterKeyId" : "alias/aws/sqs",
+        "MaximumMessageSize" : 262144,
+        "MessageRetentionPeriod" : 345600,
+        "QueueName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "emailDeliveryQueue"]]},
         "Tags" : [ {
             "Key" : "shortcode",
             "Value" : { "Ref" : "SHORTCODE" }
@@ -70,7 +85,8 @@
         "Description": "The lambda function that receives messages from SQS, enriches the items and adds enriched data to DDB",
         "Environment": {
           "Variables" : {
-            "DELIVERYQUEUEURL" : {"Ref": "deliveryQueue"},
+            "SMSDELIVERYQUEUEURL" : {"Ref": "smsDeliveryQueue"},
+            "EMAILDELIVERYQUEUEURL" : {"Ref": "emailDeliveryQueue"},
             "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}}
           }
         },
@@ -102,10 +118,15 @@
 
   },
   "Outputs" : {
-      "DeliveryQueueArn": {
-          "Description" : "The Arn of the SQS Queue",
-          "Value" : { "Fn::GetAtt": ["deliveryQueue", "Arn"] },
-          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "deliveryQueueArn"]]}}
+      "SMSDeliveryQueueArn": {
+          "Description" : "The Arn of the SMS SQS Queue",
+          "Value" : { "Fn::GetAtt": ["smsDeliveryQueue", "Arn"] },
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "smsDeliveryQueueArn"]]}}
+      },
+      "EMAILDeliveryQueueArn": {
+          "Description" : "The Arn of the EMAIL SQS Queue",
+          "Value" : { "Fn::GetAtt": ["emailDeliveryQueue", "Arn"] },
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "emailDeliveryQueueArn"]]}}
       }
   }
 }
