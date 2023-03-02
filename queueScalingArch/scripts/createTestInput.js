@@ -1,6 +1,6 @@
 const uuidv4 = require('uuid').v4;
 const fs = require('node:fs/promises');
-const maxRows = 10000;
+const maxRows = 1;
 
 
 const main = async (argv) => {

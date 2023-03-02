@@ -7,9 +7,10 @@ const s3Client = new S3Client({
 const REQUESTSTABLENAME = process.env['REQUESTSTABLENAME'];
 const HEADERSTART = "messageid,";
 const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, PutCommand } = require("@aws-sdk/lib-dynamodb");
+const { DynamoDBDocumentClient, PutCommand, BatchWriteCommand} = require("@aws-sdk/lib-dynamodb");
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
+const BATCHSIZE = 25;
 async function getS3Object(params) {
     const response = await s3Client
         .send(new GetObjectCommand(params))
@@ -41,6 +42,20 @@ async function putItemDDB(item) {
     return data;
 } 
 
+async function putItemsDDB(items) {
+    let params = {
+        "RequestItems": {}
+    };
+    params.RequestItems[REQUESTSTABLENAME] = [];
+    for (item of items) {
+        let requestDetails ={ "PutRequest": {"Item": item}}
+        params.RequestItems[REQUESTSTABLENAME].push(requestDetails);
+    }
+    const data = await ddbDocClient.send(new BatchWriteCommand(params));
+    console.log("Success - items added to table", data);
+    return data;
+} 
+
 exports.handler = async (event) => {
     console.log(JSON.stringify(event));
     console.log("DDB table name is " + REQUESTSTABLENAME);
@@ -62,6 +77,8 @@ exports.handler = async (event) => {
         let rowArray = buf.toString().split(/(?:\r\n|\r|\n)/g);
         console.log("there are " + rowArray.length + " rows");
         let itemsAdded = 0;
+        let items = [];
+        let batchCount = 0;
         for (let i = 0; i < rowArray.length; i++){
             let row = rowArray[i];
             console.log("row is " + row);
@@ -74,29 +91,53 @@ exports.handler = async (event) => {
             let nhsnumber = rowItems[1];
             let requestTime = rowItems[2];
             let request_partition = clientId;
-            let request_sort = "REQITEM" + batchId + requestId;
-            let status = "ACCEPTED";
+            let request_sort = batchId + requestId + "REQITEM";
+            let record_status = "ACCEPTED";
             let item = {
                 request_partition: request_partition,
                 request_sort: request_sort,
                 client_id: clientId,
                 batch_id: batchId,
-                status: status,
+                record_status: record_status,
                 nhs_number: nhsnumber,
                 request_time: requestTime,
-                request_id: requestId
+                request_id: requestId,
+                record_type: "REQITEM"
             }
-            let response = await putItemDDB(item);
-            console.log("have put item into ddb");
-            itemsAdded += 1;
+            if (BATCHSIZE > 0) {
+                //doing batch write to DDB
+                items.push(item);
+                if (items.length == BATCHSIZE) {
+                    let data = await putItemsDDB(items);
+                    itemsAdded += BATCHSIZE;
+                    console.log("have put " + BATCHSIZE + " items into ddb");
+                    //clear the array
+                    items = [];
+                }
+            }
+            else {
+                //doing single item write
+                let response = await putItemDDB(item);
+                console.log("have put item into ddb");
+                itemsAdded += 1;
+            }
+        }
+        //check if need to write remaining items
+        if (items.length > 0) {
+            let data = await putItemsDDB(items);
+            itemsAdded += items.length;
+            console.log("have put " + items.length + " items into ddb");
+            //clear the array
+            items = [];
         }
         let batch_item = {
             request_partition: clientId,
-            request_sort: "REQBATCH" + batchId,
+            request_sort: batchId + "REQBATCH",
             client_id: clientId,
             batch_id: batchId,
-            status: "ACCEPTED",
-            number_item: itemsAdded
+            record_status: "ACCEPTED",
+            number_item: itemsAdded,
+            record_type: "REQBATCH"
         }
         let response = await putItemDDB(batch_item);
         console.log("have put batch item into ddb");

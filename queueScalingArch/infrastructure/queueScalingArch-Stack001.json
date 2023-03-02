@@ -131,11 +131,12 @@
           "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processInputFunction"]]
         },
         "Handler": "processinput.handler",
+        "MemorySize": "4096",
         "Role": { "Fn::GetAtt": ["queuescalingpocLambdaRole", "Arn"] },
         "Runtime": "nodejs16.x",
         "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
         }],
-        "Timeout": 300
+        "Timeout": 900
       },
       "DependsOn": ["queuescalingpocLambdaRole", "inputItemsTable"]
     },
