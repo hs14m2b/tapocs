@@ -2,6 +2,7 @@ import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand, UpdateCommand } 
 import { SQSClient, SendMessageBatchCommand, SendMessageCommand } from "@aws-sdk/client-sqs";
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { NotifyClient } from "notifications-node-client";
 
 const REGION = "eu-west-2";
 const ddbClient = new DynamoDBClient({ region: REGION });
@@ -10,24 +11,15 @@ const REQUESTSTABLENAME = process.env['REQUESTSTABLENAME'];
 const DELIVERYQUEUEURL = process.env['DELIVERYQUEUEURL'];
 const client = new SQSClient();
 const BATCHSIZE = 0;
+const TEMPLATEID = "b844408b-e85d-470d-9d56-49bbc20f282d";
+const NOTIFYAPIKEY = "commsmgrpoc-5e556db9-b71b-472a-9ba0-627bc2954844-55a0fec2-fc3e-4b8e-8027-9835190ad242";
+const notifyClient = new NotifyClient(NOTIFYAPIKEY);
+
 
 function sleep(ms) {
     console.log("sleeping for " + ms + "ms");
     return new Promise((resolve) => { setTimeout(resolve, ms); });
 }
-
-async function sendItemsSQS(items) {
-    let params = {
-        "QueueUrl": DELIVERYQUEUEURL,
-        Entries: []
-    };
-    for (item of items) {
-        params.Entries.push(item);
-    }
-    const data = await client.send(new SendMessageBatchCommand(params));
-    console.log("Success - items added to SQS", data);
-    return data;
-} 
 
 async function updateItemDDB(params) {
     const data = await ddbDocClient.send(new UpdateCommand(params));
@@ -35,20 +27,13 @@ async function updateItemDDB(params) {
     return data;
 } 
 
-async function putItemsDDB(items) {
-    let params = {
-        "RequestItems": {}
-    };
-    params.RequestItems[REQUESTSTABLENAME] = [];
-    for (let item of items) {
-        let requestDetails ={ "PutRequest": {"Item": item}}
-        params.RequestItems[REQUESTSTABLENAME].push(requestDetails);
-    }
-    const data = await ddbDocClient.send(new BatchWriteCommand(params));
-    console.log("Success - items added to table", data);
-    return data;
-} 
-
+async function sendEmail(email, personalisation, reference){
+	return await notifyClient
+		.sendEmail(TEMPLATEID, email, {
+			personalisation: personalisation,
+			reference: reference
+		});
+}
 
 
 export const handler = async (event) => {
@@ -65,6 +50,11 @@ export const handler = async (event) => {
         let messageBody = JSON.parse(event.Records[i].body);
         console.log("partition " + messageBody.request_partition + " sort " + messageBody.request_sort);
         console.log("client id " + messageBody.request_partition);
+        let email = messageBody.endpoint;
+        console.log("email is " + email);
+        let personalisation = messageBody.personalisation;
+        console.log("personalisation is " + JSON.stringify(personalisation));
+        let reference = messageBody.request_partition + "." + messageBody.request_sort;
         //check that it is for a delivery
         if (!messageBody.request_sort || !messageBody.request_sort.endsWith("ROUTEPLAN")) {
             console.log("not processing as not a ROUTEPLAN");
@@ -72,6 +62,8 @@ export const handler = async (event) => {
         }
 
         //pretend to send the message
+        let result = await sendEmail(email, personalisation, reference);
+        console.log("result of sending email is " + result.data);
         let updateParams = {
             "TableName": REQUESTSTABLENAME,
             "Key": {

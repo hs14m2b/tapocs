@@ -56,8 +56,7 @@ async function putItemsDDB(items) {
 export const handler = async (event) => {
     console.log(JSON.stringify(event));
     let items = [];
-    for (let i = 0; i < event.Records.length; i++)
-    {
+    for (let i = 0; i < event.Records.length; i++) {
         console.log("Processing item " + (i + 1));
         //check that this is an insert
         if (event.Records[i].eventSource != "aws:sqs") {
@@ -81,6 +80,12 @@ export const handler = async (event) => {
             request_sort: messageBody.request_sort["S"] + "DEMOGRAPHICS",
 
         }
+        let demoInfo = {
+            "title": "Mr",
+            "familyname": "Brown",
+            "givenname": "Matthew",
+            "nhsnumberformatted": messageBody.nhs_number["S"].substring(0, 3) + " " + messageBody.nhs_number["S"].substring(3, 6) + " " + messageBody.nhs_number["S"].substring(6)
+        }
         let updateParams = {
             "TableName": REQUESTSTABLENAME,
             "Key": {
@@ -102,31 +107,37 @@ export const handler = async (event) => {
         //get the routing plan for the message
         console.log("sleeping for retrieval of routing info");
         await sleep(100);
-        let plan1channel = (Math.random() > 0.5) ? "SMS" : "EMAIL";
-        let plan2channel = (plan1channel == "SMS") ? "EMAIL" : "SMS";
+
+        let plan1channel = (Math.random() > 0.5) ? {"channel": "SMS", "endpoint": "07747461749"} : {"channel": "EMAIL", "endpoint": "matthewandkaren@hotmail.com"};
+        //set to email for testing temporarily
+        //plan1channel = {"channel": "EMAIL", "endpoint": "matthewandkaren@hotmail.com"};
+        let plan2channel = (plan1channel.channel == "EMAIL") ? {"channel": "SMS", "endpoint": "07747461749"} : {"channel": "EMAIL", "endpoint": "matthewandkaren@hotmail.com"};
+        let personalisation =  { title: demoInfo.title, familyname: demoInfo.familyname, nhsnumberformatted: demoInfo.nhsnumberformatted };
         let plan001 = {
             request_partition: messageBody.request_partition["S"],
             request_sort: batch_id + request_id + "001" + "ROUTEPLAN",
             record_type: "ROUTEPLAN",
             record_status: "ACTIVE",
-            channel: plan1channel,
-            endpoint: "07765432109",
+            channel: plan1channel.channel,
+            endpoint: plan1channel.endpoint,
             batch_id: batch_id,
             request_id: request_id,
             plan_sequence: 1,
-            valid_until: Date.now()+DEFAULTEXPIRY
+            valid_until: (Date.now() / 1000) + DEFAULTEXPIRY,
+            personalisation: personalisation
         };
         let plan002 = {
             request_partition: messageBody.request_partition["S"],
             request_sort: batch_id + request_id + "002" + "ROUTEPLAN",
             record_type: "ROUTEPLAN",
             record_status: "PENDING",
-            channel: plan2channel,
-            endpoint: "me@you.com",
+            channel: plan2channel.channel,
+            endpoint: plan2channel.endpoint,
             batch_id: batch_id,
             request_id: request_id,
             plan_sequence: 2,
-            valid_until: Date.now()+DEFAULTEXPIRY
+            valid_until: (Date.now()/1000)+DEFAULTEXPIRY,
+            personalisation: personalisation
         };
         let plans = [plan001, plan002];
         //batch insert the items into DDB

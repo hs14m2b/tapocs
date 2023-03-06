@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Transform": "AWS::Serverless-2016-10-31",
-  "Description": "Cloudformation template to subscribe to DDB stream and add items to SQS",
+  "Description": "Cloudformation template to subscribe to SQS and enriches the requests",
   "Parameters": {
     "SHORTCODE": {
       "Type": "String",

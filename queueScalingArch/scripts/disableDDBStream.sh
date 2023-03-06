@@ -1,1 +1,1 @@
-aws lambda update-event-source-mapping --uuid bed3fa4f-126a-48ef-97fb-aa9f34f75131 --no-enabled
+aws lambda update-event-source-mapping --uuid 34c87374-6209-49b7-993d-ffca6c48e391 --no-enabled
