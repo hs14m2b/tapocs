@@ -1,12 +1,12 @@
-import { DynamoDBDocumentClient, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 
+import { DEFAULTEXPIRY } from "./constants.mjs";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
 const REGION = "eu-west-2";
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const REQUESTSTABLENAME = process.env['REQUESTSTABLENAME'];
-const DEFAULTEXPIRY = 600;
 
 function sleep(ms) {
     console.log("sleeping for " + ms + "ms");
@@ -26,6 +26,42 @@ async function putItemDDB(item) {
     };
     const data = await ddbDocClient.send(new PutCommand(params));
     console.log("Success - item added to table", data);
+    return data;
+} 
+
+async function getRequestItems(client_id, batch_id, request_id) {
+    console.log("request partition is " + client_id);
+    console.log("batch is " + batch_id);
+    console.log("request_id is " + request_id);
+    let queryParams = {
+        KeyConditionExpression: "request_partition = :p AND begins_with(request_sort, :s)",
+        ExpressionAttributeValues: {
+            ":p": client_id,
+            ":s": batch_id + request_id
+        },
+        TableName: REQUESTSTABLENAME
+    };
+    console.log("params are " + JSON.stringify(queryParams));
+    let data = await ddbDocClient.send(new QueryCommand(queryParams));
+    console.log("got response");
+    return data.Items;
+}
+
+async function putItemsDDB(items) {
+    let params = {
+        "RequestItems": {}
+    };
+    params.RequestItems[REQUESTSTABLENAME] = [];
+    for (let item of items) {
+        try {
+            let requestDetails ={ "PutRequest": {"Item": item}}
+            params.RequestItems[REQUESTSTABLENAME].push(requestDetails);
+        } catch (error) {
+            console.log("Caught error processing row " + item);
+        }
+    }
+    const data = await ddbDocClient.send(new BatchWriteCommand(params));
+    console.log("Success - items added/updated to table", data);
     return data;
 } 
 
@@ -52,6 +88,9 @@ export const handler = async (event) => {
             "ReturnValues": "ALL_NEW"
         };
         let updateData = await updateItemDDB(updateParams);
+        console.log(JSON.stringify(updateData.Attributes));
+        let batch_id = updateData.Attributes.batch_id;
+        let request_id = updateData.Attributes.request_id;
         //adding callback info into ddb
         let callbackItem = {
             request_partition: request_partition,
@@ -61,9 +100,42 @@ export const handler = async (event) => {
         }
         let insertData = await putItemDDB(callbackItem);
         console.log("have put callback item details into ddb");
+        //check the status
+        if (body.status.toUpperCase() != "DELIVERED")
+        {
+            //delivered, permanent-failure, temporary-failure or technical-failure
+        }
+        else
+        {
+            //get all the other routing plans and set status to "NOTREQUIRED"
+            console.log("getting routing plans");
+            let requestItems = await getRequestItems(request_partition, batch_id, request_id);
+            console.log("got the routing plans");
+            console.log(JSON.stringify(requestItems));
+            let updatedItems = [];
+            for (let requestItem of requestItems) {
+                console.log(JSON.stringify(requestItem));
+                if (requestItem.record_status == "PENDING") {
+                    updatedItems.push({
+                        ...requestItem,
+                        record_status:"NOTREQUIRED"
+                    })
+                }
+                if (requestItem.record_status == "ENRICHED" && requestItem.record_type == "REQITEM") {
+                    updatedItems.push({
+                        ...requestItem,
+                        record_status: "COMPLETED",
+                        completed_time: (Date.now()/1000)
+                    })
+                }
+            }
+            console.log(JSON.stringify(updatedItems));
+            if (updatedItems.length > 0) await putItemsDDB(updatedItems);
+        }
         
     } catch (error) {
         console.log("caught error " + error.message);
+        throw error;
     }
     let response = {
         "status": 200,

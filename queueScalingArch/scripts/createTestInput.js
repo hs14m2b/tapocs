@@ -6,16 +6,26 @@ const maxRows = 1;
 const main = async (argv) => {
   console.log(argv[2]);
   let fileName = argv[2];
+  let batch_id = argv[3];
   let fileHandle = await fs.open("./" + fileName, "w","775");
   let wrtStrm = fileHandle.createWriteStream();
   //write header
-  let header = "messageid,nhsnumber,time\n";
+  let header = "messageid,nhsnumber,time,b64json\n";
   await wrtStrm.write(header);
   for (let i = 0; i < maxRows; i++){
     let id = uuidv4();
     let nhsnumber = i.toString().padStart(10, '9');
     let __time = Date.now().toString();
-    await wrtStrm.write(id + "," + nhsnumber + "," + __time + "\n");
+    let request = {
+      request_id: id,
+      request_time: __time,
+      nhs_number: nhsnumber,
+      client_id: "12345",
+      batch_id: batch_id,
+      personalisation: {}
+    }
+    let b64request = Buffer.from(JSON.stringify(request)).toString("base64");
+    await wrtStrm.write(id + "," + nhsnumber + "," + __time + "," +b64request + "\n");
   }
   wrtStrm.close();
   fileHandle.close();

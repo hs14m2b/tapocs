@@ -1,6 +1,7 @@
 import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { SQSClient, SendMessageBatchCommand, SendMessageCommand } from "@aws-sdk/client-sqs";
 
+import { DEFAULTEXPIRY } from "./constants.mjs";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
 const REGION = "eu-west-2";
@@ -10,7 +11,6 @@ const REQUESTSTABLENAME = process.env['REQUESTSTABLENAME'];
 const SMSDELIVERYQUEUEURL = process.env['SMSDELIVERYQUEUEURL'];
 const EMAILDELIVERYQUEUEURL = process.env['EMAILDELIVERYQUEUEURL'];
 const client = new SQSClient();
-const DEFAULTEXPIRY = 600;
 const BATCHSIZE = 0;
 
 function sleep(ms) {

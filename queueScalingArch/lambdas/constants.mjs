@@ -1,0 +1,1 @@
+export const DEFAULTEXPIRY = 600;

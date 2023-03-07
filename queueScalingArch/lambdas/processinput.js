@@ -10,8 +10,9 @@ const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
 const { DynamoDBDocumentClient, PutCommand, BatchWriteCommand} = require("@aws-sdk/lib-dynamodb");
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
-const BATCHSIZE = 5;
 const DEFAULTEXPIRY = 600;
+const BATCHSIZE = 5;
+
 const SPLITTINGSIZE = 5000; //
 async function getS3Object(params) {
     const response = await s3Client
@@ -118,12 +119,16 @@ exports.handler = async (event) => {
                     request_sort: request_sort,
                     client_id: clientId,
                     batch_id: batchId,
-                    record_status: record_status,
                     nhs_number: nhsnumber,
                     request_time: requestTime,
                     request_id: requestId,
+                    record_status: record_status,
                     record_type: "REQITEM",
                     valid_until: (Date.now()/1000) + DEFAULTEXPIRY
+                }
+                if (rowItems.length > 3) {
+                    let inputJson = JSON.parse(Buffer.from(rowItems[3], "base64").toString("utf8"));
+                    item = { ...item, ...inputJson };
                 }
                 items.push(JSON.stringify(item).replace("\n","").replace("\r", ""));
                 if (items.length == SPLITTINGSIZE) {
