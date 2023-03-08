@@ -239,6 +239,15 @@
             "AttributeName" : "client_id",
             "AttributeType" : "S"
         },{
+            "AttributeName" : "date_received",
+            "AttributeType" : "N"
+        },{
+            "AttributeName" : "time_received",
+            "AttributeType" : "N"
+        },{
+            "AttributeName" : "record_type",
+            "AttributeType" : "S"
+        },{
             "AttributeName" : "batch_id",
             "AttributeType" : "S"
         }],
@@ -254,6 +263,34 @@
             }],
           "Projection" : {
             "NonKeyAttributes": ["status"],
+            "ProjectionType" : "INCLUDE"
+          }
+        },
+        {
+          "IndexName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "requestsTable-datereceivedGSI"]]},
+          "KeySchema" : [ {
+            "AttributeName" : "record_type",
+            "KeyType" : "HASH"
+            },{
+                "AttributeName" : "date_received",
+                "KeyType" : "RANGE"
+            }],
+          "Projection" : {
+            "NonKeyAttributes": ["client_id", "batch_id"],
+            "ProjectionType" : "INCLUDE"
+          }
+        },
+        {
+          "IndexName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "requestsTable-timereceivedGSI"]]},
+          "KeySchema" : [ {
+            "AttributeName" : "record_type",
+            "KeyType" : "HASH"
+            },{
+                "AttributeName" : "time_received",
+                "KeyType" : "RANGE"
+            }],
+          "Projection" : {
+            "NonKeyAttributes": ["client_id", "batch_id"],
             "ProjectionType" : "INCLUDE"
           }
         }],

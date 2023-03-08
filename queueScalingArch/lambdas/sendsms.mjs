@@ -87,9 +87,6 @@ export const handler = async (event) => {
         console.log("sleeping for SMS sending");
         await sleep(100);
         let updateData = await updateItemDDB(updateParams);
-        //get the routing plan for the message
-        console.log("sleeping for retrieval of routing info");
-        await sleep(100);
     }
     return;
 }

@@ -1,0 +1,113 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "Cloudformation template to provide synthetic callbacks by subscribing to DDB stream and generating callback requests",
+  "Parameters": {
+    "SHORTCODE": {
+      "Type": "String",
+      "Description": "The shortcode for tags",
+      "Default": "mabr8"
+    },
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "Branchname for the deployment"
+    },
+    "CALLBACKDOMAIN": {
+      "Type": "String",
+      "Description": "The domain qualifier for receiving Gov Notify callbacks",
+      "Default": "callbacks"
+    },
+    "PROJECTNAME": {
+      "Type": "String",
+      "Default": "queuescaling",
+      "Description": "Project name for the deployment"
+    },
+    "CERTARN": {
+      "Type": "String",
+      "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/a707a2d1-5966-4ac3-abe6-e17e71a41f4a"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Description": "NHSD TA Hosted Zone identifier for DNS entries",
+      "Default": "Z1075FNTZPAM5I"
+    },
+    "HOSTEDZONESUFFIX": {
+      "Type": "String",
+      "Description": "Hosted Zone DNS suffix",
+      "Default": "nhsdta.com"
+    }
+  },
+  "Globals": {
+    "Function": {
+      "Tags": {
+        "shortcode": { "Ref": "SHORTCODE" }
+      },
+      "Environment": {
+        "Variables": {
+          "HOSTEDZONESUFFIX": { "Ref": "HOSTEDZONESUFFIX" },
+          "BRANCHNAME": { "Ref": "BRANCHNAME" },
+          "PROJECTNAME": { "Ref": "PROJECTNAME" },
+          "CALLBACKDOMAIN": { "Ref": "CALLBACKDOMAIN" }
+        }
+      },
+      "Timeout": 300
+    }
+  },
+  "Resources": {
+    "processMessageSentStreamFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": "synthstack001lambdas.zip",
+        "Description": "The lambda function that receives items from the DDB Stream and publishes to SQS",
+        "Environment": {
+          "Variables": {
+            "HOSTEDZONESUFFIX": { "Ref": "HOSTEDZONESUFFIX" },
+            "BRANCHNAME": { "Ref": "BRANCHNAME" },
+            "PROJECTNAME": { "Ref": "PROJECTNAME" },
+            "CALLBACKDOMAIN": { "Ref": "CALLBACKDOMAIN" }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processMessageSentStreamFunction"]]
+        },
+        "Handler": "processmessagesentsynth.handler",
+        "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
+        "Runtime": "nodejs16.x",
+        "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
+        }],
+        "Timeout": 300
+      }
+    },
+    "DDBStreamMsgSentLambdaEventSource":{
+      "Type" : "AWS::Lambda::EventSourceMapping",
+      "Properties" : {
+          "BatchSize" : 10,
+          "BisectBatchOnFunctionError" : true,
+          "Enabled" : true,
+          "EventSourceArn" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTableStreamArn"]]}},
+          "FilterCriteria": {
+            "Filters" : [ {
+              "Pattern" : "{\"eventName\": [\"MODIFY\"], \"dynamodb\": {\"NewImage\":{\"record_type\": {\"S\": [\"ROUTEPLAN\"]}}}}"
+            }]
+          },
+          "FunctionName" : {"Ref": "processMessageSentStreamFunction"},
+          "MaximumBatchingWindowInSeconds" : 1,
+          "MaximumRecordAgeInSeconds" : -1,
+          "MaximumRetryAttempts" : -1,
+          "ParallelizationFactor" : 10,
+          "StartingPosition" : "LATEST"
+        }
+    }
+
+
+  },
+  "Outputs" : {
+      "LambdaESMId" : {
+          "Description" : "The ID of the lambda event source mapping to DDB Stream to detect Message Sent events",
+          "Value" : { "Fn::GetAtt": ["DDBStreamMsgSentLambdaEventSource", "Id"] },
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "DDBStreamMsgSentId"]]}}
+      }
+  }
+}

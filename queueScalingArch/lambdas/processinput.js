@@ -121,6 +121,8 @@ exports.handler = async (event) => {
                     batch_id: batchId,
                     nhs_number: nhsnumber,
                     request_time: requestTime,
+                    time_received: Date.now() / 1000,
+                    date_received: parseInt(new Date().toISOString().substring(0,10).replace("-", "")),
                     request_id: requestId,
                     record_status: record_status,
                     record_type: "REQITEM",
@@ -157,6 +159,8 @@ exports.handler = async (event) => {
                 record_status: "ACCEPTED",
                 number_item: itemsAdded,
                 record_type: "REQBATCH",
+                time_received: Date.now() / 1000,
+                date_received: parseInt(new Date().toISOString().substring(0,10).replace("-", "")),
                 valid_until: (Date.now()/1000) + DEFAULTEXPIRY
             }
             let response = await putItemDDB(batch_item);

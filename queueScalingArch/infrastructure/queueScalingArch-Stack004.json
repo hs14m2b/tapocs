@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Transform": "AWS::Serverless-2016-10-31",
-  "Description": "Cloudformation template to subscribe to SQS queue and pretend to send email and/or SMS",
+  "Description": "Cloudformation template to subscribe to SQS queues and pretend to send email and/or SMS",
   "Parameters": {
     "SHORTCODE": {
       "Type": "String",

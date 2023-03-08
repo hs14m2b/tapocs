@@ -27,12 +27,20 @@ async function updateItemDDB(params) {
     return data;
 } 
 
-async function sendEmail(email, personalisation, reference){
+async function sendEmail(email, personalisation, reference) {
+    let syntheticresult = {
+        data: {
+            message: "pretended to send the email"
+        }
+    }
+    return syntheticresult;
+    /*
 	return await notifyClient
 		.sendEmail(TEMPLATEID, email, {
 			personalisation: personalisation,
 			reference: reference
 		});
+    */
 }
 
 
@@ -79,9 +87,6 @@ export const handler = async (event) => {
         console.log("sleeping for EMAIL sending");
         await sleep(100);
         let updateData = await updateItemDDB(updateParams);
-        //get the routing plan for the message
-        console.log("sleeping for retrieval of routing info");
-        await sleep(100);
     }
     return;
 }

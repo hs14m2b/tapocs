@@ -16,13 +16,19 @@ const main = async (argv) => {
     let id = uuidv4();
     let nhsnumber = i.toString().padStart(10, '9');
     let __time = Date.now().toString();
+    let personalisation = {
+      "title": "Mr",
+      "familyname": "Brown",
+      "givenname": "Matthew",
+      "nhsnumberformatted": nhsnumber.substring(0, 3) + " " + nhsnumber.substring(3, 6) + " " + nhsnumber.substring(6)
+    };
     let request = {
       request_id: id,
       request_time: __time,
       nhs_number: nhsnumber,
       client_id: "12345",
       batch_id: batch_id,
-      personalisation: {}
+      personalisation: personalisation
     }
     let b64request = Buffer.from(JSON.stringify(request)).toString("base64");
     await wrtStrm.write(id + "," + nhsnumber + "," + __time + "," +b64request + "\n");

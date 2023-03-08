@@ -122,6 +122,8 @@ export const handler = async (event) => {
             endpoint: plan1channel.endpoint,
             batch_id: batch_id,
             request_id: request_id,
+            time_received: Date.now() / 1000,
+            date_received: parseInt(new Date().toISOString().substring(0,10).replace("-", "")),
             plan_sequence: 1,
             valid_until: (Date.now() / 1000) + DEFAULTEXPIRY,
             personalisation: personalisation
@@ -135,6 +137,8 @@ export const handler = async (event) => {
             endpoint: plan2channel.endpoint,
             batch_id: batch_id,
             request_id: request_id,
+            time_received: Date.now() / 1000,
+            date_received: parseInt(new Date().toISOString().substring(0,10).replace("-", "")),
             plan_sequence: 2,
             valid_until: (Date.now()/1000)+DEFAULTEXPIRY,
             personalisation: personalisation

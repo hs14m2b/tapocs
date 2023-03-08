@@ -96,6 +96,11 @@ export const handler = async (event) => {
             request_partition: request_partition,
             request_sort: request_sort.replace("ROUTEPLAN", "RPCALLBACK"),
             valid_until: (Date.now() / 1000) + DEFAULTEXPIRY,
+            time_received: Date.now() / 1000,
+            date_received: parseInt(new Date().toISOString().substring(0, 10).replace("-", "")),
+            record_type: "RPCALLBACK",
+            batch_id: batch_id,
+            request_id: request_id,
             ...body
         }
         let insertData = await putItemDDB(callbackItem);
