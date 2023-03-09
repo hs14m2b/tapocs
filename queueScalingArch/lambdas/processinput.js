@@ -38,7 +38,8 @@ function sleep(ms) {
 async function putItemDDB(item) {
     let params = {
         "TableName": REQUESTSTABLENAME,
-        "Item": item
+        "Item": item,
+        "ConditionExpression": "attribute_not_exists(request_partition)"
     };
     const data = await ddbDocClient.send(new PutCommand(params));
     console.log("Success - item added to table", data);
@@ -52,7 +53,12 @@ async function putItemsDDB(items) {
     params.RequestItems[REQUESTSTABLENAME] = [];
     for (item of items) {
         try {
-            let requestDetails ={ "PutRequest": {"Item": item}}
+            let requestDetails = {
+                "PutRequest": {
+                    "Item": item,
+                    "ConditionExpression": "attribute_not_exists(request_partition)"
+                }
+            };
             params.RequestItems[REQUESTSTABLENAME].push(requestDetails);
         } catch (error) {
             console.log("Caught error processing row " + item);
@@ -158,6 +164,7 @@ exports.handler = async (event) => {
                 batch_id: batchId,
                 record_status: "ACCEPTED",
                 number_item: itemsAdded,
+                completed_item_count: 0,
                 record_type: "REQBATCH",
                 time_received: Date.now() / 1000,
                 date_received: parseInt(new Date().toISOString().substring(0,10).replace("-", "")),
@@ -214,7 +221,6 @@ exports.handler = async (event) => {
             //check if need to write remaining items
             if (items.length > 0) {
                 let data = await putItemsDDB(items);
-                itemsAdded += items.length;
                 console.log("have put " + items.length + " items into ddb");
                 //clear the array
                 items = [];

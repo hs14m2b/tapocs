@@ -39,11 +39,15 @@ export const handler = async (event) => {
             continue;
         }
         //do something with the request
+        //delivered, permanent-failure or technical-failure
+        let status = (Math.random() > 0.5) ? "delivered" : (Math.random() > 0.5) ? "permanent-failure" : "technical-failure";
+        //status = "permanent-failure";
+        //status = "delivered";
         let callbackData = {
             id: "cdbb5ad6-60c9-48d3-bee2-a6bb82f50772",
             reference: messageBody.request_partition["S"] + "." + messageBody.request_sort["S"],
             to: messageBody.endpoint["S"],
-            "status": "delivered",
+            "status": status,
             "completed_at": new Date().toISOString,
             "notification_type": messageBody.channel["S"],
             "template_id": "b844408b-e85d-470d-9d56-49bbc20f282d",

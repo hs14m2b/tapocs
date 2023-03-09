@@ -120,7 +120,7 @@ export const handler = async (event) => {
             let updatedItems = [];
             for (let requestItem of requestItems) {
                 console.log(JSON.stringify(requestItem));
-                if (requestItem.record_status == "PENDING") {
+                if (requestItem.record_status == "PENDING" && requestItem.record_type == "ROUTEPLAN") {
                     updatedItems.push({
                         ...requestItem,
                         record_status:"NOTREQUIRED"

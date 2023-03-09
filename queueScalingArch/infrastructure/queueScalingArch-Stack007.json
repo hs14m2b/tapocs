@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Transform": "AWS::Serverless-2016-10-31",
-  "Description": "Cloudformation template to provide synthetic callbacks by subscribing to DDB stream and generating callback requests",
+  "Description": "Cloudformation template to read the DDB stream to monitor failure of individual ROUTEPLAN items and take action as needed",
   "Parameters": {
     "SHORTCODE": {
       "Type": "String",
@@ -12,11 +12,6 @@
       "Type": "String",
       "Default": "main",
       "Description": "Branchname for the deployment"
-    },
-    "CALLBACKDOMAIN": {
-      "Type": "String",
-      "Description": "The domain qualifier for receiving Gov Notify callbacks",
-      "Default": "callbacks"
     },
     "PROJECTNAME": {
       "Type": "String",
@@ -48,31 +43,29 @@
         "Variables": {
           "HOSTEDZONESUFFIX": { "Ref": "HOSTEDZONESUFFIX" },
           "BRANCHNAME": { "Ref": "BRANCHNAME" },
-          "PROJECTNAME": { "Ref": "PROJECTNAME" },
-          "CALLBACKDOMAIN": { "Ref": "CALLBACKDOMAIN" }
+          "PROJECTNAME": { "Ref": "PROJECTNAME" }
         }
       },
       "Timeout": 300
     }
   },
   "Resources": {
-    "processMessageSentStreamFunction": {
+    "processItemCompleteStreamFunction": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
-        "Code": "synthstack001lambdas.zip",
-        "Description": "The lambda function that receives MODIFY ROUTEPLAN items the DDB Stream and invokes the callback endpoint",
+        "Code": "stack007lambdas.zip",
+        "Description": "The lambda function that receives MODIFY REQITEM items the DDB Stream and updates the REQBATCH item as needed",
         "Environment": {
           "Variables": {
-            "HOSTEDZONESUFFIX": { "Ref": "HOSTEDZONESUFFIX" },
-            "BRANCHNAME": { "Ref": "BRANCHNAME" },
-            "PROJECTNAME": { "Ref": "PROJECTNAME" },
-            "CALLBACKDOMAIN": { "Ref": "CALLBACKDOMAIN" }
+            "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}},
+            "SMSDELIVERYQUEUEURL" : {"Fn::ImportValue" :{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "smsDeliveryQueueUrl"]]}},
+            "EMAILDELIVERYQUEUEURL" : {"Fn::ImportValue" :{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "emailDeliveryQueueUrl"]]}}
           }
         },
         "FunctionName": {
-          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processMessageSentStreamFunction"]]
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processRoutePlanFailStreamFunction"]]
         },
-        "Handler": "processmessagesentsynth.handler",
+        "Handler": "processrouteplanfailure.handler",
         "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
         "Runtime": "nodejs16.x",
         "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
@@ -80,7 +73,7 @@
         "Timeout": 300
       }
     },
-    "DDBStreamMsgSentLambdaEventSource":{
+    "DDBStreamIRoutePlanFailLambdaEventSource":{
       "Type" : "AWS::Lambda::EventSourceMapping",
       "Properties" : {
           "BatchSize" : 10,
@@ -92,7 +85,7 @@
               "Pattern" : "{\"eventName\": [\"MODIFY\"], \"dynamodb\": {\"NewImage\":{\"record_type\": {\"S\": [\"ROUTEPLAN\"]}}}}"
             }]
           },
-          "FunctionName" : {"Ref": "processMessageSentStreamFunction"},
+          "FunctionName" : {"Ref": "processItemCompleteStreamFunction"},
           "MaximumBatchingWindowInSeconds" : 1,
           "MaximumRecordAgeInSeconds" : -1,
           "MaximumRetryAttempts" : -1,
@@ -104,10 +97,10 @@
 
   },
   "Outputs" : {
-      "LambdaESMId" : {
-          "Description" : "The ID of the lambda event source mapping to DDB Stream to detect Message Sent events",
-          "Value" : { "Fn::GetAtt": ["DDBStreamMsgSentLambdaEventSource", "Id"] },
-          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "DDBStreamMsgSentId"]]}}
+      "LambdaRPFailId" : {
+          "Description" : "The ID of the lambda event source mapping to DDB Stream to detect RoutePlan Failed events",
+          "Value" : { "Fn::GetAtt": ["DDBStreamIRoutePlanFailLambdaEventSource", "Id"] },
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "DDBStreamRoutePlanFailId"]]}}
       }
   }
 }

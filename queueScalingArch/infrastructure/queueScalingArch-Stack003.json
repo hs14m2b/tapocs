@@ -127,6 +127,16 @@
           "Description" : "The Arn of the EMAIL SQS Queue",
           "Value" : { "Fn::GetAtt": ["emailDeliveryQueue", "Arn"] },
           "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "emailDeliveryQueueArn"]]}}
+      },
+      "SMSDeliveryQueueUrl": {
+          "Description" : "The URL of the SMS SQS Queue",
+          "Value" : { "Ref": "smsDeliveryQueue" },
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "smsDeliveryQueueUrl"]]}}
+      },
+      "EMAILDeliveryQueueUrl": {
+          "Description" : "The URL of the EMAIL SQS Queue",
+          "Value" : { "Ref": "emailDeliveryQueue" },
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "emailDeliveryQueueUrl"]]}}
       }
   }
 }

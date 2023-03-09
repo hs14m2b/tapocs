@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Transform": "AWS::Serverless-2016-10-31",
-  "Description": "Cloudformation template to provide synthetic callbacks by subscribing to DDB stream and generating callback requests",
+  "Description": "Cloudformation template to read the DDB stream to monitor completion of individual REQITEMs and update REQBATCH as needed",
   "Parameters": {
     "SHORTCODE": {
       "Type": "String",
@@ -12,11 +12,6 @@
       "Type": "String",
       "Default": "main",
       "Description": "Branchname for the deployment"
-    },
-    "CALLBACKDOMAIN": {
-      "Type": "String",
-      "Description": "The domain qualifier for receiving Gov Notify callbacks",
-      "Default": "callbacks"
     },
     "PROJECTNAME": {
       "Type": "String",
@@ -48,31 +43,27 @@
         "Variables": {
           "HOSTEDZONESUFFIX": { "Ref": "HOSTEDZONESUFFIX" },
           "BRANCHNAME": { "Ref": "BRANCHNAME" },
-          "PROJECTNAME": { "Ref": "PROJECTNAME" },
-          "CALLBACKDOMAIN": { "Ref": "CALLBACKDOMAIN" }
+          "PROJECTNAME": { "Ref": "PROJECTNAME" }
         }
       },
       "Timeout": 300
     }
   },
   "Resources": {
-    "processMessageSentStreamFunction": {
+    "processItemCompleteStreamFunction": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
-        "Code": "synthstack001lambdas.zip",
-        "Description": "The lambda function that receives MODIFY ROUTEPLAN items the DDB Stream and invokes the callback endpoint",
+        "Code": "stack006lambdas.zip",
+        "Description": "The lambda function that receives MODIFY REQITEM items the DDB Stream and updates the REQBATCH item as needed",
         "Environment": {
           "Variables": {
-            "HOSTEDZONESUFFIX": { "Ref": "HOSTEDZONESUFFIX" },
-            "BRANCHNAME": { "Ref": "BRANCHNAME" },
-            "PROJECTNAME": { "Ref": "PROJECTNAME" },
-            "CALLBACKDOMAIN": { "Ref": "CALLBACKDOMAIN" }
+            "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}}
           }
         },
         "FunctionName": {
-          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processMessageSentStreamFunction"]]
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processItemCompletedStreamFunction"]]
         },
-        "Handler": "processmessagesentsynth.handler",
+        "Handler": "processitemcomplete.handler",
         "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
         "Runtime": "nodejs16.x",
         "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
@@ -80,7 +71,7 @@
         "Timeout": 300
       }
     },
-    "DDBStreamMsgSentLambdaEventSource":{
+    "DDBStreamItemCompleteLambdaEventSource":{
       "Type" : "AWS::Lambda::EventSourceMapping",
       "Properties" : {
           "BatchSize" : 10,
@@ -89,10 +80,10 @@
           "EventSourceArn" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTableStreamArn"]]}},
           "FilterCriteria": {
             "Filters" : [ {
-              "Pattern" : "{\"eventName\": [\"MODIFY\"], \"dynamodb\": {\"NewImage\":{\"record_type\": {\"S\": [\"ROUTEPLAN\"]}}}}"
+              "Pattern" : "{\"eventName\": [\"MODIFY\"], \"dynamodb\": {\"NewImage\":{\"record_type\": {\"S\": [\"REQITEM\"]}}}}"
             }]
           },
-          "FunctionName" : {"Ref": "processMessageSentStreamFunction"},
+          "FunctionName" : {"Ref": "processItemCompleteStreamFunction"},
           "MaximumBatchingWindowInSeconds" : 1,
           "MaximumRecordAgeInSeconds" : -1,
           "MaximumRetryAttempts" : -1,
@@ -106,8 +97,8 @@
   "Outputs" : {
       "LambdaESMId" : {
           "Description" : "The ID of the lambda event source mapping to DDB Stream to detect Message Sent events",
-          "Value" : { "Fn::GetAtt": ["DDBStreamMsgSentLambdaEventSource", "Id"] },
-          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "DDBStreamMsgSentId"]]}}
+          "Value" : { "Fn::GetAtt": ["DDBStreamItemCompleteLambdaEventSource", "Id"] },
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "DDBStreamItemCompleteId"]]}}
       }
   }
 }

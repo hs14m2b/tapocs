@@ -180,10 +180,7 @@
           "IgnorePublicAcls": true,
           "RestrictPublicBuckets": true
         },
-        "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }],
-        "VersioningConfiguration": {
-          "Status": "Suspended"
-        }
+        "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }]
       },
       "DependsOn": ["processInputFunction", "S3InputLambdaPermission"]
     },
@@ -307,7 +304,7 @@
             "SSEType": "KMS"
         },
         "StreamSpecification": {
-          "StreamViewType" : "NEW_IMAGE"
+          "StreamViewType" : "NEW_AND_OLD_IMAGES"
         },
         "TableClass" : "STANDARD",
         "TableName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "requestsTable"]]},

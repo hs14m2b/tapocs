@@ -43,7 +43,12 @@ async function putItemsDDB(items) {
     };
     params.RequestItems[REQUESTSTABLENAME] = [];
     for (let item of items) {
-        let requestDetails ={ "PutRequest": {"Item": item}}
+        let requestDetails = {
+            "PutRequest": {
+                "Item": item,
+                "ConditionExpression": "attribute_not_exists(request_partition)"
+            }
+        };
         params.RequestItems[REQUESTSTABLENAME].push(requestDetails);
     }
     const data = await ddbDocClient.send(new BatchWriteCommand(params));
