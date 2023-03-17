@@ -1,0 +1,15 @@
+export const DEFAULTEXPIRY = 3600;
+export const REQITEM = "REQITEM";
+export const REQBATCH = "REQBATCH";
+export const ROUTEPLAN = "ROUTEPLAN";
+export const ACTIVE = "ACTIVE";
+export const PENDING = "PENDING";
+export const FAILED = "FAILED";
+export const COMPLETED = "COMPLETED";
+export const DELIVERED = "DELIVERED";
+export const SENT = "SENT";
+export const TEMPORARY_FAILURE = "TEMPORARY-FAILURE";
+export const NOTREQUIRED = "NOTREQUIRED";
+export const ACCEPTED = "ACCEPTED";
+export const ENRICHED = "ENRICHED";
+export const DDBBATCHSIZE = 25;

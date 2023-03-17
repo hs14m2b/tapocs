@@ -1,0 +1,346 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "Cloudformation template to create inbound lambda processing and S3 trigger",
+  "Parameters": {
+    "SHORTCODE": {
+      "Type": "String",
+      "Description": "The shortcode for tags",
+      "Default": "mabr8"
+    },
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "Branchname for the deployment"
+    },
+    "PROJECTNAME": {
+      "Type": "String",
+      "Default": "queuescaling",
+      "Description": "Project name for the deployment"
+    },
+    "CERTARN": {
+      "Type": "String",
+      "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/a707a2d1-5966-4ac3-abe6-e17e71a41f4a"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Description": "NHSD TA Hosted Zone identifier for DNS entries",
+      "Default": "Z1075FNTZPAM5I"
+    },
+    "HOSTEDZONESUFFIX": {
+      "Type": "String",
+      "Description": "Hosted Zone DNS suffix",
+      "Default": "nhsdta.com"
+    }
+  },
+  "Globals": {
+    "Function": {
+      "Tags": {
+        "shortcode": { "Ref": "SHORTCODE" }
+      },
+      "Environment": {
+        "Variables": {
+          "BRANCHNAME": { "Ref": "BRANCHNAME" }
+        }
+      },
+      "Timeout": 300
+    }
+  },
+  "Resources": {
+    "queuescalingpocLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess",
+          "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+          "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+          "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB"
+        ],
+        "Path": "/service-role/",
+        "RoleName": {
+          "Fn::Join": ["-",[{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRole-001"]]
+        }
+      }
+    },
+    "queuescalingpocLambdaRolePolicy":{
+        "Type" : "AWS::IAM::Policy",
+        "Properties" : {
+            "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRolePolicy","001"]]},
+            "PolicyDocument" : {
+                "Statement": [
+                    {
+                        "Action": [
+                            "apigateway:*",
+                            "autoscaling:*",
+                            "cloudwatch:*",
+                            "cloudformation:*",
+                            "cloudfront:*",
+                            "codebuild:*",
+                            "codedeploy:*",
+                            "codepipeline:*",
+                            "dynamodb:*",
+                            "ecs:*",
+                            "elasticbeanstalk:*",
+                            "ec2:*",
+                            "elasticloadbalancing:*",
+                            "iam:*",
+                            "lambda:*",
+                            "rds:*",
+                            "route53:*",
+                            "route53domains:*",
+                            "s3:*",
+                            "sns:*",
+                            "sqs:*",
+                            "sts:AssumeRole",
+                            "iam:PassRole",
+                            "kms:*"
+                        ],
+                        "Resource": "*",
+                        "Effect": "Allow"
+                    }
+                ],
+                "Version": "2012-10-17"
+                },
+              "Roles": [ {"Ref": "queuescalingpocLambdaRole"	} ]
+            }
+    },
+    "processInputFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": "stack001lambdas.zip",
+        "Description": "The lambda function that opens the input S3 file and publishes the records to SQS",
+        "Environment": {
+          "Variables" : {"REQUESTSTABLENAME" : {"Ref": "inputItemsTable"}}
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processInputFunction"]]
+        },
+        "Handler": "processinput.handler",
+        "MemorySize": "4096",
+        "ReservedConcurrentExecutions": 5,
+        "Role": { "Fn::GetAtt": ["queuescalingpocLambdaRole", "Arn"] },
+        "Runtime": "nodejs16.x",
+        "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
+        }],
+        "Timeout": 900
+      },
+      "DependsOn": ["queuescalingpocLambdaRole", "inputItemsTable"]
+    },
+    "S3InputBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "BucketKeyEnabled": true,
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        },
+        "BucketName": {
+          "Fn::Join": [
+            "-",
+            [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "inputs"]
+          ]
+        },
+        "NotificationConfiguration": {
+          "LambdaConfigurations" : [ {
+            "Event" : "s3:ObjectCreated:*",
+            "Filter" : {
+                "S3Key": {
+                  "Rules": [{
+                    "Name": "prefix",
+                    "Value": "input/"
+                  }]
+                }
+              },
+            "Function" : {"Fn::GetAtt": ["processInputFunction", "Arn"]}
+          }]
+        },
+        "ObjectLockEnabled": false,
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }]
+      },
+      "DependsOn": ["processInputFunction", "S3InputLambdaPermission"]
+    },
+    "S3InputLambdaPermission": {
+      "Type" : "AWS::Lambda::Permission",
+      "Properties" : {
+          "Action" : "lambda:InvokeFunction",
+          "FunctionName" : {"Ref": "processInputFunction"},
+          "Principal" : "s3.amazonaws.com",
+          "SourceArn" : {"Fn::Join": ["", ["arn:aws:s3:::",{"Fn::Join": ["-",[{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "inputs"]]}]]
+          }
+      },
+      "DependsOn": ["processInputFunction"]
+    },
+    "inputItemsDDBKey":{
+        "Type" : "AWS::KMS::Key",
+        "Properties" : {
+            "Description" : "KMS key used to encrypt DDB tables",
+            "Enabled" : true,
+            "EnableKeyRotation" : true,
+            "KeyPolicy" : {
+                "Version": "2012-10-17",
+                "Id": "key-default-1",
+                "Statement": [
+                    {
+                        "Sid": "Enable IAM User Permissions",
+                        "Effect": "Allow",
+                        "Principal": {
+                            "AWS": { "Fn::Join" : [ "", [ "arn:aws:iam::",{ "Ref" : "AWS::AccountId" },":root"] ] }
+                        },
+                        "Action": "kms:*",
+                        "Resource": "*"
+                    }
+                ]
+            },
+            "KeySpec" : "SYMMETRIC_DEFAULT",
+            "KeyUsage" : "ENCRYPT_DECRYPT",
+            "MultiRegion" : false,
+            "PendingWindowInDays" : 30,
+            "Tags" : [ {"Key": "shortcode", "Value": { "Ref" : "SHORTCODE" }} ]
+        }
+    },
+    "inputItemsTable":{
+    "Type" : "AWS::DynamoDB::Table",
+    "Properties" : {
+        "AttributeDefinitions" : [ {
+            "AttributeName" : "request_partition",
+            "AttributeType" : "S"
+        },{
+            "AttributeName" : "request_sort",
+            "AttributeType" : "S"
+        },{
+            "AttributeName" : "client_id",
+            "AttributeType" : "S"
+        },{
+            "AttributeName" : "date_received",
+            "AttributeType" : "N"
+        },{
+            "AttributeName" : "time_received",
+            "AttributeType" : "N"
+        },{
+            "AttributeName" : "record_type",
+            "AttributeType" : "S"
+        },{
+            "AttributeName" : "batch_id",
+            "AttributeType" : "S"
+        }],
+        "BillingMode" : "PAY_PER_REQUEST",
+        "GlobalSecondaryIndexes": [{
+          "IndexName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "requestsTable-batchGSI"]]},
+          "KeySchema" : [ {
+            "AttributeName" : "client_id",
+            "KeyType" : "HASH"
+            },{
+                "AttributeName" : "batch_id",
+                "KeyType" : "RANGE"
+            }],
+          "Projection" : {
+            "NonKeyAttributes": ["status"],
+            "ProjectionType" : "INCLUDE"
+          }
+        },
+        {
+          "IndexName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "requestsTable-datereceivedGSI"]]},
+          "KeySchema" : [ {
+            "AttributeName" : "record_type",
+            "KeyType" : "HASH"
+            },{
+                "AttributeName" : "date_received",
+                "KeyType" : "RANGE"
+            }],
+          "Projection" : {
+            "NonKeyAttributes": ["client_id", "batch_id", "time_received", "record_status"],
+            "ProjectionType" : "INCLUDE"
+          }
+        },
+        {
+          "IndexName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "requestsTable-timereceivedGSI"]]},
+          "KeySchema" : [ {
+            "AttributeName" : "record_type",
+            "KeyType" : "HASH"
+            },{
+                "AttributeName" : "time_received",
+                "KeyType" : "RANGE"
+            }],
+          "Projection" : {
+            "NonKeyAttributes": ["client_id", "batch_id", "record_status"],
+            "ProjectionType" : "INCLUDE"
+          }
+        }],
+        "KeySchema" : [ {
+            "AttributeName" : "request_partition",
+            "KeyType" : "HASH"
+        },{
+            "AttributeName" : "request_sort",
+            "KeyType" : "RANGE"
+        }],
+        "SSESpecification" : {
+            "KMSMasterKeyId" : {"Ref" : "inputItemsDDBKey"},
+            "SSEEnabled" : true,
+            "SSEType": "KMS"
+        },
+        "StreamSpecification": {
+          "StreamViewType" : "NEW_AND_OLD_IMAGES"
+        },
+        "TableClass" : "STANDARD",
+        "TableName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "requestsTable"]]},
+        "Tags" : [ {
+            "Key" : "shortcode",
+            "Value" : { "Ref" : "SHORTCODE" }
+        }],
+        "TimeToLiveSpecification": {
+          "AttributeName" : "valid_until",
+          "Enabled" : true
+        }
+      }
+    }
+
+  },
+  "Outputs" : {
+      "S3BucketName" : {
+          "Description" : "The Name of the S3 Bucket",
+          "Value" : { "Ref": "S3InputBucket" },
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "S3InputBucket"]]}}
+      },
+      "LambdaExecRole" : {
+          "Description" : "The Arn of the role for running Lambda Functions",
+          "Value" : { "Fn::GetAtt": ["queuescalingpocLambdaRole", "Arn"] },
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}}
+      },
+      "DDBTableName" : {
+          "Description" : "The Name of the requests table",
+          "Value" : { "Ref": "inputItemsTable" },
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}}
+      },
+      "DDBStreamArn" : {
+          "Description" : "The Arn of the Stream from the DDB Table",
+          "Value" : { "Fn::GetAtt": ["inputItemsTable", "StreamArn"] },
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTableStreamArn"]]}}
+      }
+  }
+}
