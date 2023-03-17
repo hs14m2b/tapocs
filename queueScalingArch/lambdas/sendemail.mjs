@@ -13,7 +13,11 @@ const client = new SQSClient();
 const BATCHSIZE = 0;
 const TEMPLATEID = "b844408b-e85d-470d-9d56-49bbc20f282d";
 const NOTIFYAPIKEY = "commsmgrpoc-5e556db9-b71b-472a-9ba0-627bc2954844-55a0fec2-fc3e-4b8e-8027-9835190ad242";
-const notifyClient = new NotifyClient(NOTIFYAPIKEY);
+const SYNTHETICNOTIFYURL = "https://" + process.env["SYNTHNOTIFYDOMAIN"];
+// for sending requests to synthetic gov notify 
+const notifyClient = new NotifyClient(SYNTHETICNOTIFYURL, NOTIFYAPIKEY);
+// for sending requests to real gov notify 
+//const notifyClient = new NotifyClient(NOTIFYAPIKEY);
 
 
 function sleep(ms) {
@@ -28,19 +32,19 @@ async function updateItemDDB(params) {
 } 
 
 async function sendEmail(email, personalisation, reference) {
+    /*
     let syntheticresult = {
         data: {
             message: "pretended to send the email"
         }
     }
     return syntheticresult;
-    /*
+    */
 	return await notifyClient
 		.sendEmail(TEMPLATEID, email, {
 			personalisation: personalisation,
 			reference: reference
 		});
-    */
 }
 
 

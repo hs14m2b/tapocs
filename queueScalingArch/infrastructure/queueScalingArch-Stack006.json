@@ -64,6 +64,7 @@
           "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processItemCompletedStreamFunction"]]
         },
         "Handler": "processitemcomplete.handler",
+        "MemorySize": "1024",
         "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
         "Runtime": "nodejs16.x",
         "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }

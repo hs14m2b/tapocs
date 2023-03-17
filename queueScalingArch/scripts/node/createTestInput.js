@@ -1,6 +1,6 @@
 const uuidv4 = require('uuid').v4;
 const fs = require('node:fs/promises');
-const maxRows = 4;
+const maxRows = 50000;
 
 
 const main = async (argv) => {
@@ -13,7 +13,7 @@ const main = async (argv) => {
   let header = "messageid,nhsnumber,time,b64json\n";
   await wrtStrm.write(header);
   for (let i = 0; i < maxRows; i++){
-    let id = uuidv4();
+    let id = uuidv4()+ i.toString().padStart(10, '0');;
     let nhsnumber = i.toString().padStart(10, '9');
     let __time = Date.now().toString();
     let personalisation = {

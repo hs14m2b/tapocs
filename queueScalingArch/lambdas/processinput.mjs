@@ -1,4 +1,9 @@
-const { GetObjectCommand, HeadObjectCommand, S3Client, CopyObjectCommand, DeleteObjectCommand , PutObjectCommand} = require('@aws-sdk/client-s3');
+import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DDBBATCHSIZE, DEFAULTEXPIRY } from "./constants.mjs";
+
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+
 const REGION = "eu-west-2";
 const s3Client = new S3Client({
     apiVersion: '2006-03-01',
@@ -6,14 +11,10 @@ const s3Client = new S3Client({
 })
 const REQUESTSTABLENAME = process.env['REQUESTSTABLENAME'];
 const HEADERSTART = "messageid,";
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, PutCommand, BatchWriteCommand} = require("@aws-sdk/lib-dynamodb");
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
-const DEFAULTEXPIRY = 600;
-const BATCHSIZE = 5;
 
-const SPLITTINGSIZE = 5000; //
+const SPLITTINGSIZE = 500; //
 async function getS3Object(params) {
     const response = await s3Client
         .send(new GetObjectCommand(params))
@@ -51,7 +52,7 @@ async function putItemsDDB(items) {
         "RequestItems": {}
     };
     params.RequestItems[REQUESTSTABLENAME] = [];
-    for (item of items) {
+    for (let item of items) {
         try {
             let requestDetails = {
                 "PutRequest": {
@@ -64,6 +65,16 @@ async function putItemsDDB(items) {
             console.log("Caught error processing row " + item);
         }
     }
+    const data = await ddbDocClient.send(new BatchWriteCommand(params));
+    console.log("Success - items added to table", data);
+    return data;
+} 
+
+async function putUnprocessedItemsDDB(items) {
+    let params = {
+        "RequestItems": {}
+    };
+    params.RequestItems[REQUESTSTABLENAME] = items;
     const data = await ddbDocClient.send(new BatchWriteCommand(params));
     console.log("Success - items added to table", data);
     return data;
@@ -82,7 +93,7 @@ async function writeSplitFile(items, bucket, key, splitNo)
     return response;
 }
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
     console.log(JSON.stringify(event));
     console.log("DDB table name is " + REQUESTSTABLENAME);
     console.log("Starting to process file at " + (Date.now()/1000));
@@ -108,10 +119,10 @@ exports.handler = async (event) => {
             let splitNo = 1;
             for (let i = 0; i < rowArray.length; i++) {
                 let row = rowArray[i];
-                console.log("row is " + row);
+                //console.log("row is " + row);
                 let rowItems = row.split(",");
                 if (rowItems.length < 3 || row.startsWith(HEADERSTART)) {
-                    console.log("skipping row");
+                    console.log("skipping row [" + row + "]");
                     continue;
                 }
                 let requestId = rowItems[0];
@@ -170,6 +181,7 @@ exports.handler = async (event) => {
                 date_received: parseInt(new Date().toISOString().substring(0,10).replace("-", "")),
                 valid_until: (Date.now()/1000) + DEFAULTEXPIRY
             }
+            console.log("batch item is " + JSON.stringify(batch_item));
             let response = await putItemDDB(batch_item);
             console.log("have put batch item into ddb");
             //move original S3 item by doing copy/delete
@@ -182,7 +194,7 @@ exports.handler = async (event) => {
             console.log(JSON.stringify(copyObjectResponse));
             let deleteObjectResponse = await s3Client.send(new DeleteObjectCommand(params));
             console.log(JSON.stringify(deleteObjectResponse));
-            console.log("Finished processing file at " + (Date.now()/1000));
+            console.log("Finished processing file at " + new Date().toISOString());
             return {};
         }
         else
@@ -192,9 +204,10 @@ exports.handler = async (event) => {
             let rowArray = buf.toString().split(/(?:\r\n|\r|\n)/g);
             console.log("Row Count is " + rowArray.length);
             let items = [];
+            let totalItemsWritten = 0;
             for (let i = 0; i < rowArray.length; i++) {
                 let row = rowArray[i];
-                console.log("row is " + row);
+                //console.log("row is " + row);
                 let item = null;
                 try {
                     item = JSON.parse(row);
@@ -202,13 +215,20 @@ exports.handler = async (event) => {
                     console.log("Row is not valid JSON - skipping");
                     continue;
                 } 
-                if (BATCHSIZE > 0) {
+                if (DDBBATCHSIZE > 0) {
                     //doing batch write to DDB
                     items.push(item);
-                    if (items.length == BATCHSIZE) {
+                    if (items.length == DDBBATCHSIZE) {
                         let data = await putItemsDDB(items);
-                        console.log("have put " + BATCHSIZE + " items into ddb");
+                        console.log("have put " + DDBBATCHSIZE + " items into ddb");
+                        while (data.UnprocessedItems[REQUESTSTABLENAME] &&
+                            data.UnprocessedItems[REQUESTSTABLENAME].length > 0)
+                        {
+                            console.log("THERE ARE UNPROCESSED ITEMS - COUNT IS " + data.UnprocessedItems[REQUESTSTABLENAME].length);
+                            data = await putUnprocessedItemsDDB(data.UnprocessedItems[REQUESTSTABLENAME]);
+                        }
                         //clear the array
+                        totalItemsWritten += DDBBATCHSIZE;
                         items = [];
                     }
                 }
@@ -221,7 +241,14 @@ exports.handler = async (event) => {
             //check if need to write remaining items
             if (items.length > 0) {
                 let data = await putItemsDDB(items);
+                while (data.UnprocessedItems[REQUESTSTABLENAME] &&
+                    data.UnprocessedItems[REQUESTSTABLENAME].length > 0)
+                {
+                    console.log("THERE ARE UNPROCESSED ITEMS - COUNT IS " + data.UnprocessedItems[REQUESTSTABLENAME].length);
+                    data = await putUnprocessedItemsDDB(data.UnprocessedItems[REQUESTSTABLENAME]);
+                }
                 console.log("have put " + items.length + " items into ddb");
+                totalItemsWritten += items.length;
                 //clear the array
                 items = [];
             }
@@ -231,11 +258,12 @@ exports.handler = async (event) => {
                 Key: key.replace("input/", "processed/"),
                 Bucket: bucket,
             };
+            console.log("Total no items written to DDB = " + totalItemsWritten);
             let copyObjectResponse = await s3Client.send(new CopyObjectCommand(copyObjectCommandParams));
-            console.log(JSON.stringify(copyObjectResponse));
+            //console.log(JSON.stringify(copyObjectResponse));
             let deleteObjectResponse = await s3Client.send(new DeleteObjectCommand(params));
-            console.log(JSON.stringify(deleteObjectResponse));
-            console.log("Finished processing file at " + (Date.now()/1000));
+            //console.log(JSON.stringify(deleteObjectResponse));
+            console.log("Finished processing file at " + new Date().toISOString());
             return {};
         }
     } catch (error) {

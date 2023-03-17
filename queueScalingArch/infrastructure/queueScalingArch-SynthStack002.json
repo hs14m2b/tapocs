@@ -1,0 +1,259 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "Cloudformation template to deploy synthetic endpoints to simulate Gov Notify",
+  "Parameters": {
+    "SHORTCODE": {
+      "Type": "String",
+      "Description": "The shortcode for tags",
+      "Default": "mabr8"
+    },
+    "NOTIFICATIONSDOMAIN": {
+      "Type": "String",
+      "Description": "The domain qualifier for pretending to be gov notify",
+      "Default": "notifications"
+    },
+    "CALLBACKDOMAIN": {
+      "Type": "String",
+      "Description": "The domain qualifier for receiving Gov Notify callbacks",
+      "Default": "callbacks"
+    },
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "Branchname for the deployment"
+    },
+    "PROJECTNAME": {
+      "Type": "String",
+      "Default": "queuescaling",
+      "Description": "Project name for the deployment"
+    },
+    "CERTARN": {
+      "Type": "String",
+      "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/a707a2d1-5966-4ac3-abe6-e17e71a41f4a"
+    },
+    "CERTIFICATEARN" : {
+      "Type" : "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/1445ff7f-f847-48fe-b9d7-aaf7f37414d2",
+      "Description" : "The certificate ARN for the domain"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Description": "NHSD TA Hosted Zone identifier for DNS entries",
+      "Default": "Z1075FNTZPAM5I"
+    },
+    "HOSTEDZONESUFFIX": {
+      "Type": "String",
+      "Description": "Hosted Zone DNS suffix",
+      "Default": "nhsdta.com"
+    }
+  },
+  "Globals": {
+    "Function": {
+      "Tags": {
+        "shortcode": { "Ref": "SHORTCODE" }
+      },
+      "Environment": {
+        "Variables": {
+          "HOSTEDZONESUFFIX": { "Ref": "HOSTEDZONESUFFIX" },
+          "BRANCHNAME": { "Ref": "BRANCHNAME" },
+          "PROJECTNAME": { "Ref": "PROJECTNAME" },
+          "CALLBACKDOMAIN": { "Ref": "CALLBACKDOMAIN" },
+          "NOTIFICATIONSDOMAIN": {"Ref": "NOTIFICATIONSDOMAIN"}
+        }
+      },
+      "Timeout": 300
+    }
+  },
+  "Resources": {
+    "notificationssynthemailFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "synthstack002lambdas.zip",
+        "Description": "The lambda function that receives email send requests",
+        "Environment": {
+          "Variables" : {
+            "EMAILQUEUEURL" : {"Ref": "emailsQueue"}
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "notificationssynthHttpApi" },
+              "Method": "POST",
+              "Path": "/v2/notifications/email",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "notificationssynthemailFunction"]]
+        },
+        "Handler": "notificationsemail.handler",
+        "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
+        "Runtime": "nodejs16.x",
+        "Timeout": 300
+      },
+      "DependsOn": []
+    },
+    "notificationssynthsmsFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "synthstack002lambdas.zip",
+        "Description": "The lambda function that receives SMS requests",
+        "Environment": {
+          "Variables" : {
+            "SMSQUEUEURL" : {"Ref": "smsesQueue"}
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "notificationssynthHttpApi" },
+              "Method": "POST",
+              "Path": "/v2/notifications/sms",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "notificationssynthsmsFunction"]]
+        },
+        "Handler": "notificationssms.handler",
+        "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
+        "Runtime": "nodejs16.x",
+        "Timeout": 300
+      },
+      "DependsOn": []
+    },
+    "notificationssynthHttpApi": {
+      "Type": "AWS::Serverless::HttpApi",
+      "Properties": {
+        "Description": "HTTP API for pretending to be gov notify",
+        "Domain": {
+          "BasePath": ["/"],
+          "CertificateArn": {"Ref": "CERTIFICATEARN"},
+          "DomainName": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "NOTIFICATIONSDOMAIN" }]]},{ "Ref": "HOSTEDZONESUFFIX" }]]},
+          "EndpointConfiguration": "REGIONAL",
+          "Route53": {
+            "HostedZoneId": {"Ref": "HOSTEDZONEID"}
+          },
+          "SecurityPolicy": "TLS_1_2"
+        },
+        "Name": {
+          "Fn::Join": ["i", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "notificationssynthHttpApi"]]
+        },
+        "StageName": "$default"
+      }
+    },
+    "emailsQueue": {
+    "Type" : "AWS::SQS::Queue",
+    "Properties" : {
+        "DelaySeconds" : 10,
+        "KmsMasterKeyId" : "alias/aws/sqs",
+        "MaximumMessageSize" : 262144,
+        "MessageRetentionPeriod" : 345600,
+        "QueueName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "notificationEmailsQueue"]]},
+        "Tags" : [ {
+            "Key" : "shortcode",
+            "Value" : { "Ref" : "SHORTCODE" }
+        }],
+        "VisibilityTimeout" : 300
+      }
+    },
+    "sendNotificationEmailFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": "synthstack002lambdas.zip",
+        "Description": "The lambda function that receives messages from SQS, and sends the delivery notification back to the stack",
+        "Environment": {
+          "Variables": {
+            "HOSTEDZONESUFFIX": { "Ref": "HOSTEDZONESUFFIX" },
+            "BRANCHNAME": { "Ref": "BRANCHNAME" },
+            "PROJECTNAME": { "Ref": "PROJECTNAME" },
+            "CALLBACKDOMAIN": { "Ref": "CALLBACKDOMAIN" }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "sendNotificationEmailsFunction"]]
+        },
+        "Handler": "notificationsemailcallback.handler",
+        "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
+        "Runtime": "nodejs16.x",
+        "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
+        }],
+        "Timeout": 300
+      }
+    },
+    "SQSLambdaEventSource":{
+      "Type" : "AWS::Lambda::EventSourceMapping",
+      "Properties" : {
+          "BatchSize" : 10,
+          "Enabled" : true,
+          "EventSourceArn" : { "Fn::GetAtt": ["emailsQueue", "Arn"] },
+          "FunctionName" : {"Ref": "sendNotificationEmailFunction"},
+          "MaximumBatchingWindowInSeconds" : 1,
+          "ScalingConfig": {
+            "MaximumConcurrency" : 50
+          }
+        }
+    },
+    "smsesQueue": {
+    "Type" : "AWS::SQS::Queue",
+    "Properties" : {
+        "DelaySeconds" : 10,
+        "KmsMasterKeyId" : "alias/aws/sqs",
+        "MaximumMessageSize" : 262144,
+        "MessageRetentionPeriod" : 345600,
+        "QueueName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "notificationSmsesQueue"]]},
+        "Tags" : [ {
+            "Key" : "shortcode",
+            "Value" : { "Ref" : "SHORTCODE" }
+        }],
+        "VisibilityTimeout" : 300
+      }
+    },
+    "sendNotificationSmsFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": "synthstack002lambdas.zip",
+        "Description": "The lambda function that receives messages from SQS, and sends the delivery notification back to the stack",
+        "Environment": {
+          "Variables": {
+            "HOSTEDZONESUFFIX": { "Ref": "HOSTEDZONESUFFIX" },
+            "BRANCHNAME": { "Ref": "BRANCHNAME" },
+            "PROJECTNAME": { "Ref": "PROJECTNAME" },
+            "CALLBACKDOMAIN": { "Ref": "CALLBACKDOMAIN" }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "sendNotificationSmsesFunction"]]
+        },
+        "Handler": "notificationssmscallback.handler",
+        "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
+        "Runtime": "nodejs16.x",
+        "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
+        }],
+        "Timeout": 300
+      }
+    },
+    "SQSSMSLambdaEventSource":{
+      "Type" : "AWS::Lambda::EventSourceMapping",
+      "Properties" : {
+          "BatchSize" : 10,
+          "Enabled" : true,
+          "EventSourceArn" : { "Fn::GetAtt": ["smsesQueue", "Arn"] },
+          "FunctionName" : {"Ref": "sendNotificationSmsFunction"},
+          "MaximumBatchingWindowInSeconds" : 1,
+          "ScalingConfig": {
+            "MaximumConcurrency" : 50
+          }
+        }
+    }
+  }
+}

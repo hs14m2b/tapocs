@@ -23,6 +23,11 @@
       "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
       "Default": "arn:aws:acm:us-east-1:865198111306:certificate/a707a2d1-5966-4ac3-abe6-e17e71a41f4a"
     },
+    "NOTIFICATIONSDOMAIN": {
+      "Type": "String",
+      "Description": "The domain qualifier for pretending to be gov notify",
+      "Default": "notifications"
+    },
     "HOSTEDZONEID": {
       "Type": "String",
       "Description": "NHSD TA Hosted Zone identifier for DNS entries",
@@ -55,13 +60,19 @@
         "Description": "The lambda function that receives messages from SQS and pretends to send an SMS",
         "Environment": {
           "Variables" : {
-            "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}}
+            "HOSTEDZONESUFFIX": { "Ref": "HOSTEDZONESUFFIX" },
+            "BRANCHNAME": { "Ref": "BRANCHNAME" },
+            "PROJECTNAME": { "Ref": "PROJECTNAME" },
+            "NOTIFICATIONSDOMAIN": {"Ref": "NOTIFICATIONSDOMAIN"},
+            "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}},
+            "SYNTHNOTIFYDOMAIN": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "NOTIFICATIONSDOMAIN" }]]},{ "Ref": "HOSTEDZONESUFFIX" }]]}
           }
         },
         "FunctionName": {
           "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "sendSMSFunction"]]
         },
         "Handler": "sendsms.handler",
+        "MemorySize": "1024",
         "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
         "Runtime": "nodejs16.x",
         "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
@@ -89,13 +100,19 @@
         "Description": "The lambda function that receives messages from SQS and pretends to send an SMS",
         "Environment": {
           "Variables" : {
-            "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}}
+            "HOSTEDZONESUFFIX": { "Ref": "HOSTEDZONESUFFIX" },
+            "BRANCHNAME": { "Ref": "BRANCHNAME" },
+            "PROJECTNAME": { "Ref": "PROJECTNAME" },
+            "NOTIFICATIONSDOMAIN": {"Ref": "NOTIFICATIONSDOMAIN"},
+            "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}},
+            "SYNTHNOTIFYDOMAIN": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "NOTIFICATIONSDOMAIN" }]]},{ "Ref": "HOSTEDZONESUFFIX" }]]}
           }
         },
         "FunctionName": {
           "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "sendEMAILFunction"]]
         },
         "Handler": "sendemail.handler",
+        "MemorySize": "1024",
         "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
         "Runtime": "nodejs16.x",
         "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }

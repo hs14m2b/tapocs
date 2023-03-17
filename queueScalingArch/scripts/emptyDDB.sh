@@ -1,4 +1,4 @@
 #!/bin/sh
 TIMESTAMP=$(date +%s)
 
-node emptyDDB.mjs
+node node/emptyDDB.mjs

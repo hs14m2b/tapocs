@@ -36,7 +36,15 @@ async function getBatchItems(client_id, batch_id) {
     console.log("params are " + JSON.stringify(queryParams));
     let data = await ddbDocClient.send(new QueryCommand(queryParams));
     console.log("got response");
-    return data.Items;
+    let batchItems = JSON.parse(JSON.stringify(data.Items));
+    let moreItems = (data.LastEvaluatedKey) ? true : false;
+    while (moreItems) {
+        queryParams["ExclusiveStartKey"] = data.LastEvaluatedKey;
+        data = await ddbDocClient.send(new QueryCommand(queryParams));
+        batchItems = batchItems.concat(data.Items);
+        moreItems = (data.LastEvaluatedKey) ? true : false;
+    }
+   return batchItems;
 }
 
 async function updateBatchRequest(item) {
@@ -110,9 +118,14 @@ export const handler = async (event) => {
         if (batchSize == 0) continue;
         if (completedCount + failedCount == batchSize) {
             reqBatchItem.record_status = "COMPLETED";
+            reqBatchItem.time_completed = parseInt((Date.now() / 1000).toString());
         }
-        let updateResponse = await updateBatchRequest(reqBatchItem);
-        console.log("have updated the batch request " + JSON.stringify(updateResponse));
+        try {
+            let updateResponse = await updateBatchRequest(reqBatchItem);
+            console.log("have updated the batch request " + JSON.stringify(updateResponse));
+        } catch (error) {
+            console.log("update of batch failed due to [" + error.message + "]");            
+        }
     }
     return;
 }

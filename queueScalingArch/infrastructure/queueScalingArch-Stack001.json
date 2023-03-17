@@ -132,6 +132,7 @@
         },
         "Handler": "processinput.handler",
         "MemorySize": "4096",
+        "ReservedConcurrentExecutions": 5,
         "Role": { "Fn::GetAtt": ["queuescalingpocLambdaRole", "Arn"] },
         "Runtime": "nodejs16.x",
         "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
@@ -273,7 +274,7 @@
                 "KeyType" : "RANGE"
             }],
           "Projection" : {
-            "NonKeyAttributes": ["client_id", "batch_id"],
+            "NonKeyAttributes": ["client_id", "batch_id", "time_received", "record_status"],
             "ProjectionType" : "INCLUDE"
           }
         },
@@ -287,7 +288,7 @@
                 "KeyType" : "RANGE"
             }],
           "Projection" : {
-            "NonKeyAttributes": ["client_id", "batch_id"],
+            "NonKeyAttributes": ["client_id", "batch_id", "record_status"],
             "ProjectionType" : "INCLUDE"
           }
         }],
