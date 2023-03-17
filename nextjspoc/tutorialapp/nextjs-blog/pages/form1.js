@@ -153,7 +153,7 @@ return props;
   {
     const data = await parse(ctx.req);
     console.log('BODY', data);
-    const { givenname, familyname, nextpost } = data;
+    const { givenname, familyname, nextpage } = data;
     props["givenname"] = givenname;
     props["familyname"] = familyname;
     props = formFunctions.checkData(props);
@@ -181,7 +181,7 @@ return props;
     }
     else
     {
-      ctx.res.setHeader("Location", "/form2");
+      ctx.res.setHeader("Location", nextpage);
       ctx.res.statusCode=302;
     }
     return props;

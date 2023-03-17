@@ -128,7 +128,7 @@ Home.getInitialProps = async (ctx) => {
   {
     const data = await parse(ctx.req);
     console.log('BODY', data);
-    const { favcolour, nextpost } = data;
+    const { favcolour, nextpage } = data;
     props["favcolour"] = favcolour;
     props = formFunctions.checkData(props);
     if (props.fcerror ) return props;
@@ -155,7 +155,7 @@ Home.getInitialProps = async (ctx) => {
     }
     else
     {
-      ctx.res.setHeader("Location", "/formx");
+      ctx.res.setHeader("Location", nextpage);
       ctx.res.statusCode=302;
     }
     return props;

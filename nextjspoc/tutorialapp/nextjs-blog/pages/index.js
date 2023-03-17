@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Create Next App</title>
+        <title>Dynamic UI Framework PoC</title>
         <link rel="icon" href="/assets/favicons/favicon.ico" />
       </Head>
       <h2 className="nhsuk-heading-l">

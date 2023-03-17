@@ -114,7 +114,7 @@ Home.getInitialProps = async (ctx) => {
   {
     const data = await parse(ctx.req);
     console.log('BODY', data);
-    const { addresspostcode, nextpost } = data;
+    const { addresspostcode, nextpage } = data;
     props["addresspostcode"] = addresspostcode;
     props = formFunctions.checkData(props);
     if (props.pcerror ) return props;
@@ -139,7 +139,7 @@ Home.getInitialProps = async (ctx) => {
     }
     else
     {
-      ctx.res.setHeader("Location", NEXTFORM);
+      ctx.res.setHeader("Location", nextpage);
       ctx.res.statusCode=302;
     }
     return props;
