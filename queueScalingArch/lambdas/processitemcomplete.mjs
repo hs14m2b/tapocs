@@ -7,6 +7,7 @@ const REGION = "eu-west-2";
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const REQUESTSTABLENAME = process.env['REQUESTSTABLENAME'];
+const PROCESSINGMETRICSTABLENAME = process.env['PROCESSINGMETRICSTABLENAME'];
 
 let https;
 try {
@@ -79,7 +80,7 @@ export const handler = async (event) => {
                 update_fragment = "SET failed_item_count = failed_item_count + :increment";
             }
             let updateParams = {
-                "TableName": REQUESTSTABLENAME,
+                "TableName": PROCESSINGMETRICSTABLENAME,
                 "Key": {
                     request_partition: request_partition,
                     request_sort: batch_id + REQBATCH
@@ -139,12 +140,14 @@ export const handler = async (event) => {
                             request_partition: request_partition,
                             request_sort: batch_id + REQBATCH
                         },
-                        "UpdateExpression": "SET record_status = :status, time_completed  =:tc",
+                        "UpdateExpression": "SET record_status = :status, time_completed  =:tc, completed_item_count = :cic, failed_item_count = :fic",
                         "ConditionExpression": "record_status <> :s",
                         "ExpressionAttributeValues": {
                             ":status": COMPLETED,
                             ":s": COMPLETED,
-                            ":tc": time_completed 
+                            ":tc": time_completed,
+                            ":cic": completed_item_count,
+                            ":fic": failed_item_count
                         },
                         "ReturnValues": "ALL_NEW"
                     };

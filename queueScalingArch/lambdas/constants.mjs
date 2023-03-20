@@ -16,6 +16,8 @@ export const ACCEPTED = "ACCEPTED";
 export const ENRICHED = "ENRICHED";
 export const SQSBATCHSIZE = 10;
 export const DDBBATCHSIZE = 25;
+export const REGION = "eu-west-2";
+export const ANALYTICSPREFIX = "analytics/";
 export const DDBSCALINGERRORS = ["ThrottlingException",
     "ProvisionedThroughputExceededException",
     "ProvisionedThroughputExceeded",

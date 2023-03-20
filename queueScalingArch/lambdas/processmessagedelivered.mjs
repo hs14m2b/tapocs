@@ -9,6 +9,7 @@ const REGION = "eu-west-2";
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const REQUESTSTABLENAME = process.env['REQUESTSTABLENAME'];
+const PROCESSINGMETRICSTABLENAME = process.env['PROCESSINGMETRICSTABLENAME'];
 const FINISHEDQUEUEURL = process.env['FINISHEDQUEUEURL'];
 const sqsClient = new SQSClient();
 const BATCHSIZE = 0;
@@ -86,8 +87,8 @@ export const handler = async (event) => {
                 request_id: request_id,
                 ...messageBody
             }
-            let insertData = await putItemDDB(callbackItem, REQUESTSTABLENAME, ddbDocClient);
-            console.log("have put callback item details into ddb");
+            let insertData = await putItemDDB(callbackItem, PROCESSINGMETRICSTABLENAME, ddbDocClient);
+            console.log("have put callback item details into processing metrics ddb");
             //check the status
             if (messageBody.status.toUpperCase() != DELIVERED) {
                 //delivered, permanent-failure, temporary-failure or technical-failure

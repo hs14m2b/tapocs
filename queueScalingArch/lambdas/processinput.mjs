@@ -10,6 +10,7 @@ const s3Client = new S3Client({
     region: REGION
 })
 const REQUESTSTABLENAME = process.env['REQUESTSTABLENAME'];
+const PROCESSINGMETRICSTABLENAME = process.env['PROCESSINGMETRICSTABLENAME'];
 const HEADERSTART = "messageid,";
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
@@ -83,12 +84,13 @@ export const handler = async (event) => {
                 completed_item_count: 0,
                 failed_item_count: 0,
                 record_type: "REQBATCH",
-                time_received: Date.now() / 1000,
-                date_received: parseInt(new Date().toISOString().substring(0,10).replace("-", "")),
-                valid_until: (Date.now()/1000) + DEFAULTEXPIRY
+                time_received: parseInt((Date.now() / 1000).toString()),
+                date_received: parseInt(new Date().toISOString().substring(0,10).replace(/-/g, "")),
+                valid_until: parseInt((Date.now() / 1000).toString()) + DEFAULTEXPIRY
             }
             console.log("batch item is " + JSON.stringify(batch_item));
             let response = await putItemDDB(batch_item, REQUESTSTABLENAME, ddbDocClient);
+            response = await putItemDDB(batch_item, PROCESSINGMETRICSTABLENAME, ddbDocClient);
             console.log("have put batch item into ddb");
             for (let i = 0; i < rowArray.length; i++) {
                 let row = rowArray[i];
@@ -112,11 +114,11 @@ export const handler = async (event) => {
                     nhs_number: nhsnumber,
                     request_time: requestTime,
                     time_received: parseInt((Date.now() / 1000).toString()),
-                    date_received: parseInt(new Date().toISOString().substring(0,10).replace("-", "")),
+                    date_received: parseInt(new Date().toISOString().substring(0,10).replace(/-/g, "")),
                     request_id: requestId,
                     record_status: record_status,
                     record_type: "REQITEM",
-                    valid_until: (Date.now()/1000) + DEFAULTEXPIRY
+                    valid_until: parseInt((Date.now() / 1000).toString()) + DEFAULTEXPIRY
                 }
                 if (rowItems.length > 3) {
                     let inputJson = JSON.parse(Buffer.from(rowItems[3], "base64").toString("utf8"));
@@ -155,6 +157,8 @@ export const handler = async (event) => {
                 "ReturnValues": "ALL_NEW"
             };
             let updateData = await updateItemDDB(updateParams, ddbDocClient);
+            updateParams.TableName = PROCESSINGMETRICSTABLENAME;
+            updateData = await updateItemDDB(updateParams, ddbDocClient);
             console.log("have updated number of items on batch");
             //move original S3 item by doing copy/delete
             let copyObjectCommandParams = {

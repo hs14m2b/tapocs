@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Transform": "AWS::Serverless-2016-10-31",
-  "Description": "Cloudformation template to read the DDB stream to monitor failure of individual ROUTEPLAN items and take action as needed",
+  "Description": "Cloudformation template to receive completion individual ROUTEPLAN items and take action as needed",
   "Parameters": {
     "SHORTCODE": {
       "Type": "String",
@@ -58,6 +58,7 @@
         "Environment": {
           "Variables": {
             "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}},
+            "PROCESSINGMETRICSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "processingMetricsTable"]]}},
             "FINISHEDQUEUEURL" : {"Ref": "requestFinishedQueue"}
           }
         },
@@ -95,6 +96,7 @@
         "Environment": {
           "Variables": {
             "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}},
+            "PROCESSINGMETRICSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "processingMetricsTable"]]}},
             "SMSDELIVERYQUEUEURL" : {"Fn::ImportValue" :{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "smsDeliveryQueueUrl"]]}},
             "EMAILDELIVERYQUEUEURL" : {"Fn::ImportValue" :{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "emailDeliveryQueueUrl"]]}},
             "FINISHEDQUEUEURL" : {"Ref": "requestFinishedQueue"}

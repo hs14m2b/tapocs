@@ -13,7 +13,7 @@ let query_params = {
     KeyConditionExpression: "record_type = :rt AND date_received = :dr",
     ExpressionAttributeValues: {
         ":rt": "REQBATCH",
-        ":dr": parseInt(new Date().toISOString().substring(0,10).replace("-", ""))
+        ":dr": parseInt(new Date().toISOString().substring(0,10).replace(/-/g, ""))
     }
 }
 console.log("query params are " + JSON.stringify(query_params));
@@ -29,7 +29,7 @@ for (let batch of batchesArray) {
 }
 //for (let batch of batchesArray) {
 query_params = {
-    TableName: "main-queuescaling-requestsTable",
+    TableName: "main-queuescaling-processingMetricsTable",
     KeyConditionExpression: "request_partition = :rp AND request_sort = :rs",
     ExpressionAttributeValues: {
         ":rp": batchesArray[0].client_id,
@@ -42,6 +42,7 @@ data = await ddbDocClient.send(new QueryCommand(query_params));
 let totalNo = 0;
 let batch = JSON.parse(JSON.stringify(data.Items[0]));
 console.log(JSON.stringify(batch, null, 4));
+console.log(new Date().toISOString().substring(0, 10).replace(/-/g, ""));
 if (full_request)
 {
     console.log("checking details for batch [" + batch.batch_id + "]");

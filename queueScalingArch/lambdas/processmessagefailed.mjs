@@ -9,6 +9,7 @@ const REGION = "eu-west-2";
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const REQUESTSTABLENAME = process.env['REQUESTSTABLENAME'];
+const PROCESSINGMETRICSTABLENAME = process.env['PROCESSINGMETRICSTABLENAME'];
 const SMSDELIVERYQUEUEURL = process.env['SMSDELIVERYQUEUEURL'];
 const EMAILDELIVERYQUEUEURL = process.env['EMAILDELIVERYQUEUEURL'];
 const FINISHEDQUEUEURL = process.env['FINISHEDQUEUEURL'];
@@ -52,7 +53,7 @@ async function updateRequestItem(request_partition, batch_id, request_id) {
     }
 } 
 
-async function getRequestItems(client_id, batch_id, request_id, plan_sequence) {
+async function getNextRoutePlan(client_id, batch_id, request_id, plan_sequence) {
     console.log("request partition is " + client_id);
     console.log("batch is " + batch_id);
     console.log("request_id is " + request_id);
@@ -149,7 +150,7 @@ export const handler = async (event) => {
             let batch_id = updateData.Attributes.batch_id;
             let request_id = updateData.Attributes.request_id;
             let plan_sequence = parseInt(updateData.Attributes.plan_sequence);
-            let requestItems = await getRequestItems(request_partition, batch_id, request_id, plan_sequence);
+            let requestItems = await getNextRoutePlan(request_partition, batch_id, request_id, plan_sequence);
             if (requestItems.length == 0) {
                 console.log("there are no more ROUTEPLANs - marking REQITEM as FAILED");
                 let updateData = await updateRequestItem(request_partition, batch_id, request_id);
