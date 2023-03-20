@@ -1,5 +1,5 @@
 import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { DEFAULTEXPIRY, DELIVERED, putItemDDB, putItemsDDB, putUnprocessedItemsDDB, runQueryDDB, updateItemDDB } from "./constants.mjs";
+import { DEFAULTEXPIRY, DELIVERED, REQITEM, putItemDDB, putItemsDDB, putUnprocessedItemsDDB, runQueryDDB, updateItemDDB } from "./constants.mjs";
 import { SQSClient, SendMessageBatchCommand, SendMessageCommand } from "@aws-sdk/client-sqs";
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
@@ -9,7 +9,8 @@ const REGION = "eu-west-2";
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const REQUESTSTABLENAME = process.env['REQUESTSTABLENAME'];
-const client = new SQSClient();
+const FINISHEDQUEUEURL = process.env['FINISHEDQUEUEURL'];
+const sqsClient = new SQSClient();
 const BATCHSIZE = 0;
 
 
@@ -100,6 +101,7 @@ export const handler = async (event) => {
                 console.log("got the routing plans");
                 console.log(JSON.stringify(requestItems));
                 let updatedItems = [];
+                let reqItem = false;
                 for (let requestItem of requestItems) {
                     console.log(JSON.stringify(requestItem));
                     if (requestItem.record_status == "PENDING" && requestItem.record_type == "ROUTEPLAN") {
@@ -109,11 +111,12 @@ export const handler = async (event) => {
                         })
                     }
                     if (requestItem.record_status == "ENRICHED" && requestItem.record_type == "REQITEM") {
-                        updatedItems.push({
+                        reqItem = {
                             ...requestItem,
                             record_status: "COMPLETED",
-                            completed_time: (Date.now() / 1000)
-                        })
+                            completed_time: parseInt((Date.now() / 1000).toString())
+                        }
+                        updatedItems.push(reqItem)
                     }
                 }
                 console.log(JSON.stringify(updatedItems));
@@ -124,6 +127,20 @@ export const handler = async (event) => {
                         console.log("THERE ARE UNPROCESSED ITEMS - COUNT IS " + data.UnprocessedItems[REQUESTSTABLENAME].length);
                         data = await putUnprocessedItemsDDB(data.UnprocessedItems[REQUESTSTABLENAME], REQUESTSTABLENAME, ddbDocClient);
                     }
+                }
+                if (reqItem) {
+                    //add the completed request item to SQS
+                    let sqsParams = {
+                        DelaySeconds: 0,
+                        MessageBody: JSON.stringify(reqItem),
+                        QueueUrl: FINISHEDQUEUEURL
+                    }
+                    const response = await sqsClient.send(new SendMessageCommand(sqsParams));
+                    console.log(JSON.stringify(response));
+                }
+                else
+                {
+                    console.log("Failed to find the " + REQITEM + " so not publishing to SQS");
                 }
             }
         } catch (error) {

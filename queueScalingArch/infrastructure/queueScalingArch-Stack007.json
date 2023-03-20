@@ -57,7 +57,8 @@
         "Description": "The lambda function that receives MODIFY REQITEM items the DDB Stream and updates the REQBATCH item as needed",
         "Environment": {
           "Variables": {
-            "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}}
+            "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}},
+            "FINISHEDQUEUEURL" : {"Ref": "requestFinishedQueue"}
           }
         },
         "FunctionName": {
@@ -95,7 +96,8 @@
           "Variables": {
             "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}},
             "SMSDELIVERYQUEUEURL" : {"Fn::ImportValue" :{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "smsDeliveryQueueUrl"]]}},
-            "EMAILDELIVERYQUEUEURL" : {"Fn::ImportValue" :{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "emailDeliveryQueueUrl"]]}}
+            "EMAILDELIVERYQUEUEURL" : {"Fn::ImportValue" :{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "emailDeliveryQueueUrl"]]}},
+            "FINISHEDQUEUEURL" : {"Ref": "requestFinishedQueue"}
           }
         },
         "FunctionName": {
@@ -123,8 +125,28 @@
             "MaximumConcurrency" : 50
           }
         }
+    },
+    "requestFinishedQueue": {
+    "Type" : "AWS::SQS::Queue",
+    "Properties" : {
+        "DelaySeconds" : 0,
+        "KmsMasterKeyId" : "alias/aws/sqs",
+        "MaximumMessageSize" : 262144,
+        "MessageRetentionPeriod" : 345600,
+        "QueueName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "requestFinished"]]},
+        "Tags" : [ {
+            "Key" : "shortcode",
+            "Value" : { "Ref" : "SHORTCODE" }
+        }],
+        "VisibilityTimeout" : 300
+      }
     }
   },
   "Outputs" : {
+      "requestFinishedQueueArn": {
+          "Description" : "The Arn of the Request Finished SQS Queue",
+          "Value" : { "Fn::GetAtt": ["requestFinishedQueue", "Arn"] },
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestFinishedQueueArn"]]}}
+      }
   }
 }

@@ -11,6 +11,7 @@ const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const REQUESTSTABLENAME = process.env['REQUESTSTABLENAME'];
 const SMSDELIVERYQUEUEURL = process.env['SMSDELIVERYQUEUEURL'];
 const EMAILDELIVERYQUEUEURL = process.env['EMAILDELIVERYQUEUEURL'];
+const FINISHEDQUEUEURL = process.env['FINISHEDQUEUEURL'];
 const sqsClient = new SQSClient();
 
 
@@ -36,6 +37,14 @@ async function updateRequestItem(request_partition, batch_id, request_id) {
     try {
         const data = await updateItemDDB(updateParams, ddbDocClient);
         console.log("Success - item updated", data);
+        //publish item to SQS
+        let sqsParams = {
+            DelaySeconds: 0,
+            MessageBody: JSON.stringify(data.Attributes),
+            QueueUrl: FINISHEDQUEUEURL
+        }
+        const response = await sqsClient.send(new SendMessageCommand(sqsParams));
+        console.log(JSON.stringify(response));
         return data;
     } catch (error) {
         console.log("Failed to update request item ", error.name, error.message);
@@ -151,7 +160,7 @@ export const handler = async (event) => {
                 let nextRoutePlan = requestItems[0];
                 nextRoutePlan.record_status = ACTIVE;
                 let updateResponse = await updateRoutePlan(nextRoutePlan);
-                //publish the event to the "send requests" queue
+                //publish the event to the "email or SMS delivery" queue
                 let sqsParams = {
                     DelaySeconds: 0,
                     MessageAttributes: {

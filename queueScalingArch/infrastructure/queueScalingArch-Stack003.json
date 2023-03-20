@@ -110,7 +110,7 @@
           "FunctionName" : {"Ref": "enrichRequestFunction"},
           "MaximumBatchingWindowInSeconds" : 1,
           "ScalingConfig": {
-            "MaximumConcurrency" : 50
+            "MaximumConcurrency" : 100
           }
         }
     }

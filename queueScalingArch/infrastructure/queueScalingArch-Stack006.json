@@ -72,34 +72,21 @@
         "Timeout": 300
       }
     },
-    "DDBStreamItemCompleteLambdaEventSource":{
+    "requestFinishedSQSLambdaEventSource":{
       "Type" : "AWS::Lambda::EventSourceMapping",
       "Properties" : {
           "BatchSize" : 10,
-          "BisectBatchOnFunctionError" : true,
           "Enabled" : true,
-          "EventSourceArn" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTableStreamArn"]]}},
-          "FilterCriteria": {
-            "Filters" : [ {
-              "Pattern" : "{\"eventName\": [\"MODIFY\"], \"dynamodb\": {\"NewImage\":{\"record_type\": {\"S\": [\"REQITEM\"]}}}}"
-            }]
-          },
+          "EventSourceArn" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestFinishedQueueArn"]]}},
           "FunctionName" : {"Ref": "processItemCompleteStreamFunction"},
+          "FunctionResponseTypes": ["ReportBatchItemFailures"],
           "MaximumBatchingWindowInSeconds" : 1,
-          "MaximumRecordAgeInSeconds" : -1,
-          "MaximumRetryAttempts" : -1,
-          "ParallelizationFactor" : 10,
-          "StartingPosition" : "LATEST"
+          "ScalingConfig": {
+            "MaximumConcurrency" : 10
+          }
         }
     }
-
-
   },
   "Outputs" : {
-      "LambdaESMId" : {
-          "Description" : "The ID of the lambda event source mapping to DDB Stream to detect Message Sent events",
-          "Value" : { "Fn::GetAtt": ["DDBStreamItemCompleteLambdaEventSource", "Id"] },
-          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "DDBStreamItemCompleteId"]]}}
-      }
   }
 }
