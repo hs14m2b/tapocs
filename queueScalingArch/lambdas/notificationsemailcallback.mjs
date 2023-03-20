@@ -44,9 +44,22 @@ export const handler = async (event) => {
             "template_id": messageBody.template.id,
             "template_version": messageBody.template.version
         }
-        console.log("callback data is " + JSON.stringify(callbackData));
-        let callbackResponse = await makerequest(callbackData);
-        console.log("callback response is " + JSON.stringify(callbackResponse));
+      console.log("callback data is " + JSON.stringify(callbackData));
+      let is_error = true;
+      let iteration = 0;
+      while (is_error)
+      {
+        iteration += 1;
+        try {
+          let callbackResponse = await makerequest(callbackData);
+          is_error = false;
+          console.log("callback response is " + JSON.stringify(callbackResponse));
+        } catch (error) {
+          console.log("caught error ", error.name, error.message);
+          console.log("sleeping before retry");
+          sleep(1000 * iteration);
+        }
+      }
     }
     return;
 }

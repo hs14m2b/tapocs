@@ -3,6 +3,7 @@ import { SQSClient, SendMessageBatchCommand, SendMessageCommand } from "@aws-sdk
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { NotifyClient } from "notifications-node-client";
+import { updateItemDDB } from "./constants.mjs";
 
 const REGION = "eu-west-2";
 const ddbClient = new DynamoDBClient({ region: REGION });
@@ -24,12 +25,6 @@ function sleep(ms) {
     console.log("sleeping for " + ms + "ms");
     return new Promise((resolve) => { setTimeout(resolve, ms); });
 }
-
-async function updateItemDDB(params) {
-    const data = await ddbDocClient.send(new UpdateCommand(params));
-    console.log("Success - item updated", data);
-    return data;
-} 
 
 async function sendEmail(email, personalisation, reference) {
     /*
@@ -90,7 +85,7 @@ export const handler = async (event) => {
         };
         console.log("sleeping for EMAIL sending");
         await sleep(100);
-        let updateData = await updateItemDDB(updateParams);
+        let updateData = await updateItemDDB(updateParams, ddbDocClient);
     }
     return;
 }

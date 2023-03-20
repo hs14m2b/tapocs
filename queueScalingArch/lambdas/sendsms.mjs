@@ -3,6 +3,7 @@ import { SQSClient, SendMessageBatchCommand, SendMessageCommand } from "@aws-sdk
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { NotifyClient } from "notifications-node-client";
+import { updateItemDDB } from "./constants.mjs";
 
 const REGION = "eu-west-2";
 const ddbClient = new DynamoDBClient({ region: REGION });
@@ -24,39 +25,6 @@ function sleep(ms) {
     console.log("sleeping for " + ms + "ms");
     return new Promise((resolve) => { setTimeout(resolve, ms); });
 }
-
-async function sendItemsSQS(items) {
-    let params = {
-        "QueueUrl": DELIVERYQUEUEURL,
-        Entries: []
-    };
-    for (item of items) {
-        params.Entries.push(item);
-    }
-    const data = await client.send(new SendMessageBatchCommand(params));
-    console.log("Success - items added to SQS", data);
-    return data;
-} 
-
-async function updateItemDDB(params) {
-    const data = await ddbDocClient.send(new UpdateCommand(params));
-    console.log("Success - item updated", data);
-    return data;
-} 
-
-async function putItemsDDB(items) {
-    let params = {
-        "RequestItems": {}
-    };
-    params.RequestItems[REQUESTSTABLENAME] = [];
-    for (let item of items) {
-        let requestDetails ={ "PutRequest": {"Item": item}}
-        params.RequestItems[REQUESTSTABLENAME].push(requestDetails);
-    }
-    const data = await ddbDocClient.send(new BatchWriteCommand(params));
-    console.log("Success - items added to table", data);
-    return data;
-} 
 
 async function sendSms(phone_number, personalisation, reference) {
     /*
@@ -115,7 +83,7 @@ export const handler = async (event) => {
             },
             "ReturnValues": "ALL_NEW"
         };
-        let updateData = await updateItemDDB(updateParams);
+        let updateData = await updateItemDDB(updateParams, ddbDocClient);
     }
     return;
 }
