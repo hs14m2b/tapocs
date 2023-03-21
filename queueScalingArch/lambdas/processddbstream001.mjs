@@ -1,4 +1,7 @@
-const { SQSClient, SendMessageCommand, SendMessageBatchCommand } = require("@aws-sdk/client-sqs");
+import { SQSClient, SendMessageBatchCommand, SendMessageCommand } from "@aws-sdk/client-sqs";
+
+import { unmarshall } from "@aws-sdk/util-dynamodb";
+
 const REQUESTSQUEUENAME = process.env['REQUESTSQUEUENAME'];
 const REQUESTSQUEUEURL = process.env['REQUESTSQUEUEURL'];
 const client = new SQSClient();
@@ -14,7 +17,7 @@ async function sendItemsSQS(items) {
         "QueueUrl": REQUESTSQUEUEURL,
         Entries: []
     };
-    for (item of items) {
+    for (let item of items) {
         params.Entries.push(item);
     }
     const data = await client.send(new SendMessageBatchCommand(params));
@@ -24,7 +27,7 @@ async function sendItemsSQS(items) {
 
 
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
     console.log(JSON.stringify(event));
     let items = [];
     for (let i = 0; i < event.Records.length; i++)
@@ -35,9 +38,9 @@ exports.handler = async (event) => {
             console.log("not processing this item as not an insert");
             continue;
         }
-        let messageBody = event.Records[i].dynamodb.NewImage
+        let messageBody = unmarshall(event.Records[i].dynamodb.NewImage);
         //check that it is for a request
-        if (!messageBody.request_sort || !messageBody.request_sort["S"] || messageBody.record_type["S"] != "REQITEM") {
+        if (!messageBody.request_sort || messageBody.record_type != "REQITEM") {
             console.log("not processing as not a REQITEM");
             continue;
         }

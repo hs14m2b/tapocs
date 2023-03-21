@@ -50,7 +50,7 @@
     }
   },
   "Resources": {
-    "processItemCompleteStreamFunction": {
+    "processItemCompleteFunction": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
         "Code": "stack006lambdas.zip",
@@ -62,7 +62,7 @@
           }
         },
         "FunctionName": {
-          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processItemCompletedStreamFunction"]]
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processItemCompleteFunction"]]
         },
         "Handler": "processitemcomplete.handler",
         "MemorySize": "1024",
@@ -79,7 +79,7 @@
           "BatchSize" : 10,
           "Enabled" : true,
           "EventSourceArn" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestFinishedQueueArn"]]}},
-          "FunctionName" : {"Ref": "processItemCompleteStreamFunction"},
+          "FunctionName" : {"Ref": "processItemCompleteFunction"},
           "FunctionResponseTypes": ["ReportBatchItemFailures"],
           "MaximumBatchingWindowInSeconds" : 1,
           "ScalingConfig": {

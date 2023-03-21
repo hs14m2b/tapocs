@@ -7,4 +7,5 @@
 ./deploy-Stack005.sh
 ./deploy-Stack006.sh
 ./deploy-Stack007.sh
+./deploy-Stack008.sh
 ./deploy-SynthStack002.sh

@@ -1,4 +1,15 @@
-import { ACTIVE, DEFAULTEXPIRY, DELIVERED, FAILED, NOTREQUIRED, PENDING, REQITEM, ROUTEPLAN, SENT, TEMPORARY_FAILURE } from "./constants.mjs";
+import {
+    ACTIVE,
+    DEFAULTEXPIRY,
+    DELIVERED,
+    FAILED,
+    NOTREQUIRED,
+    PENDING,
+    REQITEM,
+    ROUTEPLAN,
+    SENT,
+    TEMPORARY_FAILURE
+} from "./constants.mjs";
 import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { SQSClient, SendMessageBatchCommand, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { putItemWithConditionDDB, runQueryDDB, updateItemDDB } from "./constants.mjs";
@@ -21,12 +32,12 @@ function sleep(ms) {
     return new Promise((resolve) => { setTimeout(resolve, ms); });
 }
 
-async function updateRequestItem(request_partition, batch_id, request_id) {
+async function updateRequestItem(request_partition, request_id) {
     let updateParams = {
         "TableName": REQUESTSTABLENAME,
         "Key": {
             request_partition: request_partition,
-            request_sort: batch_id + request_id + REQITEM
+            request_sort: request_id + REQITEM
         },
         "UpdateExpression": "set record_status = :rs",
         "ExpressionAttributeValues": {
@@ -53,17 +64,16 @@ async function updateRequestItem(request_partition, batch_id, request_id) {
     }
 } 
 
-async function getNextRoutePlan(client_id, batch_id, request_id, plan_sequence) {
-    console.log("request partition is " + client_id);
-    console.log("batch is " + batch_id);
+async function getNextRoutePlan(request_partition, request_id, plan_sequence) {
+    console.log("request partition is " + request_partition);
     console.log("request_id is " + request_id);
     console.log("plan_sequence is " + plan_sequence);
     let queryParams = {
         KeyConditionExpression: "request_partition = :p AND begins_with(request_sort, :s)",
         FilterExpression: "plan_sequence = :ps",
         ExpressionAttributeValues: {
-            ":p": client_id,
-            ":s": batch_id + request_id,
+            ":p": request_partition,
+            ":s": request_id,
             ":ps": plan_sequence + 1
         },
         TableName: REQUESTSTABLENAME
@@ -148,12 +158,13 @@ export const handler = async (event) => {
             };
             let updateData = await updateItemDDB(updateParams, ddbDocClient);
             let batch_id = updateData.Attributes.batch_id;
+            let sub_batch_no = updateData.Attributes.sub_batch_no;
             let request_id = updateData.Attributes.request_id;
             let plan_sequence = parseInt(updateData.Attributes.plan_sequence);
-            let requestItems = await getNextRoutePlan(request_partition, batch_id, request_id, plan_sequence);
+            let requestItems = await getNextRoutePlan(request_partition, request_id, plan_sequence);
             if (requestItems.length == 0) {
                 console.log("there are no more ROUTEPLANs - marking REQITEM as FAILED");
-                let updateData = await updateRequestItem(request_partition, batch_id, request_id);
+                let updateData = await updateRequestItem(request_partition, request_id);
                 console.log("have updated the request item to FAILED " + JSON.stringify(updateData));
             }
             else

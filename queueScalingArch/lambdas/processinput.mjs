@@ -1,6 +1,17 @@
+import {
+    ACCEPTED,
+    DDBBATCHSIZE,
+    DEFAULTEXPIRY,
+    REQBATCH,
+    REQITEM,
+    REQSUBBATCH,
+    putItemDDB,
+    putItemsDDB,
+    putUnprocessedItemsDDB,
+    updateItemDDB
+} from "./constants.mjs";
 import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { DDBBATCHSIZE, DEFAULTEXPIRY, REQBATCH, putItemDDB, putItemsDDB, putUnprocessedItemsDDB, updateItemDDB } from "./constants.mjs";
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
@@ -76,14 +87,15 @@ export const handler = async (event) => {
             let splitNo = 1;
             let batch_item = {
                 request_partition: clientId,
-                request_sort: batchId + "REQBATCH",
+                request_sort: batchId + REQBATCH,
                 client_id: clientId,
                 batch_id: batchId,
                 record_status: "ACCEPTED",
                 number_item: 99999999,
+                number_sub_batches: 0,
                 completed_item_count: 0,
                 failed_item_count: 0,
-                record_type: "REQBATCH",
+                record_type: REQBATCH,
                 time_received: parseInt((Date.now() / 1000).toString()),
                 date_received: parseInt(new Date().toISOString().substring(0,10).replace(/-/g, "")),
                 valid_until: parseInt((Date.now() / 1000).toString()) + DEFAULTEXPIRY
@@ -103,14 +115,16 @@ export const handler = async (event) => {
                 let requestId = rowItems[0];
                 let nhsnumber = rowItems[1];
                 let requestTime = rowItems[2];
-                let request_partition = clientId;
-                let request_sort = batchId + requestId + "REQITEM";
-                let record_status = "ACCEPTED";
+                //put each sub-batch into a separate partition
+                let request_partition = clientId + batchId + splitNo;
+                let request_sort = requestId + REQITEM;
+                let record_status = ACCEPTED;
                 let item = {
                     request_partition: request_partition,
                     request_sort: request_sort,
                     client_id: clientId,
                     batch_id: batchId,
+                    sub_batch_no: splitNo,
                     nhs_number: nhsnumber,
                     request_time: requestTime,
                     time_received: parseInt((Date.now() / 1000).toString()),
@@ -126,6 +140,25 @@ export const handler = async (event) => {
                 }
                 items.push(JSON.stringify(item).replace("\n","").replace("\r", ""));
                 if (items.length == SPLITTINGSIZE) {
+                    let sub_batch_item = {
+                        request_partition: request_partition,
+                        request_sort: REQSUBBATCH,
+                        client_id: clientId,
+                        batch_id: batchId,
+                        sub_batch_no: splitNo,
+                        record_status: ACCEPTED,
+                        number_item: SPLITTINGSIZE,
+                        completed_item_count: 0,
+                        failed_item_count: 0,
+                        record_type: REQSUBBATCH,
+                        time_received: parseInt((Date.now() / 1000).toString()),
+                        date_received: parseInt(new Date().toISOString().substring(0,10).replace(/-/g, "")),
+                        valid_until: parseInt((Date.now() / 1000).toString()) + DEFAULTEXPIRY
+                    }
+                    console.log("sub batch item is " + JSON.stringify(sub_batch_item));
+                    let response = await putItemDDB(sub_batch_item, REQUESTSTABLENAME, ddbDocClient);
+                    response = await putItemDDB(sub_batch_item, PROCESSINGMETRICSTABLENAME, ddbDocClient);
+                    console.log("have put sub batch item into ddb");
                     let data = await writeSplitFile(items, bucket, key, splitNo);
                     itemsAdded += SPLITTINGSIZE;
                     console.log("have put " + SPLITTINGSIZE + " items into split file");
@@ -137,6 +170,25 @@ export const handler = async (event) => {
             }
             //check if need to write remaining items
             if (items.length > 0) {
+                let sub_batch_item = {
+                    request_partition: clientId + batchId + splitNo,
+                    request_sort: REQSUBBATCH,
+                    client_id: clientId,
+                    batch_id: batchId,
+                    sub_batch_no: splitNo,
+                    record_status: ACCEPTED,
+                    number_item: items.length,
+                    completed_item_count: 0,
+                    failed_item_count: 0,
+                    record_type: REQSUBBATCH,
+                    time_received: parseInt((Date.now() / 1000).toString()),
+                    date_received: parseInt(new Date().toISOString().substring(0,10).replace(/-/g, "")),
+                    valid_until: parseInt((Date.now() / 1000).toString()) + DEFAULTEXPIRY
+                }
+                console.log("sub batch item is " + JSON.stringify(sub_batch_item));
+                let response = await putItemDDB(sub_batch_item, REQUESTSTABLENAME, ddbDocClient);
+                response = await putItemDDB(sub_batch_item, PROCESSINGMETRICSTABLENAME, ddbDocClient);
+                console.log("have put sub batch item into ddb");
                 let data = await writeSplitFile(items, bucket, key, splitNo);
                 itemsAdded += items.length;
                 console.log("have put " + items.length + " items into split file");
@@ -150,9 +202,10 @@ export const handler = async (event) => {
                     request_partition: clientId,
                     request_sort: batchId + REQBATCH
                 },
-                "UpdateExpression": "set number_item = :s",
+                "UpdateExpression": "set number_item = :s, number_sub_batches = :nsb",
                 "ExpressionAttributeValues": {
-                    ":s": itemsAdded
+                    ":s": itemsAdded,
+                    ":nsb": splitNo
                 },
                 "ReturnValues": "ALL_NEW"
             };

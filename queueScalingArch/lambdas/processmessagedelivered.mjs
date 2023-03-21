@@ -1,5 +1,20 @@
 import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { DEFAULTEXPIRY, DELIVERED, REQITEM, putItemDDB, putItemsDDB, putUnprocessedItemsDDB, runQueryDDB, updateItemDDB } from "./constants.mjs";
+import {
+    COMPLETED,
+    DEFAULTEXPIRY,
+    DELIVERED,
+    ENRICHED,
+    NOTREQUIRED,
+    PENDING,
+    REQITEM,
+    ROUTEPLAN,
+    RPCALLBACK,
+    putItemDDB,
+    putItemsDDB,
+    putUnprocessedItemsDDB,
+    runQueryDDB,
+    updateItemDDB
+} from "./constants.mjs";
 import { SQSClient, SendMessageBatchCommand, SendMessageCommand } from "@aws-sdk/client-sqs";
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
@@ -20,15 +35,14 @@ function sleep(ms) {
     return new Promise((resolve) => { setTimeout(resolve, ms); });
 }
 
-async function getRequestItems(client_id, batch_id, request_id) {
-    console.log("request partition is " + client_id);
-    console.log("batch is " + batch_id);
+async function getRequestItems(request_partition, request_id) {
+    console.log("request partition is " + request_partition);
     console.log("request_id is " + request_id);
     let queryParams = {
         KeyConditionExpression: "request_partition = :p AND begins_with(request_sort, :s)",
         ExpressionAttributeValues: {
-            ":p": client_id,
-            ":s": batch_id + request_id
+            ":p": request_partition,
+            ":s": request_id
         },
         TableName: REQUESTSTABLENAME
     };
@@ -75,16 +89,18 @@ export const handler = async (event) => {
             let updateData = await updateItemDDB(updateParams, ddbDocClient);
             let batch_id = updateData.Attributes.batch_id;
             let request_id = updateData.Attributes.request_id;
+            let sub_batch_no = updateData.Attributes.sub_batch_no;
             //adding callback info into ddb
             let callbackItem = {
                 request_partition: request_partition,
-                request_sort: request_sort.replace("ROUTEPLAN", "RPCALLBACK"),
+                request_sort: request_sort.replace(ROUTEPLAN, RPCALLBACK),
                 valid_until: parseInt((Date.now() / 1000).toString()) + DEFAULTEXPIRY,
                 time_received: parseInt((Date.now() / 1000).toString()),
                 date_received: parseInt(new Date().toISOString().substring(0, 10).replace("-", "")),
-                record_type: "RPCALLBACK",
+                record_type: RPCALLBACK,
                 batch_id: batch_id,
                 request_id: request_id,
+                sub_batch_no: sub_batch_no,
                 ...messageBody
             }
             let insertData = await putItemDDB(callbackItem, PROCESSINGMETRICSTABLENAME, ddbDocClient);
@@ -98,23 +114,23 @@ export const handler = async (event) => {
             else {
                 //get all the other routing plans and set status to "NOTREQUIRED"
                 console.log("getting routing plans");
-                let requestItems = await getRequestItems(request_partition, batch_id, request_id);
+                let requestItems = await getRequestItems(request_partition, request_id);
                 console.log("got the routing plans");
                 console.log(JSON.stringify(requestItems));
                 let updatedItems = [];
                 let reqItem = false;
                 for (let requestItem of requestItems) {
                     console.log(JSON.stringify(requestItem));
-                    if (requestItem.record_status == "PENDING" && requestItem.record_type == "ROUTEPLAN") {
+                    if (requestItem.record_status == PENDING && requestItem.record_type == ROUTEPLAN) {
                         updatedItems.push({
                             ...requestItem,
-                            record_status: "NOTREQUIRED"
+                            record_status: NOTREQUIRED
                         })
                     }
-                    if (requestItem.record_status == "ENRICHED" && requestItem.record_type == "REQITEM") {
+                    if (requestItem.record_status == ENRICHED && requestItem.record_type == REQITEM) {
                         reqItem = {
                             ...requestItem,
-                            record_status: "COMPLETED",
+                            record_status: COMPLETED,
                             completed_time: parseInt((Date.now() / 1000).toString())
                         }
                         updatedItems.push(reqItem)
