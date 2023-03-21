@@ -1,6 +1,7 @@
 #!/bin/sh
 
 ./delete-SynthStack002.sh
+./delete-Stack008.sh
 ./delete-Stack007.sh
 ./delete-Stack006.sh
 ./delete-Stack005.sh

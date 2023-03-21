@@ -1,5 +1,5 @@
 import { BatchWriteCommand, DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { DeleteItemCommand, DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DeleteItemCommand, DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
 
 const REGION = "eu-west-2";
 const ddbClient = new DynamoDBClient({ region: REGION });
@@ -33,20 +33,18 @@ while (moreItems) {
     let deleteItems = [];
     let query_params = {
         TableName: "main-queuescaling-requestsTable",
-        KeyConditionExpression: "request_partition = :r",
-        ExpressionAttributeValues: { ":r": "12345" },
         ProjectionExpression: "request_partition, request_sort"
     }
-    let data = await ddbClient.send(new QueryCommand(query_params));
-    moreItems = (data.LastEvaluatedKey)? true: false;    
+    let data = await ddbClient.send(new ScanCommand(query_params));
+    moreItems = (data.LastEvaluatedKey && data.Items.length>0)? true: false;    
     console.log("No items returned = " + data.Items.length);
     console.log("more items is " + moreItems);
     let count = 0;
     for (let item of data.Items) {
         //console.log(JSON.stringify(item));
         deleteItems.push({
-            "request_partition": item.request_partition,
-            "request_sort": item.request_sort
+            "request_partition": item.request_partition["S"],
+            "request_sort": item.request_sort["S"]
         });
         if (deleteItems.length == BATCHSIZE)
         {

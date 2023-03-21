@@ -15,13 +15,13 @@ function sleep(ms) {
     return new Promise((resolve) => { setTimeout(resolve, ms); });
 }
 
-async function writeAnalyticsFile(item, bucket, request_partition, request_sort)
+async function writeAnalyticsFile(item, bucket, request_partition, request_sort, client_id)
 {
     let body = JSON.stringify(item).replace("\n","").replace("\r", "");
     let params = {
         "Body": body,
         "Bucket": bucket,
-        "Key": ANALYTICSPREFIX + request_partition + "/" + request_sort + ".json"
+        "Key": ANALYTICSPREFIX + client_id + request_partition + "-" + request_sort + ".json"
     }
     const response = await s3Client
         .send(new PutObjectCommand(params))
@@ -48,9 +48,10 @@ export const handler = async (event) => {
             //convert to plain JSON
             let messageBodyPlain = unmarshall(messageBody);
             //get partition and sort information
-            let { request_partition, request_sort } = messageBodyPlain;
+            let { request_partition, request_sort, client_id } = messageBodyPlain;
+            if (!client_id) client_id = request_partition;
             console.log("Processing item " + (i + 1) + " which is a " + event.Records[i].eventName + " for " + request_partition + " - " + request_sort);
-            let writeResult = await writeAnalyticsFile(messageBodyPlain, ANALYTICSBUCKET, request_partition, request_sort);
+            let writeResult = await writeAnalyticsFile(messageBodyPlain, ANALYTICSBUCKET, request_partition, request_sort, client_id);
         } catch (error) {
             let failedItem = {
                 "itemIdentifier": itemIdentifier

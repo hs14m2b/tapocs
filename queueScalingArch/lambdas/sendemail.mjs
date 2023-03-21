@@ -1,9 +1,9 @@
 import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { ROUTEPLAN, updateItemDDB } from "./constants.mjs";
 import { SQSClient, SendMessageBatchCommand, SendMessageCommand } from "@aws-sdk/client-sqs";
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { NotifyClient } from "notifications-node-client";
-import { updateItemDDB } from "./constants.mjs";
 
 const REGION = "eu-west-2";
 const ddbClient = new DynamoDBClient({ region: REGION });
@@ -56,14 +56,14 @@ export const handler = async (event) => {
         }
         let messageBody = JSON.parse(event.Records[i].body);
         console.log("partition " + messageBody.request_partition + " sort " + messageBody.request_sort);
-        console.log("client id " + messageBody.request_partition);
+        console.log("client id " + messageBody.client_id);
         let email = messageBody.endpoint;
         console.log("email is " + email);
         let personalisation = messageBody.personalisation;
         console.log("personalisation is " + JSON.stringify(personalisation));
         let reference = messageBody.request_partition + "." + messageBody.request_sort;
         //check that it is for a delivery
-        if (!messageBody.request_sort || !messageBody.request_sort.endsWith("ROUTEPLAN")) {
+        if (!messageBody.request_sort || !messageBody.request_sort.endsWith(ROUTEPLAN)) {
             console.log("not processing as not a ROUTEPLAN");
             continue;
         }

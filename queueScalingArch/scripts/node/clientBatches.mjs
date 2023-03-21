@@ -6,9 +6,11 @@ const REGION = "eu-west-2";
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 let full_request = false;
+const REQUESTSTABLENAME = "main-queuescaling-requestsTable";
+const PROCESSINGMETRICSTABLENAME = "main-queuescaling-processingMetricsTable";
 
 let query_params = {
-    TableName: "main-queuescaling-requestsTable",
+    TableName: REQUESTSTABLENAME,
     IndexName: "main-queuescaling-requestsTable-datereceivedGSI",
     KeyConditionExpression: "record_type = :rt AND date_received = :dr",
     ExpressionAttributeValues: {
@@ -29,7 +31,7 @@ for (let batch of batchesArray) {
 }
 //for (let batch of batchesArray) {
 query_params = {
-    TableName: "main-queuescaling-processingMetricsTable",
+    TableName: REQUESTSTABLENAME,
     KeyConditionExpression: "request_partition = :rp AND request_sort = :rs",
     ExpressionAttributeValues: {
         ":rp": batchesArray[0].client_id,

@@ -3,7 +3,9 @@ import { BatchWriteCommand, PutCommand, QueryCommand, UpdateCommand } from "@aws
 export const DEFAULTEXPIRY = 3600;
 export const REQITEM = "REQITEM";
 export const REQBATCH = "REQBATCH";
+export const REQSUBBATCH = "REQSUBBATCH";
 export const ROUTEPLAN = "ROUTEPLAN";
+export const RPCALLBACK = "RPCALLBACK";
 export const ACTIVE = "ACTIVE";
 export const PENDING = "PENDING";
 export const FAILED = "FAILED";

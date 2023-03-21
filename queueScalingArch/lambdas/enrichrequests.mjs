@@ -1,5 +1,5 @@
+import { ACTIVE, DEFAULTEXPIRY, PENDING, REQITEM, ROUTEPLAN, putItemsDDB, putUnprocessedItemsDDB, updateItemDDB } from "./constants.mjs";
 import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { DEFAULTEXPIRY, putItemsDDB, putUnprocessedItemsDDB, updateItemDDB } from "./constants.mjs";
 import { SQSClient, SendMessageBatchCommand, SendMessageCommand } from "@aws-sdk/client-sqs";
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
@@ -43,33 +43,29 @@ export const handler = async (event) => {
             continue;
         }
         let messageBody = JSON.parse(event.Records[i].body);
-        console.log("partition " + messageBody.request_partition["S"] + " sort " + messageBody.request_sort["S"]);
-        console.log("nhs number " + messageBody.nhs_number["S"]);
-        console.log("client id " + messageBody.request_partition["S"]);
+        console.log("partition " + messageBody.request_partition + " sort " + messageBody.request_sort);
+        console.log("nhs number " + messageBody.nhs_number);
+        console.log("client id " + messageBody.client_id);
         //check that it is for a request
-        if (!messageBody.request_sort || !messageBody.request_sort["S"] || !messageBody.request_sort["S"].endsWith("REQITEM")) {
+        if (!messageBody.request_sort || !messageBody.request_sort.endsWith(REQITEM)) {
             console.log("not processing as not a REQITEM");
             continue;
         }
-        let batch_id = messageBody.batch_id["S"];
-        let request_id = messageBody.request_id["S"];
+        let batch_id = messageBody.batch_id;
+        let request_id = messageBody.request_id;
+        let sub_batch_no = messageBody.sub_batch_no;
         //get the demographics info
-        let demoItem = {
-            request_partition: messageBody.request_partition["S"],
-            request_sort: messageBody.request_sort["S"] + "DEMOGRAPHICS",
-
-        }
         let demoInfo = {
             "title": "Mr",
             "familyname": "Brown",
             "givenname": "Matthew",
-            "nhsnumberformatted": messageBody.nhs_number["S"].substring(0, 3) + " " + messageBody.nhs_number["S"].substring(3, 6) + " " + messageBody.nhs_number["S"].substring(6)
+            "nhsnumberformatted": messageBody.nhs_number.substring(0, 3) + " " + messageBody.nhs_number.substring(3, 6) + " " + messageBody.nhs_number.substring(6)
         }
         let updateParams = {
             "TableName": REQUESTSTABLENAME,
             "Key": {
-                request_partition: messageBody.request_partition["S"],
-                request_sort: messageBody.request_sort["S"]
+                request_partition: messageBody.request_partition,
+                request_sort: messageBody.request_sort
             },
             "UpdateExpression": "set email = :e, mobile_phone = :m, record_status = :s, active_plan = :p",
             "ExpressionAttributeValues": {
@@ -93,33 +89,35 @@ export const handler = async (event) => {
         let plan2channel = (plan1channel.channel == "EMAIL") ? {"channel": "SMS", "endpoint": "07747461749"} : {"channel": "EMAIL", "endpoint": "matthewandkaren@hotmail.com"};
         let personalisation =  { title: demoInfo.title, familyname: demoInfo.familyname, nhsnumberformatted: demoInfo.nhsnumberformatted };
         let plan001 = {
-            request_partition: messageBody.request_partition["S"],
-            request_sort: batch_id + request_id + "001" + "ROUTEPLAN",
-            record_type: "ROUTEPLAN",
-            record_status: "ACTIVE",
+            request_partition: messageBody.request_partition,
+            request_sort: request_id + "001" + ROUTEPLAN,
+            record_type: ROUTEPLAN,
+            record_status: ACTIVE,
             channel: plan1channel.channel,
             endpoint: plan1channel.endpoint,
             batch_id: batch_id,
+            sub_batch_no: sub_batch_no,
             request_id: request_id,
-            time_received: Date.now() / 1000,
-            date_received: parseInt(new Date().toISOString().substring(0,10).replace("-", "")),
+            time_received: parseInt((Date.now() / 1000).toString()),
+            date_received: parseInt(new Date().toISOString().substring(0,10).replace(/-/g, "")),
             plan_sequence: 1,
-            valid_until: (Date.now() / 1000) + DEFAULTEXPIRY,
+            valid_until: parseInt((Date.now() / 1000).toString()) + DEFAULTEXPIRY,
             personalisation: personalisation
         };
         let plan002 = {
-            request_partition: messageBody.request_partition["S"],
-            request_sort: batch_id + request_id + "002" + "ROUTEPLAN",
-            record_type: "ROUTEPLAN",
-            record_status: "PENDING",
+            request_partition: messageBody.request_partition,
+            request_sort: request_id + "002" + ROUTEPLAN,
+            record_type: ROUTEPLAN,
+            record_status: PENDING,
             channel: plan2channel.channel,
             endpoint: plan2channel.endpoint,
             batch_id: batch_id,
+            sub_batch_no: sub_batch_no,
             request_id: request_id,
-            time_received: Date.now() / 1000,
-            date_received: parseInt(new Date().toISOString().substring(0,10).replace("-", "")),
+            time_received: parseInt((Date.now() / 1000).toString()),
+            date_received: parseInt(new Date().toISOString().substring(0,10).replace(/-/g, "")),
             plan_sequence: 2,
-            valid_until: (Date.now()/1000)+DEFAULTEXPIRY,
+            valid_until: parseInt((Date.now() / 1000).toString()) + DEFAULTEXPIRY,
             personalisation: personalisation
         };
         let plans = [plan001, plan002];
