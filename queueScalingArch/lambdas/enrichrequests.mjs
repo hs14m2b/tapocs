@@ -1,7 +1,7 @@
 import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { DEFAULTEXPIRY, putItemsDDB, putUnprocessedItemsDDB, updateItemDDB } from "./constants.mjs";
 import { SQSClient, SendMessageBatchCommand, SendMessageCommand } from "@aws-sdk/client-sqs";
 
-import { DEFAULTEXPIRY } from "./constants.mjs";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
 const REGION = "eu-west-2";
@@ -30,32 +30,6 @@ async function sendItemsSQS(items) {
     console.log("Success - items added to SQS", data);
     return data;
 } 
-
-async function updateItemDDB(params) {
-    const data = await ddbDocClient.send(new UpdateCommand(params));
-    console.log("Success - item updated", data);
-    return data;
-} 
-
-async function putItemsDDB(items) {
-    let params = {
-        "RequestItems": {}
-    };
-    params.RequestItems[REQUESTSTABLENAME] = [];
-    for (let item of items) {
-        let requestDetails = {
-            "PutRequest": {
-                "Item": item,
-                "ConditionExpression": "attribute_not_exists(request_partition)"
-            }
-        };
-        params.RequestItems[REQUESTSTABLENAME].push(requestDetails);
-    }
-    const data = await ddbDocClient.send(new BatchWriteCommand(params));
-    console.log("Success - items added to table", data);
-    return data;
-} 
-
 
 
 export const handler = async (event) => {
@@ -108,7 +82,7 @@ export const handler = async (event) => {
         };
         console.log("sleeping for demographics retrieval");
         await sleep(30);
-        let updateData = await updateItemDDB(updateParams);
+        let updateData = await updateItemDDB(updateParams,ddbDocClient);
         //get the routing plan for the message
         console.log("sleeping for retrieval of routing info");
         await sleep(100);
@@ -150,7 +124,13 @@ export const handler = async (event) => {
         };
         let plans = [plan001, plan002];
         //batch insert the items into DDB
-        await putItemsDDB(plans);
+        let data = await putItemsDDB(plans,REQUESTSTABLENAME, ddbDocClient);
+        while (data.UnprocessedItems[REQUESTSTABLENAME] &&
+            data.UnprocessedItems[REQUESTSTABLENAME].length > 0)
+        {
+            console.log("THERE ARE UNPROCESSED ITEMS - COUNT IS " + data.UnprocessedItems[REQUESTSTABLENAME].length);
+            data = await putUnprocessedItemsDDB(data.UnprocessedItems[REQUESTSTABLENAME],REQUESTSTABLENAME, ddbDocClient);
+        }
         //publish the event to the "send requests" queue
         let sqsParams = {
             DelaySeconds: 0,

@@ -1,12 +1,13 @@
 const uuidv4 = require('uuid').v4;
 const fs = require('node:fs/promises');
-const maxRows = 50000;
+const maxRows = 1000;
 
 
 const main = async (argv) => {
   console.log(argv[2]);
   let fileName = argv[2];
   let batch_id = argv[3];
+  let client_id = argv[4];
   let fileHandle = await fs.open("./" + fileName, "w","775");
   let wrtStrm = fileHandle.createWriteStream();
   //write header
@@ -26,7 +27,7 @@ const main = async (argv) => {
       request_id: id,
       request_time: __time,
       nhs_number: nhsnumber,
-      client_id: "12345",
+      client_id: client_id,
       batch_id: batch_id,
       personalisation: personalisation
     }

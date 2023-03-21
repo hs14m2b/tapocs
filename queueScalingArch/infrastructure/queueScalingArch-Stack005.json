@@ -61,6 +61,36 @@
     }
   },
   "Resources": {
+    "deliveredQueue": {
+    "Type" : "AWS::SQS::Queue",
+    "Properties" : {
+        "DelaySeconds" : 0,
+        "KmsMasterKeyId" : "alias/aws/sqs",
+        "MaximumMessageSize" : 262144,
+        "MessageRetentionPeriod" : 345600,
+        "QueueName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "deliveredQueue"]]},
+        "Tags" : [ {
+            "Key" : "shortcode",
+            "Value" : { "Ref" : "SHORTCODE" }
+        }],
+        "VisibilityTimeout" : 300
+      }
+    },
+    "failedQueue": {
+    "Type" : "AWS::SQS::Queue",
+    "Properties" : {
+        "DelaySeconds" : 0,
+        "KmsMasterKeyId" : "alias/aws/sqs",
+        "MaximumMessageSize" : 262144,
+        "MessageRetentionPeriod" : 345600,
+        "QueueName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "failedQueue"]]},
+        "Tags" : [ {
+            "Key" : "shortcode",
+            "Value" : { "Ref" : "SHORTCODE" }
+        }],
+        "VisibilityTimeout" : 300
+      }
+    },
     "callbackFromNotifyFunction": {
       "Type": "AWS::Serverless::Function",
       "Properties": {
@@ -68,7 +98,11 @@
         "Description": "The lambda function that receives callbacks from gov notify",
         "Environment": {
           "Variables" : {
-            "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}}
+            "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}},
+            "DELIVEREDQUEUENAME" : {"Fn::GetAtt": ["deliveredQueue", "QueueName"]},
+            "DELIVEREDQUEUEURL" : {"Ref": "deliveredQueue"},
+            "FAILEDQUEUENAME" : {"Fn::GetAtt": ["failedQueue", "QueueName"]},
+            "FAILEDQUEUEURL" : {"Ref": "failedQueue"}
           }
         },
         "Events": {
@@ -113,5 +147,17 @@
         "StageName": "$default"
       }
     }
+  },
+  "Outputs" : {
+      "DeliveredQueueArn": {
+          "Description" : "The Arn of the SQS Queue",
+          "Value" : { "Fn::GetAtt": ["deliveredQueue", "Arn"] },
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "deliveredQueueArn"]]}}
+      },
+      "FailedQueueArn": {
+          "Description" : "The Arn of the SQS Queue",
+          "Value" : { "Fn::GetAtt": ["failedQueue", "Arn"] },
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "failedQueueArn"]]}}
+      }
   }
 }

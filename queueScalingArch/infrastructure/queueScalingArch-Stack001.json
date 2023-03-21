@@ -125,7 +125,10 @@
         "Code": "stack001lambdas.zip",
         "Description": "The lambda function that opens the input S3 file and publishes the records to SQS",
         "Environment": {
-          "Variables" : {"REQUESTSTABLENAME" : {"Ref": "inputItemsTable"}}
+          "Variables" : {
+            "REQUESTSTABLENAME" : {"Ref": "inputItemsTable"},
+            "PROCESSINGMETRICSTABLENAME" : {"Ref": "processingMetricsTable"}
+          }
         },
         "FunctionName": {
           "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processInputFunction"]]
@@ -318,6 +321,41 @@
           "Enabled" : true
         }
       }
+    },
+    "processingMetricsTable":{
+    "Type" : "AWS::DynamoDB::Table",
+    "Properties" : {
+        "AttributeDefinitions" : [ {
+            "AttributeName" : "request_partition",
+            "AttributeType" : "S"
+        },{
+            "AttributeName" : "request_sort",
+            "AttributeType" : "S"
+        }],
+        "BillingMode" : "PAY_PER_REQUEST",
+        "KeySchema" : [ {
+            "AttributeName" : "request_partition",
+            "KeyType" : "HASH"
+        },{
+            "AttributeName" : "request_sort",
+            "KeyType" : "RANGE"
+        }],
+        "SSESpecification" : {
+            "KMSMasterKeyId" : {"Ref" : "inputItemsDDBKey"},
+            "SSEEnabled" : true,
+            "SSEType": "KMS"
+        },
+        "TableClass" : "STANDARD",
+        "TableName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processingMetricsTable"]]},
+        "Tags" : [ {
+            "Key" : "shortcode",
+            "Value" : { "Ref" : "SHORTCODE" }
+        }],
+        "TimeToLiveSpecification": {
+          "AttributeName" : "valid_until",
+          "Enabled" : true
+        }
+      }
     }
 
   },
@@ -331,6 +369,11 @@
           "Description" : "The Arn of the role for running Lambda Functions",
           "Value" : { "Fn::GetAtt": ["queuescalingpocLambdaRole", "Arn"] },
           "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}}
+      },
+      "PMDDBTableName" : {
+          "Description" : "The Name of the processing metrics table",
+          "Value" : { "Ref": "processingMetricsTable" },
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "processingMetricsTable"]]}}
       },
       "DDBTableName" : {
           "Description" : "The Name of the requests table",

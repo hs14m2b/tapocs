@@ -1,5 +1,5 @@
 import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { COMPLETED, DEFAULTEXPIRY, FAILED, REQBATCH, REQITEM } from "./constants.mjs";
+import { COMPLETED, DDBVALIDATIONERRORS, DEFAULTEXPIRY, FAILED, REQBATCH, REQITEM, putItemWithConditionDDB, updateItemDDB } from "./constants.mjs";
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
@@ -7,6 +7,7 @@ const REGION = "eu-west-2";
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const REQUESTSTABLENAME = process.env['REQUESTSTABLENAME'];
+const PROCESSINGMETRICSTABLENAME = process.env['PROCESSINGMETRICSTABLENAME'];
 
 let https;
 try {
@@ -47,85 +48,132 @@ async function getBatchItems(client_id, batch_id) {
    return batchItems;
 }
 
-async function updateBatchRequest(item) {
-    let params = {
-        "TableName": REQUESTSTABLENAME,
-        "Item": item,
-        "ConditionExpression": "record_status <> :s",
-        "ExpressionAttributeValues": {
-            ":s": "COMPLETED"
-        }
-    };
-    const data = await ddbDocClient.send(new PutCommand(params));
-    console.log("Success - item updated", data);
-    return data;
-} 
-
 
 export const handler = async (event) => {
     console.log(JSON.stringify(event));
+    let failedItems = {
+        "batchItemFailures": []
+    }
     let items = [];
     for (let i = 0; i < event.Records.length; i++)
     {
         console.log("Processing item " + (i + 1));
-        //check that this is an update
-        if (event.Records[i].eventName != "MODIFY") {
-            console.log("not processing this item as not an update");
+        //check that this is an SMS
+        if (event.Records[i].eventSource != "aws:sqs") {
+            console.log("not processing this item as not received from SQS!");
             continue;
         }
-        let messageBody = event.Records[i].dynamodb.NewImage
-        let oldMessageBody = event.Records[i].dynamodb.OldImage
-        //check that it is for a RequestItem
-        if (!messageBody.record_type || !messageBody.record_type["S"] || messageBody.record_type["S"] != REQITEM) {
-            console.log("not processing as not a REQITEM");
-            continue;
-        }
-        //check that record_status is now "COMPLETED" or "FAILED"
-        if (!messageBody.record_status || !messageBody.record_status["S"]
-            || (messageBody.record_status["S"] != COMPLETED && messageBody.record_status["S"] != FAILED)) {
-            console.log("not processing as record_status is not COMPLETED or FAILED");
-            continue;
-        }
-        //check that old record_status was different"
-        if (!oldMessageBody.record_status || !oldMessageBody.record_status["S"]
-            || oldMessageBody.record_status["S"] == messageBody.record_status["S"]) {
-            console.log("not processing as old record_status same as new record_status");
-            continue;
-        }
-        //get all the request items in the batch
-        let request_partition = messageBody.request_partition["S"];
-        let batch_id = messageBody.batch_id["S"];
-        let batchItems = await getBatchItems(request_partition, batch_id);
-        let completedCount = 0;
-        let failedCount = 0;
-        let reqBatchItem = {};
-        let batchSize = 0;
-        for (let batchItem of batchItems)
-        {
-            if (batchItem.record_type == REQBATCH)
-            {
-                reqBatchItem = batchItem;
-                batchSize = batchItem.number_item;
-            }
-            else if (batchItem.record_type == REQITEM)
-            {
-                if (batchItem.record_status == COMPLETED) completedCount += 1;
-                if (batchItem.record_status == FAILED) failedCount += 1;
-            }
-        }
-        console.log("have looked at all items in batch. There are " + completedCount + " items completed and " + failedCount + " items failed out of a total of " + batchSize);
-        reqBatchItem.completed_item_count = completedCount + failedCount;
-        if (batchSize == 0) continue;
-        if (completedCount + failedCount == batchSize) {
-            reqBatchItem.record_status = "COMPLETED";
-            reqBatchItem.time_completed = parseInt((Date.now() / 1000).toString());
-        }
+        let itemIdentifier = event.Records[i].messageId;
         try {
-            let updateResponse = await updateBatchRequest(reqBatchItem);
-            console.log("have updated the batch request " + JSON.stringify(updateResponse));
+            
+            let messageBody = JSON.parse(event.Records[i].body);
+            //update the count on the batch item
+            //get all the request items in the batch
+            let request_partition = messageBody.request_partition;
+            let batch_id = messageBody.batch_id;
+            let update_fragment = "";
+            if (messageBody.record_status == COMPLETED) {
+                update_fragment = "SET completed_item_count = completed_item_count + :increment";
+            }
+            else
+            {
+                update_fragment = "SET failed_item_count = failed_item_count + :increment";
+            }
+            let updateParams = {
+                "TableName": PROCESSINGMETRICSTABLENAME,
+                "Key": {
+                    request_partition: request_partition,
+                    request_sort: batch_id + REQBATCH
+                },
+                "UpdateExpression": update_fragment,
+                "ExpressionAttributeValues": {
+                    ":increment": 1
+                },
+                "ReturnValues": "ALL_NEW"
+            };
+            let updateData = null;
+            try {
+                updateData = await updateItemDDB(updateParams, ddbDocClient);
+            } catch (error) {
+                if (DDBVALIDATIONERRORS.includes(error.name))
+                {
+                    console.log("caught database validation error - probably due to missing data from data clearout");
+                }
+                console.log("unable to increment batch count");
+                continue;
+            }
+            let completed_item_count = updateData.Attributes.completed_item_count;
+            let failed_item_count = updateData.Attributes.failed_item_count;
+            let number_item = updateData.Attributes.number_item;
+            
+            let completedCount = completed_item_count;
+            let failedCount = failed_item_count;
+            let reqBatchItem = {};
+            let batchSize = number_item;
+            /*
+            let batchItems = await getBatchItems(request_partition, batch_id);
+            for (let batchItem of batchItems)
+            {
+                if (batchItem.record_type == REQBATCH)
+                {
+                    reqBatchItem = batchItem;
+                    batchSize = batchItem.number_item;
+                }
+                else if (batchItem.record_type == REQITEM)
+                {
+                    if (batchItem.record_status == COMPLETED) completedCount += 1;
+                    if (batchItem.record_status == FAILED) failedCount += 1;
+                }
+            }
+            console.log("have looked at all items in batch. There are " + completedCount + " items completed and " + failedCount + " items failed out of a total of " + batchSize);
+            */
+            console.log("There are " + completedCount + " items completed and " + failedCount + " items failed out of a total of " + batchSize);
+            if (batchSize == 0) continue;
+            if (completedCount + failedCount == batchSize) {
+                console.log("marking batch as " + COMPLETED)
+                reqBatchItem.record_status = COMPLETED;
+                let time_completed = parseInt((Date.now() / 1000).toString());
+                try {
+                    let updateParams2 = {
+                        "TableName": REQUESTSTABLENAME,
+                        "Key": {
+                            request_partition: request_partition,
+                            request_sort: batch_id + REQBATCH
+                        },
+                        "UpdateExpression": "SET record_status = :status, time_completed  =:tc, completed_item_count = :cic, failed_item_count = :fic",
+                        "ConditionExpression": "record_status <> :s",
+                        "ExpressionAttributeValues": {
+                            ":status": COMPLETED,
+                            ":s": COMPLETED,
+                            ":tc": time_completed,
+                            ":cic": completed_item_count,
+                            ":fic": failed_item_count
+                        },
+                        "ReturnValues": "ALL_NEW"
+                    };
+                    try {
+                        let updateResponse = await updateItemDDB(updateParams2, ddbDocClient);
+                        console.log("have updated the batch request " + JSON.stringify(updateResponse));
+                    } catch (error) {
+                        if (DDBVALIDATIONERRORS.includes(error.name))
+                        {
+                            console.log("caught database validation error - probably due to missing data from data clearout");
+                        }
+                        console.log("unable to update batch request");
+                        continue;
+                    }
+                } catch (error) {
+                    console.log("update of batch failed due to [" + error.message + "]");            
+                }
+            }
         } catch (error) {
-            console.log("update of batch failed due to [" + error.message + "]");            
+            let failedItem = {
+                "itemIdentifier": itemIdentifier
+            };
+            failedItems.batchItemFailures.push(failedItem);
+            console.log("failed to process SQS record ", error.name, error.message);
         }
+            
     }
-    return;
+    return failedItems;
 }
