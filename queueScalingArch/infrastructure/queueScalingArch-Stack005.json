@@ -127,6 +127,20 @@
       },
       "DependsOn": []
     },
+    "queuescalingcallbackSQSLambdaEventSource":{
+      "Type" : "AWS::Lambda::EventSourceMapping",
+      "Properties" : {
+          "BatchSize" : 10,
+          "Enabled" : true,
+          "EventSourceArn" :  { "Fn::GetAtt": ["callbackQueue", "Arn"] },
+          "FunctionName" : {"Ref": "callbackFromNotifyFunction"},
+          "FunctionResponseTypes": ["ReportBatchItemFailures"],
+          "MaximumBatchingWindowInSeconds" : 1,
+          "ScalingConfig": {
+            "MaximumConcurrency" : 50
+          }
+        }
+    },
     "queuescalingcallbackHttpApi": {
       "Type": "AWS::Serverless::HttpApi",
       "Properties": {
@@ -134,7 +148,7 @@
         "Domain": {
           "BasePath": ["/"],
           "CertificateArn": {"Ref": "CERTIFICATEARN"},
-          "DomainName": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "CALLBACKDOMAIN" }]]},{ "Ref": "HOSTEDZONESUFFIX" }]]},
+          "DomainName": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "CALLBACKDOMAIN" }, "x"]]},{ "Ref": "HOSTEDZONESUFFIX" }]]},
           "EndpointConfiguration": "REGIONAL",
           "Route53": {
             "HostedZoneId": {"Ref": "HOSTEDZONEID"}
@@ -146,7 +160,297 @@
         },
         "StageName": "$default"
       }
+    },
+    "callbackQueue": {
+    "Type" : "AWS::SQS::Queue",
+    "Properties" : {
+        "DelaySeconds" : 0,
+        "KmsMasterKeyId" : "alias/aws/sqs",
+        "MaximumMessageSize" : 262144,
+        "MessageRetentionPeriod" : 345600,
+        "QueueName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "callbackQueue"]]},
+        "Tags" : [ {
+            "Key" : "shortcode",
+            "Value" : { "Ref" : "SHORTCODE" }
+        }],
+        "VisibilityTimeout" : 300
+      }
+    },
+    "callbackQueuePolicySQS": {
+        "Type": "AWS::SQS::QueuePolicy",
+        "Properties": {
+            "PolicyDocument": {
+                "Statement": [
+                    {
+                        "Action": "SQS:*",
+                        "Effect": "Allow",
+                        "Principal": {
+                            "AWS": { "Ref" : "AWS::AccountId" }
+                        },
+                        "Resource": {
+                            "Fn::GetAtt": ["callbackQueue", "Arn"]
+                        },
+                        "Sid": "Sid1517269801413"
+                    }
+                ],
+                "Version": "2012-10-17"
+            },
+            "Queues": [
+                {
+                "Ref": "callbackQueue"
+                }
+            ]
+        }
+    },
+    "queuescalingcallbackRestApi": {
+        "Type": "AWS::ApiGateway::RestApi",
+        "Properties" : {
+         "Name": {
+            "Fn::Join": ["i", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingcallbackRESTApi"]]
+          },
+           "Description" : "This is the REST API to receive callbacks from notify and queue them on SQS",
+            "EndpointConfiguration" : {
+                "Types" : ["REGIONAL"]
+            }
+        }
+    },
+    "queueScalingCallbackAPIDomainName": {
+        "Type": "AWS::ApiGateway::DomainName",
+        "Properties": {
+            "DomainName": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "CALLBACKDOMAIN" }]]},{ "Ref": "HOSTEDZONESUFFIX" }]]},
+            "RegionalCertificateArn": { "Ref": "CERTIFICATEARN" },
+            "SecurityPolicy":"TLS_1_2",
+            "EndpointConfiguration" : {
+                "Types" : ["REGIONAL"]
+            }
+        }
+    },
+    "queueScalingCallbackAPIR53Alias" : {
+        "Type" : "AWS::Route53::RecordSet",
+        "Properties" : {
+            "AliasTarget" : {
+                "DNSName" : { "Fn::GetAtt": ["queueScalingCallbackAPIDomainName", "RegionalDomainName"] },
+                "EvaluateTargetHealth" : "false",
+                "HostedZoneId" : { "Fn::GetAtt": ["queueScalingCallbackAPIDomainName", "RegionalHostedZoneId"] }
+            },
+            "Comment" : "DNS entry pointing at API Gateway",
+            "HostedZoneId" : { "Ref" : "HOSTEDZONEID" },
+            "Name" : {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "CALLBACKDOMAIN" }]]},{ "Ref": "HOSTEDZONESUFFIX" }]]},
+            "Type" : "A"
+        }
+    },
+    "queueScalingCallbackAPIDeployment": {
+        "Type": "AWS::ApiGateway::Deployment",
+        "Properties": {
+            "RestApiId": { "Ref": "queuescalingcallbackRestApi" },
+            "StageName" : "prod",
+            "Description": {"Fn::Join": ["",["Automatic API Deployment by Cloudformation ", "prod"]]}
+        },
+        "DependsOn": [
+            "callbackAPIMethodOPTIONS", 
+            "callbackAPIMethodPOST"
+        ]
+    },
+    "queueScalingCallbackAPIBaseMapping": {
+        "Type" : "AWS::ApiGateway::BasePathMapping",
+        "Properties" : {
+            "BasePath" : "",
+            "DomainName": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "CALLBACKDOMAIN" }]]},{ "Ref": "HOSTEDZONESUFFIX" }]]},
+            "RestApiId": { "Ref": "queuescalingcallbackRestApi" },
+            "Stage" : "prod"
+        },
+        "DependsOn": [
+            "queueScalingCallbackAPIDomainName", "queueScalingCallbackAPIDeployment"
+        ]
+    },
+    "queuescalingcallbackRestApiRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+              {
+                  "Action": ["sts:AssumeRole"],
+                  "Effect": "Allow",
+                  "Principal": {
+                      "Service": ["apigateway.amazonaws.com"]
+                  }
+              }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Path": "/",
+        "Policies": [
+            {
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": "sqs:SendMessage",
+                            "Effect": "Allow",
+                            "Resource": {
+                                "Fn::GetAtt": ["callbackQueue", "Arn"]
+                            }
+                        },
+                        {
+                            "Action": [
+                            "logs:CreateLogGroup",
+                            "logs:CreateLogStream",
+                            "logs:PutLogEvents"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": "*"
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                },
+                "PolicyName": "api-gateway-sqs-send-msg-policy"
+            }
+        ],
+        "RoleName": "api-gateway-sqs-send-msg-role"
+      }
+    },
+    "extapiAPIPath": {
+        "Type": "AWS::ApiGateway::Resource",
+        "Properties": {
+            "ParentId": { "Fn::GetAtt": ["queuescalingcallbackRestApi", "RootResourceId"] },
+            "PathPart": "extapi",
+            "RestApiId": { "Ref": "queuescalingcallbackRestApi" }
+        },
+          "DependsOn": [
+            "queuescalingcallbackRestApi"
+        ]
+    },
+    "notifyAPIPath": {
+        "Type": "AWS::ApiGateway::Resource",
+        "Properties": {
+            "ParentId": { "Ref": "extapiAPIPath" },
+            "PathPart": "notify",
+            "RestApiId": { "Ref": "queuescalingcallbackRestApi" }
+        },
+          "DependsOn": [
+            "queuescalingcallbackRestApi"
+        ]
+    },
+    "callbackAPIPath": {
+        "Type": "AWS::ApiGateway::Resource",
+        "Properties": {
+            "ParentId": { "Ref": "notifyAPIPath" },
+            "PathPart": "callback",
+            "RestApiId": { "Ref": "queuescalingcallbackRestApi" }
+        },
+          "DependsOn": [
+            "queuescalingcallbackRestApi"
+        ]
+    },
+    "callbackAPIMethodOPTIONS": {
+        "Type": "AWS::ApiGateway::Method",
+        "Properties": {
+            "AuthorizationType": "NONE",
+            "ResourceId": {
+                "Ref": "callbackAPIPath"
+            },
+            "RestApiId": {
+                "Ref": "queuescalingcallbackRestApi"
+            },
+            "HttpMethod": "OPTIONS",
+            "Integration": {
+                "IntegrationResponses": [
+                    {
+                        "StatusCode": 200,
+                        "ResponseParameters": {
+                            "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                            "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                            "method.response.header.Access-Control-Allow-Origin": "'*'"
+                        },
+                        "ResponseTemplates": {
+                            "application/json": ""
+                        }
+                    }
+                ],
+                "PassthroughBehavior": "WHEN_NO_MATCH",
+                "RequestTemplates": {
+                    "application/json": "{\"statusCode\": 200}"
+                },
+                "Type": "MOCK"
+            },
+            "MethodResponses": [
+                {
+                    "StatusCode": 200,
+                    "ResponseModels": {
+                        "application/json": "Empty"
+                    },
+                    "ResponseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": false,
+                        "method.response.header.Access-Control-Allow-Methods": false,
+                        "method.response.header.Access-Control-Allow-Origin": false
+                    }
+                }
+            ]
+        }
+    },
+    "callbackAPIMethodPOST": {
+    "Type": "AWS::ApiGateway::Method",
+    "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "POST",
+        "Integration": {
+            "Credentials": {
+                "Fn::GetAtt": ["queuescalingcallbackRestApiRole", "Arn"]
+            },
+            "IntegrationHttpMethod": "POST",
+            "IntegrationResponses": [
+                {
+                    "StatusCode": "200",
+                    "ResponseParameters": {
+                        "method.response.header.Access-Control-Allow-Origin": "'*'"
+                    }
+                }
+            ],
+            "PassthroughBehavior": "NEVER",
+            "RequestParameters": {
+                "integration.request.header.Content-Type": "'application/x-www-form-urlencoded'"
+            },
+            "RequestTemplates": {
+                "application/json": "Action=SendMessage&MessageBody=$input.body"
+            },
+            "Type": "AWS",
+            "Uri": {
+                "Fn::Join": [
+                    "",
+                    [
+                        "arn:aws:apigateway:",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        ":sqs:path/",
+                        {
+                            "Ref": "AWS::AccountId"
+                        },
+                        "/",
+                        {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "callbackQueue"]]}
+                    ]
+                ]
+            }
+        },
+        "MethodResponses": [
+            {
+                "ResponseModels": {
+                    "application/json": "Empty"
+                },
+                "StatusCode": "200",
+                "ResponseParameters": {
+                    "method.response.header.Access-Control-Allow-Origin": false
+                }
+            }
+        ],
+        "ResourceId": {
+            "Ref": "callbackAPIPath"
+        },
+        "RestApiId": {
+            "Ref": "queuescalingcallbackRestApi"
+        }
+      }
     }
+
   },
   "Outputs" : {
       "DeliveredQueueArn": {

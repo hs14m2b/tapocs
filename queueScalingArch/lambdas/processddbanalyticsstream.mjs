@@ -21,7 +21,7 @@ async function writeAnalyticsFile(item, bucket, request_partition, request_sort,
     let params = {
         "Body": body,
         "Bucket": bucket,
-        "Key": ANALYTICSPREFIX + client_id + request_partition + "-" + request_sort + ".json"
+        "Key": ANALYTICSPREFIX + client_id + "/" + request_partition + "-" + request_sort + ".json"
     }
     const response = await s3Client
         .send(new PutObjectCommand(params))
