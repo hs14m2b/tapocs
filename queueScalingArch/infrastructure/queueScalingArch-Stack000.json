@@ -1,0 +1,80 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "Cloudformation template to create parameters and shared components",
+  "Parameters": {
+    "SHORTCODE": {
+      "Type": "String",
+      "Description": "The shortcode for tags",
+      "Default": "mabr8"
+    },
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "Branchname for the deployment"
+    },
+    "PROJECTNAME": {
+      "Type": "String",
+      "Default": "queuescaling",
+      "Description": "Project name for the deployment"
+    },
+    "CERTARN": {
+      "Type": "String",
+      "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/a707a2d1-5966-4ac3-abe6-e17e71a41f4a"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Description": "NHSD TA Hosted Zone identifier for DNS entries",
+      "Default": "Z1075FNTZPAM5I"
+    },
+    "HOSTEDZONESUFFIX": {
+      "Type": "String",
+      "Description": "Hosted Zone DNS suffix",
+      "Default": "nhsdta.com"
+    }
+  },
+  "Globals": {
+    "Function": {
+      "Tags": {
+        "shortcode": { "Ref": "SHORTCODE" }
+      },
+      "Environment": {
+        "Variables": {
+          "BRANCHNAME": { "Ref": "BRANCHNAME" }
+        }
+      },
+      "Timeout": 300
+    }
+  },
+  "Resources": {
+    "batchSplittingSizeParam" : {
+      "Type" : "AWS::SSM::Parameter",
+      "Properties" : {
+          "AllowedPattern" : "^\\d+$",
+          "DataType" : "text",
+          "Description" : "Parameter containing the maximum number of records to be contained in each sub-batch",
+          "Name" : {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "BatchSplittingSizeParam"]]}},
+          "Tags" : {
+            "shortcode": {"Ref": "SHORTCODE"}
+          },
+          "Tier" : "Standard",
+          "Type" : "String",
+          "Value" : "500"
+        }
+    }
+
+  },
+  "Outputs" : {
+      "APIMInfo" : {
+          "Description" : "The Parameter Name containing JSON object with API Management Info for invoking APIs through the APIM platform",
+          "Value" : {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "APIMInfoParam"]]}},
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "APIMInfoParam"]]}}
+      },
+      "batchSplittingSizeParamInfo" : {
+          "Description" : "The Parameter Name containing sub-batch splitting size",
+          "Value" : {"Ref": "batchSplittingSizeParam"},
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "BatchSplittingSizeParam"]]}}
+      }
+  }
+}

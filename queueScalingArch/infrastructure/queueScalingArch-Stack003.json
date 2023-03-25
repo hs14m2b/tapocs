@@ -32,6 +32,16 @@
       "Type": "String",
       "Description": "Hosted Zone DNS suffix",
       "Default": "nhsdta.com"
+    },
+    "PDSFHIRURL": {
+      "Type": "String",
+      "Description": "The base URL of the PDS FHIR API - default to Sandbox",
+      "Default": "https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4/"
+    },
+    "APIMAUTHURL": {
+      "Type": "String",
+      "Description": "The base URL of the PDS FHIR API - default to Sandbox",
+      "Default": "https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4/"
     }
   },
   "Globals": {
