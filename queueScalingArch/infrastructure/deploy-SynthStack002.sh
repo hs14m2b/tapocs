@@ -10,7 +10,7 @@ echo $TIMESTAMP
 cd ..
 cd lambdas
 npm install
-zip -qr ${TIMESTAMP}synthstack002lambdas.zip ./*
+zip -qr ${TIMESTAMP}synthstack002lambdas.zip *.mjs
 #zip -qr ${TIMESTAMP}synthstack002layer.zip node_modules
 # update cloudformation templates
 cp ../infrastructure/queueScalingArch-SynthStack002.json queueScalingArch-SynthStack002.json

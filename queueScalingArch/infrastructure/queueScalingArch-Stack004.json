@@ -72,9 +72,10 @@
           "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "sendSMSFunction"]]
         },
         "Handler": "sendsms.handler",
+        "Layers": [{"Fn::Join": ["", ["arn:aws:lambda:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"} ,":layer:", { "Ref": "BRANCHNAME" },"-", { "Ref": "PROJECTNAME" }, "-","queuescalingLambdaLayer" ,":3" ]]}],
         "MemorySize": "1024",
         "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
         }],
         "Timeout": 300
@@ -112,9 +113,10 @@
           "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "sendEMAILFunction"]]
         },
         "Handler": "sendemail.handler",
+        "Layers": [{"Fn::Join": ["", ["arn:aws:lambda:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"} ,":layer:", { "Ref": "BRANCHNAME" },"-", { "Ref": "PROJECTNAME" }, "-","queuescalingLambdaLayer" ,":3" ]]}],
         "MemorySize": "1024",
         "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
         }],
         "Timeout": 300

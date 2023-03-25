@@ -9,8 +9,8 @@ echo $TIMESTAMP
 
 cd ..
 cd lambdas
-npm install
-zip -qr ${TIMESTAMP}stack006lambdas.zip ./*
+#npm install
+zip -qr ${TIMESTAMP}stack006lambdas.zip *.mjs
 #zip -qr ${TIMESTAMP}stack006layer.zip node_modules
 # update cloudformation templates
 cp ../infrastructure/queueScalingArch-Stack006.json queueScalingArch-Stack006.json

@@ -3,6 +3,7 @@ import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand, UpdateCommand } 
 import { SQSClient, SendMessageBatchCommand, SendMessageCommand } from "@aws-sdk/client-sqs";
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { getOAuth2AccessToken } from './api_common_functions.mjs';
 
 const REGION = "eu-west-2";
 const ddbClient = new DynamoDBClient({ region: REGION });
@@ -31,6 +32,14 @@ async function sendItemsSQS(items) {
     return data;
 } 
 
+async function getAPIToken(){
+    console.log("getting access token");
+    let oauth_response = JSON.parse(await getOAuth2AccessToken(apiKey, kid, privatekey, APIMDOMAIN, APIAUTHPATH)) ;
+    access_token = oauth_response.access_token;
+    oauth2_issued_time = Math.floor(parseInt(oauth_response.issued_at)/1000);
+    oauth2_validity_period = parseInt(oauth_response.expires_in);
+
+}
 
 export const handler = async (event) => {
     console.log(JSON.stringify(event));

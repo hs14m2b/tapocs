@@ -1,13 +1,20 @@
-import { https } from 'node:https';
-import { jwt } from 'jsonwebtoken';
-import { uuid } from 'uuid';
-const querystring = require('querystring');
+import pkg from 'jsonwebtoken';
+import { URLSearchParams } from 'url';
+const { jwt } = pkg;
+import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
+
+let https;
+try {
+  https = await import('node:https');
+} catch (err) {
+  console.log('https support is disabled!');
+}
 
 export const createSignedJwtForAuth = (apiKey, kid, privatekey, oauth_fqdn, oauth_auth_path) =>
 {
 
-	let jwtid = uuid.v4();
+	let jwtid = uuidv4();
 	let expiresIn = 300;
     let client_token_sign_options = { 
 		"algorithm": "RS512",
@@ -29,11 +36,11 @@ export const getOAuth2AccessToken = async (signed_jwt, oauth_fqdn, oauth_auth_pa
 {
 
 	// form data
-	let postData = querystring.stringify({
+	let postData = new URLSearchParams({
         "grant_type": "client_credentials",
         "client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
         "client_assertion": signed_jwt
-      });
+      }).toString();
   
     //console.log("request POST data is " + JSON.stringify(postData));
     // request option
@@ -83,13 +90,13 @@ export const getOAuth2AccessTokenViaTokenExchange = async (signed_jwt, id_token,
 {
 
 	// form data
-	let postData = querystring.stringify({
+	let postData = new URLSearchParams({
         "grant_type": "urn:ietf:params:oauth:grant-type:token-exchange",
         "client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
         "client_assertion": signed_jwt,
         "subject_token_type": "urn:ietf:params:oauth:token-type:id_token",
         "subject_token": id_token
-      });
+      }).toString();
   
     //console.log("request POST data is " + JSON.stringify(postData));
     // request option

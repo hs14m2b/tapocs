@@ -54,7 +54,7 @@
           "AllowedPattern" : "^\\d+$",
           "DataType" : "text",
           "Description" : "Parameter containing the maximum number of records to be contained in each sub-batch",
-          "Name" : {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "BatchSplittingSizeParam"]]}},
+          "Name" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "BatchSplittingSizeParam"]]},
           "Tags" : {
             "shortcode": {"Ref": "SHORTCODE"}
           },
@@ -62,16 +62,29 @@
           "Type" : "String",
           "Value" : "500"
         }
+    },
+    "queuescalingpocFunctionLayer": {
+      "Type": "AWS::Serverless::LayerVersion",
+      "Properties": {
+        "ContentUri": "queuescalinglayer.zip",
+        "Description": "The lambda layer containing the dependencies for the Lambda",
+        "LayerName": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingLambdaLayer"]]},
+        "RetentionPolicy": "Delete"
+      }
     }
-
   },
   "Outputs" : {
       "APIMInfo" : {
           "Description" : "The Parameter Name containing JSON object with API Management Info for invoking APIs through the APIM platform",
-          "Value" : {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "APIMInfoParam"]]}},
+          "Value" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "APIMInfoParam"]]},
           "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "APIMInfoParam"]]}}
       },
-      "batchSplittingSizeParamInfo" : {
+      "queuescalingLambdaLayerArn" : {
+        "Description" : "The Arn of the QueueScaling Lambda Layer",
+        "Value" :  { "Ref": "queuescalingpocFunctionLayer" },
+        "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingLambdaLayerArn"]]}}
+    },
+    "batchSplittingSizeParamInfo" : {
           "Description" : "The Parameter Name containing sub-batch splitting size",
           "Value" : {"Ref": "batchSplittingSizeParam"},
           "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "BatchSplittingSizeParam"]]}}
