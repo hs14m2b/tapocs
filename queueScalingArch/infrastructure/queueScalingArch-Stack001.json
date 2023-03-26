@@ -106,6 +106,7 @@
                             "s3:*",
                             "sns:*",
                             "sqs:*",
+                            "ssm:*",
                             "sts:AssumeRole",
                             "iam:PassRole",
                             "kms:*"

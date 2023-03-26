@@ -1,8 +1,8 @@
-import pkg from 'jsonwebtoken';
-import { URLSearchParams } from 'url';
-const { jwt } = pkg;
+import jwt from 'jsonwebtoken';
+const { sign } = jwt;
 import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
+import { URLSearchParams } from 'url';
 
 let https;
 try {
@@ -27,7 +27,7 @@ export const createSignedJwtForAuth = (apiKey, kid, privatekey, oauth_fqdn, oaut
 	let client_token_payload = {
         "aud": HTTPS + oauth_fqdn + oauth_auth_path
     };
-	let client_token = jwt.sign(client_token_payload, privatekey, client_token_sign_options);
+	let client_token = sign(client_token_payload, privatekey, client_token_sign_options);
 
     return client_token;
 };
@@ -141,3 +141,51 @@ export const getOAuth2AccessTokenViaTokenExchange = async (signed_jwt, id_token,
           req.end();
       });
 };
+
+export const getPatientDemographicInfo = async (nhs_number, access_token, pds_fhir_fqdn, pds_fhir_path) =>
+{
+  //with the Patient path!
+	let XRequestID = uuidv4();
+
+  // request option
+let options = {
+    host: pds_fhir_fqdn,
+    port: 443,
+    method: 'GET',
+    path: pds_fhir_path + nhs_number,
+    rejectUnauthorized: false,
+    headers: {
+      'Authorization': 'Bearer '+ access_token,
+      'accept': 'application/fhir+json',
+      "X-Request-ID": XRequestID
+    }
+  };
+
+  console.log("request options are  " + JSON.stringify(options));
+  return new Promise(function (resolve, reject) {
+      // request object
+      var req = https.request(options, function (res) {
+          var result = '';
+          console.log("HTTP status code: " + res.statusCode);
+          res.on('data', function (chunk) {
+              result += chunk;
+          });
+          res.on('end', function () {
+              console.log(result);
+              resolve(result);
+          });
+          res.on('error', function (err) {
+              console.log(err);
+              reject(err);
+          })
+      });
+       
+      // req error
+      req.on('error', function (err) {
+        console.log(err);
+      });
+       
+      //send request
+      req.end();
+  });
+}

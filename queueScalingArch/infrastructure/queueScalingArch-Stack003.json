@@ -33,10 +33,15 @@
       "Description": "Hosted Zone DNS suffix",
       "Default": "nhsdta.com"
     },
-    "PDSFHIRURL": {
+    "PDSFHIRFQDN": {
       "Type": "String",
-      "Description": "The base URL of the PDS FHIR API - default to Sandbox",
-      "Default": "https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4/"
+      "Description": "The FQDN of the PDS FHIR API - default to Sandbox",
+      "Default": "sandbox.api.service.nhs.uk"
+    },
+    "PDSFHIRPATH": {
+      "Type": "String",
+      "Description": "The base path of the PDS FHIR API - default to Sandbox",
+      "Default": "/personal-demographics/FHIR/R4/Patient/"
     },
     "APIMAUTHURL": {
       "Type": "String",
@@ -97,6 +102,9 @@
           "Variables" : {
             "SMSDELIVERYQUEUEURL" : {"Ref": "smsDeliveryQueue"},
             "EMAILDELIVERYQUEUEURL" : {"Ref": "emailDeliveryQueue"},
+            "APIMINFOPARAM": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "APIMInfoParam"]]},
+            "PDSFHIRFQDN": {"Ref": "PDSFHIRFQDN"},
+            "PDSFHIRPATH": {"Ref": "PDSFHIRPATH"},
             "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}}
           }
         },

@@ -1,16 +1,22 @@
 import { ACTIVE, DEFAULTEXPIRY, PENDING, REQITEM, ROUTEPLAN, putItemsDDB, putUnprocessedItemsDDB, updateItemDDB } from "./constants.mjs";
 import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { SQSClient, SendMessageBatchCommand, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { SSMClient, GetParametersCommand } from "@aws-sdk/client-ssm"; // ES Modules import
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { getOAuth2AccessToken } from './api_common_functions.mjs';
+import { createSignedJwtForAuth, getOAuth2AccessToken, getPatientDemographicInfo } from './api_common_functions.mjs';
 
 const REGION = "eu-west-2";
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
+const ssmclient = new SSMClient({ region: REGION });
 const REQUESTSTABLENAME = process.env['REQUESTSTABLENAME'];
 const SMSDELIVERYQUEUEURL = process.env['SMSDELIVERYQUEUEURL'];
 const EMAILDELIVERYQUEUEURL = process.env['EMAILDELIVERYQUEUEURL'];
+const APIMINFOPARAM = process.env['APIMINFOPARAM'];
+const PDSFHIRFQDN = process.env['PDSFHIRFQDN'];
+const PDSFHIRPATH = process.env['PDSFHIRPATH'];
+
 const client = new SQSClient();
 const BATCHSIZE = 0;
 
@@ -32,17 +38,63 @@ async function sendItemsSQS(items) {
     return data;
 } 
 
-async function getAPIToken(){
-    console.log("getting access token");
-    let oauth_response = JSON.parse(await getOAuth2AccessToken(apiKey, kid, privatekey, APIMDOMAIN, APIAUTHPATH)) ;
-    access_token = oauth_response.access_token;
-    oauth2_issued_time = Math.floor(parseInt(oauth_response.issued_at)/1000);
-    oauth2_validity_period = parseInt(oauth_response.expires_in);
-
+var apim_info = false;
+async function getApimInfo(invocation_time){
+    if (apim_info)
+    {
+        let info_age = invocation_time - apim_info.retrieved_time;
+        if (info_age < 300) return apim_info;
+    }
+    let input = {
+        "Names": [APIMINFOPARAM],
+        "WithDecryption": true
+    }
+    const command = new GetParametersCommand(input);
+    const response = await ssmclient.send(command);
+    console.log("response from param store ", response );
+    let returned_parameter = JSON.parse(response.Parameters[0].Value);
+    apim_info = {
+        "retrieved_time": invocation_time,
+        ...returned_parameter
+    }
+    return apim_info;
 }
+
+var access_token_info=false;
+async function getAPIToken(invocation_time, _apim_info){
+    if (access_token_info)
+    {
+        let access_token_age = invocation_time - access_token_info.oauth2_issued_time;
+        if (access_token_age < access_token_info.oauth2_validity_period - 120) return access_token_info;
+    }
+    console.log("getting access token");
+    let {apiKey, kid, privateKey, apiDomain, apiauthpath} = _apim_info;
+    console.log("private key is ", privateKey);
+    privateKey = privateKey.replace(/\\n/g, "\n");
+    console.log("private key is ", privateKey);
+    let signed_jwt = createSignedJwtForAuth(apiKey, kid, privateKey, apiDomain, apiauthpath);
+    let oauth_response = JSON.parse(await getOAuth2AccessToken(signed_jwt, apiDomain, apiauthpath))
+    let access_token = oauth_response.access_token;
+    let oauth2_issued_time = Math.floor(parseInt(oauth_response.issued_at)/1000);
+    let oauth2_validity_period = parseInt(oauth_response.expires_in);
+    access_token_info = {
+        access_token: access_token,
+        oauth2_issued_time: invocation_time,
+        oauth2_validity_period: oauth2_validity_period
+    }
+    return access_token;
+}
+
 
 export const handler = async (event) => {
     console.log(JSON.stringify(event));
+    let invocation_time = parseInt((Date.now() / 1000).toString());
+    let _apim_info = await getApimInfo(invocation_time);
+    console.log(JSON.stringify(_apim_info));
+    let access_token = await getAPIToken(invocation_time, _apim_info);
+    console.log("access token is ", access_token);
+    let demographic_info = await getPatientDemographicInfo("9000000009", access_token, PDSFHIRFQDN, PDSFHIRPATH);
+    console.log("demographics info is xxx ", JSON.stringify(demographic_info));
     let items = [];
     for (let i = 0; i < event.Records.length; i++) {
         console.log("Processing item " + (i + 1));
