@@ -69,9 +69,9 @@ async function getAPIToken(invocation_time, _apim_info){
     }
     console.log("getting access token");
     let {apiKey, kid, privateKey, apiDomain, apiauthpath} = _apim_info;
-    console.log("private key is ", privateKey);
+    //console.log("private key is ", privateKey);
     privateKey = privateKey.replace(/\\n/g, "\n");
-    console.log("private key is ", privateKey);
+    //console.log("private key is ", privateKey);
     let signed_jwt = createSignedJwtForAuth(apiKey, kid, privateKey, apiDomain, apiauthpath);
     let oauth_response = JSON.parse(await getOAuth2AccessToken(signed_jwt, apiDomain, apiauthpath))
     let access_token = oauth_response.access_token;

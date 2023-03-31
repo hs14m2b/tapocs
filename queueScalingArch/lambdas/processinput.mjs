@@ -12,6 +12,7 @@ import {
 } from "./constants.mjs";
 import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
@@ -22,9 +23,12 @@ const s3Client = new S3Client({
 })
 const REQUESTSTABLENAME = process.env['REQUESTSTABLENAME'];
 const PROCESSINGMETRICSTABLENAME = process.env['PROCESSINGMETRICSTABLENAME'];
+const MONITORINGQUEUEURL = process.env['MONITORINGQUEUEURL'];
+
 const HEADERSTART = "messageid,";
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
+const sqsclient = new SQSClient();
 
 const SPLITTINGSIZE = 500; //
 async function getS3Object(params) {
@@ -196,6 +200,8 @@ export const handler = async (event) => {
                 items = [];
             }
             //update number of items
+            batch_item.number_item = itemsAdded;
+            batch_item.number_sub_batches = splitNo;
             let updateParams = {
                 "TableName": REQUESTSTABLENAME,
                 "Key": {
@@ -213,6 +219,17 @@ export const handler = async (event) => {
             updateParams.TableName = PROCESSINGMETRICSTABLENAME;
             updateData = await updateItemDDB(updateParams, ddbDocClient);
             console.log("have updated number of items on batch");
+            //publish batch to monitoring queue
+            let commandParams = {
+                DelaySeconds: 30,
+                MessageBody: JSON.stringify(batch_item),
+                QueueUrl:MONITORINGQUEUEURL
+            }
+            console.log("sqs command is ", JSON.stringify(commandParams));
+            const sqsresponse = await sqsclient.send(new SendMessageCommand(commandParams));
+            console.log(JSON.stringify(sqsresponse));
+            console.log("published item to SQS queue ", JSON.stringify(sqsresponse));
+    
             //move original S3 item by doing copy/delete
             let copyObjectCommandParams = {
                 CopySource: bucket + "/" + key,

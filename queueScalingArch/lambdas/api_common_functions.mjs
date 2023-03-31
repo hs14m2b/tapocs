@@ -172,7 +172,11 @@ let options = {
           });
           res.on('end', function () {
               console.log(result);
-              resolve(result);
+              let response = {
+                "status": res.statusCode,
+                "body": result
+              }
+              resolve(response);
           });
           res.on('error', function (err) {
               console.log(err);

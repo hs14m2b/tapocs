@@ -1,0 +1,92 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "Cloudformation template to subscribe to monitoring SQS queue and update progress of a batch",
+  "Parameters": {
+    "SHORTCODE": {
+      "Type": "String",
+      "Description": "The shortcode for tags",
+      "Default": "mabr8"
+    },
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "Branchname for the deployment"
+    },
+    "PROJECTNAME": {
+      "Type": "String",
+      "Default": "queuescaling",
+      "Description": "Project name for the deployment"
+    },
+    "CERTARN": {
+      "Type": "String",
+      "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/a707a2d1-5966-4ac3-abe6-e17e71a41f4a"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Description": "NHSD TA Hosted Zone identifier for DNS entries",
+      "Default": "Z1075FNTZPAM5I"
+    },
+    "HOSTEDZONESUFFIX": {
+      "Type": "String",
+      "Description": "Hosted Zone DNS suffix",
+      "Default": "nhsdta.com"
+    }
+  },
+  "Globals": {
+    "Function": {
+      "Tags": {
+        "shortcode": { "Ref": "SHORTCODE" }
+      },
+      "Environment": {
+        "Variables": {
+          "BRANCHNAME": { "Ref": "BRANCHNAME" }
+        }
+      },
+      "Timeout": 300
+    }
+  },
+  "Resources": {
+    "monitorrequestprogressFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": "stack009lambdas.zip",
+        "Description": "The lambda function that receives messages from SQS updates metrics for each batch and re-queues if not completed",
+        "Environment": {
+          "Variables" : {
+            "MONITORINGQUEUEURL" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "monitoringQueueUrl"]]}},
+            "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}}
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "monitorrequestprogressFunction"]]
+        },
+        "Handler": "monitorrequestprogress.handler",
+        "Layers": [{"Fn::Join": ["", ["arn:aws:lambda:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"} ,":layer:", { "Ref": "BRANCHNAME" },"-", { "Ref": "PROJECTNAME" }, "-","queuescalingLambdaLayer" ,":3" ]]}],
+        "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
+        "Runtime": "nodejs18.x",
+        "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
+        }],
+        "Timeout": 300
+      }
+    },
+    "SQSLambdaEventSource":{
+      "Type" : "AWS::Lambda::EventSourceMapping",
+      "Properties" : {
+          "BatchSize" : 1,
+          "Enabled" : true,
+          "EventSourceArn" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "monitoringQueueArn"]]}},
+          "FunctionName" : {"Ref": "monitorrequestprogressFunction"},
+          "MaximumBatchingWindowInSeconds" : 1,
+          "ScalingConfig": {
+            "MaximumConcurrency" : 100
+          }
+        }
+    }
+
+
+  },
+  "Outputs" : {
+  }
+}
