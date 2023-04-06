@@ -106,6 +106,7 @@
                             "s3:*",
                             "sns:*",
                             "sqs:*",
+                            "ssm:*",
                             "sts:AssumeRole",
                             "iam:PassRole",
                             "kms:*"
@@ -127,17 +128,20 @@
         "Environment": {
           "Variables" : {
             "REQUESTSTABLENAME" : {"Ref": "inputItemsTable"},
-            "PROCESSINGMETRICSTABLENAME" : {"Ref": "processingMetricsTable"}
+            "PROCESSINGMETRICSTABLENAME" : {"Ref": "processingMetricsTable"},
+            "MONITORINGQUEUENAME" : {"Fn::GetAtt": ["monitoringQueue", "QueueName"]},
+            "MONITORINGQUEUEURL" : {"Ref": "monitoringQueue"}
           }
         },
         "FunctionName": {
           "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processInputFunction"]]
         },
         "Handler": "processinput.handler",
+        "Layers": [{"Fn::Join": ["", ["arn:aws:lambda:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"} ,":layer:", { "Ref": "BRANCHNAME" },"-", { "Ref": "PROJECTNAME" }, "-","queuescalingLambdaLayer" ,":3" ]]}],
         "MemorySize": "4096",
         "ReservedConcurrentExecutions": 5,
         "Role": { "Fn::GetAtt": ["queuescalingpocLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
         }],
         "Timeout": 900
@@ -356,8 +360,22 @@
           "Enabled" : true
         }
       }
-    }
-
+    },
+    "monitoringQueue": {
+      "Type" : "AWS::SQS::Queue",
+      "Properties" : {
+          "DelaySeconds" : 30,
+          "KmsMasterKeyId" : "alias/aws/sqs",
+          "MaximumMessageSize" : 262144,
+          "MessageRetentionPeriod" : 345600,
+          "QueueName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "monitoringQueue"]]},
+          "Tags" : [ {
+              "Key" : "shortcode",
+              "Value" : { "Ref" : "SHORTCODE" }
+          }],
+          "VisibilityTimeout" : 300
+        }
+      }
   },
   "Outputs" : {
       "S3BucketName" : {
@@ -384,6 +402,16 @@
           "Description" : "The Arn of the Stream from the DDB Table",
           "Value" : { "Fn::GetAtt": ["inputItemsTable", "StreamArn"] },
           "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTableStreamArn"]]}}
-      }
+      },
+      "MonitoringQueueArn": {
+        "Description" : "The Arn of the SQS Queue",
+        "Value" : { "Fn::GetAtt": ["monitoringQueue", "Arn"] },
+        "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "monitoringQueueArn"]]}}
+      },
+      "MonitoringQueueUrl": {
+        "Description" : "The Arn of the SQS Queue",
+        "Value" : { "Ref": "monitoringQueue" },
+        "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "monitoringQueueUrl"]]}}
+    }
   }
 }

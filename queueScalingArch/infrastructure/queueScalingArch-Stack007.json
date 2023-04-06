@@ -54,21 +54,21 @@
       "Type": "AWS::Lambda::Function",
       "Properties": {
         "Code": "stack007lambdas.zip",
-        "Description": "The lambda function that receives MODIFY REQITEM items the DDB Stream and updates the REQBATCH item as needed",
+        "Description": "The lambda function that receives message delivered items from SQS and updates the REQITEM and REQSUBBATCH item as needed",
         "Environment": {
           "Variables": {
             "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}},
-            "PROCESSINGMETRICSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "processingMetricsTable"]]}},
-            "FINISHEDQUEUEURL" : {"Ref": "requestFinishedQueue"}
+            "PROCESSINGMETRICSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "processingMetricsTable"]]}}
           }
         },
         "FunctionName": {
           "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processMessageDeliveredFunction"]]
         },
         "Handler": "processmessagedelivered.handler",
+        "Layers": [{"Fn::Join": ["", ["arn:aws:lambda:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"} ,":layer:", { "Ref": "BRANCHNAME" },"-", { "Ref": "PROJECTNAME" }, "-","queuescalingLambdaLayer" ,":3" ]]}],
         "MemorySize": "1024",
         "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
         }],
         "Timeout": 300
@@ -92,23 +92,23 @@
       "Type": "AWS::Lambda::Function",
       "Properties": {
         "Code": "stack007lambdas.zip",
-        "Description": "The lambda function that receives MODIFY REQITEM items the DDB Stream and updates the REQBATCH item as needed",
+        "Description": "The lambda function that receives message delivered items from SQS and updates the REQITEM and REQSUBBATCH item as needed or publishes the next action to SQS",
         "Environment": {
           "Variables": {
             "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}},
             "PROCESSINGMETRICSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "processingMetricsTable"]]}},
             "SMSDELIVERYQUEUEURL" : {"Fn::ImportValue" :{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "smsDeliveryQueueUrl"]]}},
-            "EMAILDELIVERYQUEUEURL" : {"Fn::ImportValue" :{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "emailDeliveryQueueUrl"]]}},
-            "FINISHEDQUEUEURL" : {"Ref": "requestFinishedQueue"}
+            "EMAILDELIVERYQUEUEURL" : {"Fn::ImportValue" :{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "emailDeliveryQueueUrl"]]}}
           }
         },
         "FunctionName": {
           "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processMessageFailedFunction"]]
         },
         "Handler": "processmessagefailed.handler",
+        "Layers": [{"Fn::Join": ["", ["arn:aws:lambda:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"} ,":layer:", { "Ref": "BRANCHNAME" },"-", { "Ref": "PROJECTNAME" }, "-","queuescalingLambdaLayer" ,":3" ]]}],
         "MemorySize": "1024",
         "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
         }],
         "Timeout": 300
@@ -127,28 +127,8 @@
             "MaximumConcurrency" : 50
           }
         }
-    },
-    "requestFinishedQueue": {
-    "Type" : "AWS::SQS::Queue",
-    "Properties" : {
-        "DelaySeconds" : 0,
-        "KmsMasterKeyId" : "alias/aws/sqs",
-        "MaximumMessageSize" : 262144,
-        "MessageRetentionPeriod" : 345600,
-        "QueueName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "requestFinished"]]},
-        "Tags" : [ {
-            "Key" : "shortcode",
-            "Value" : { "Ref" : "SHORTCODE" }
-        }],
-        "VisibilityTimeout" : 300
-      }
     }
   },
   "Outputs" : {
-      "requestFinishedQueueArn": {
-          "Description" : "The Arn of the Request Finished SQS Queue",
-          "Value" : { "Fn::GetAtt": ["requestFinishedQueue", "Arn"] },
-          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestFinishedQueueArn"]]}}
-      }
   }
 }

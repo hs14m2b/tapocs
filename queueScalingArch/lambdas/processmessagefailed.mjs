@@ -7,12 +7,13 @@ import {
     PENDING,
     REQITEM,
     ROUTEPLAN,
+    REQSUBBATCH,
     SENT,
     TEMPORARY_FAILURE
 } from "./constants.mjs";
 import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { SQSClient, SendMessageBatchCommand, SendMessageCommand } from "@aws-sdk/client-sqs";
-import { putItemWithConditionDDB, runQueryDDB, updateItemDDB } from "./constants.mjs";
+import { putItemWithConditionDDB, runQueryDDB, updateItemDDB, transactWriteItemsDDB } from "./constants.mjs";
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
@@ -23,7 +24,6 @@ const REQUESTSTABLENAME = process.env['REQUESTSTABLENAME'];
 const PROCESSINGMETRICSTABLENAME = process.env['PROCESSINGMETRICSTABLENAME'];
 const SMSDELIVERYQUEUEURL = process.env['SMSDELIVERYQUEUEURL'];
 const EMAILDELIVERYQUEUEURL = process.env['EMAILDELIVERYQUEUEURL'];
-const FINISHEDQUEUEURL = process.env['FINISHEDQUEUEURL'];
 const sqsClient = new SQSClient();
 
 
@@ -32,24 +32,45 @@ function sleep(ms) {
     return new Promise((resolve) => { setTimeout(resolve, ms); });
 }
 
-async function updateRequestItem(request_partition, request_id) {
-    let updateParams = {
-        "TableName": REQUESTSTABLENAME,
-        "Key": {
-            request_partition: request_partition,
-            request_sort: request_id + REQITEM
-        },
-        "UpdateExpression": "set record_status = :rs",
-        "ExpressionAttributeValues": {
-            ":rs": FAILED
-        },
-        "ReturnValues": "ALL_NEW"
-    };
+async function updateRequestItemFailed(request_partition, request_id) {
+    let time_completed = parseInt((Date.now() / 1000).toString());
+    let date_completed = parseInt(new Date().toISOString().substring(0,10).replace(/-/g, ""));
+    let updateItems = 
+    [{
+        "Update": {
+            "Key": {
+                request_partition: {"S": request_partition},
+                request_sort: {"S": request_id + REQITEM}
+            },
+            "UpdateExpression": "SET record_status = :rs, time_completed  =:tc, date_completed = :dc",
+            "TableName": REQUESTSTABLENAME,
+            "ExpressionAttributeValues": {
+                ":rs": {"S": FAILED},
+                ":tc": {"N": time_completed.toString()},
+                ":dc": {"N": date_completed.toString()}
+            }
+        }
+    },{
+        "Update": {
+            "Key": {
+                request_partition: {"S": request_partition},
+                request_sort: {"S": REQSUBBATCH}
+            },
+            "UpdateExpression": "SET failed_item_count = failed_item_count + :increment",
+            "TableName": REQUESTSTABLENAME,
+            "ExpressionAttributeValues": {
+                ":increment": {"N": "1"}
+            }
+        }
+    }]
+
+
 
     try {
-        const data = await updateItemDDB(updateParams, ddbDocClient);
+        const data = await transactWriteItemsDDB(updateItems, ddbClient);
         console.log("Success - item updated", data);
         //publish item to SQS
+        /*
         let sqsParams = {
             DelaySeconds: 0,
             MessageBody: JSON.stringify(data.Attributes),
@@ -57,6 +78,7 @@ async function updateRequestItem(request_partition, request_id) {
         }
         const response = await sqsClient.send(new SendMessageCommand(sqsParams));
         console.log(JSON.stringify(response));
+        */
         return data;
     } catch (error) {
         console.log("Failed to update request item ", error.name, error.message);
@@ -144,15 +166,19 @@ export const handler = async (event) => {
             let request_partition = referenceParts[0];
             let request_sort = referenceParts[1];
             //update the status of the item
+            let time_completed = parseInt((Date.now() / 1000).toString());
+            let date_completed = parseInt(new Date().toISOString().substring(0,10).replace(/-/g, ""));
             let updateParams = {
                 "TableName": REQUESTSTABLENAME,
                 "Key": {
                     request_partition: request_partition,
                     request_sort: request_sort
                 },
-                "UpdateExpression": "set record_status = :s",
+                "UpdateExpression": "SET record_status = :s, time_completed  =:tc, date_completed = :dc",
                 "ExpressionAttributeValues": {
-                    ":s": messageBody.status.toUpperCase()
+                    ":s": messageBody.status.toUpperCase(),
+                    ":tc": time_completed,
+                    ":dc": date_completed
                 },
                 "ReturnValues": "ALL_NEW"
             };
@@ -161,15 +187,15 @@ export const handler = async (event) => {
             let sub_batch_no = updateData.Attributes.sub_batch_no;
             let request_id = updateData.Attributes.request_id;
             let plan_sequence = parseInt(updateData.Attributes.plan_sequence);
-            let requestItems = await getNextRoutePlan(request_partition, request_id, plan_sequence);
-            if (requestItems.length == 0) {
+            let remainingRoutePlans = await getNextRoutePlan(request_partition, request_id, plan_sequence);
+            if (remainingRoutePlans.length == 0) {
                 console.log("there are no more ROUTEPLANs - marking REQITEM as FAILED");
-                let updateData = await updateRequestItem(request_partition, request_id);
+                let updateData = await updateRequestItemFailed(request_partition, request_id);
                 console.log("have updated the request item to FAILED " + JSON.stringify(updateData));
             }
             else
             {
-                let nextRoutePlan = requestItems[0];
+                let nextRoutePlan = remainingRoutePlans[0];
                 nextRoutePlan.record_status = ACTIVE;
                 let updateResponse = await updateRoutePlan(nextRoutePlan);
                 //publish the event to the "email or SMS delivery" queue

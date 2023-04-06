@@ -1,4 +1,5 @@
 import { BatchWriteCommand, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { TransactWriteItemsCommand  } from "@aws-sdk/client-dynamodb";
 
 export const DEFAULTEXPIRY = 3600;
 export const REQITEM = "REQITEM";
@@ -16,8 +17,10 @@ export const TEMPORARY_FAILURE = "TEMPORARY-FAILURE";
 export const NOTREQUIRED = "NOTREQUIRED";
 export const ACCEPTED = "ACCEPTED";
 export const ENRICHED = "ENRICHED";
+export const ALLNEW = "ALL_NEW";
 export const SQSBATCHSIZE = 10;
 export const DDBBATCHSIZE = 25;
+export const RANDOMCALLBACKDELAY = 5;
 export const REGION = "eu-west-2";
 export const ANALYTICSPREFIX = "analytics/";
 export const DDBSCALINGERRORS = ["ThrottlingException",
@@ -164,7 +167,6 @@ export const runQueryDDB = async (queryParams, ddbDocClient) => {
         try {
             console.log("params are " + JSON.stringify(queryParams));
             let data = await ddbDocClient.send(new QueryCommand(queryParams));
-            console.log("got response");
             in_error = false;
             return data.Items;
         }
@@ -207,3 +209,42 @@ export const putItemWithConditionDDB = async (params, ddbDocClient) => {
         }
     }
 }
+
+export const transactWriteItemsDDB = async (items, ddbDocClient) => {
+    console.log("items are ", JSON.stringify(items, null, 4));
+    let params = {
+        "TransactItems": []
+    };
+    for (let item of items) {
+        try {
+            params.TransactItems.push(item);
+        } catch (error) {
+            console.log("Caught error processing row " + item);
+        }
+    }
+    let in_error = true;
+    let iteration = 0;
+    while (in_error)
+    {
+        iteration += 1;
+        try {
+            console.log("params are ", JSON.stringify(params, null, 4));
+            const data = await ddbDocClient.send(new TransactWriteItemsCommand(params));
+            console.log("Success - items added/updated to table", data);
+            in_error = false;
+            return data;
+        } catch (error) {
+            console.log("Failed - items NOT added/updated to table", error.name, error.message);
+            if (DDBSCALINGERRORS.includes(error.name)) {
+                console.log("this is a scaling error so backing off for 1 second")
+                await sleep(1000 * iteration);
+            }
+            else {
+                console.log("not a scaling error so throwing exception");
+                console.log(error.stack);
+                throw error;
+            }
+        }
+        
+    }
+} 

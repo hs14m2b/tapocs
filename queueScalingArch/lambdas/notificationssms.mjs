@@ -1,6 +1,6 @@
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 
-import { DEFAULTEXPIRY } from "./constants.mjs";
+import { DEFAULTEXPIRY, RANDOMCALLBACKDELAY } from "./constants.mjs";
 import { v4 as uuidv4 } from 'uuid';
 
 const REGION = "eu-west-2";
@@ -14,7 +14,7 @@ function sleep(ms) {
 
 async function sendItemSQS(item) {
     //publish the event to the "send requests" queue
-    let delaySeconds = parseInt((Math.random() * 60).toString());
+    let delaySeconds = parseInt((Math.random() * 5).toString());
     let sqsParams = {
         DelaySeconds: delaySeconds,
         MessageBody: JSON.stringify(item),

@@ -32,6 +32,21 @@
       "Type": "String",
       "Description": "Hosted Zone DNS suffix",
       "Default": "nhsdta.com"
+    },
+    "PDSFHIRFQDN": {
+      "Type": "String",
+      "Description": "The FQDN of the PDS FHIR API - default to Sandbox",
+      "Default": "sandbox.api.service.nhs.uk"
+    },
+    "PDSFHIRPATH": {
+      "Type": "String",
+      "Description": "The base path of the PDS FHIR API - default to Sandbox",
+      "Default": "/personal-demographics/FHIR/R4/Patient/"
+    },
+    "APIMAUTHURL": {
+      "Type": "String",
+      "Description": "The base URL of the PDS FHIR API - default to Sandbox",
+      "Default": "https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4/"
     }
   },
   "Globals": {
@@ -87,6 +102,9 @@
           "Variables" : {
             "SMSDELIVERYQUEUEURL" : {"Ref": "smsDeliveryQueue"},
             "EMAILDELIVERYQUEUEURL" : {"Ref": "emailDeliveryQueue"},
+            "APIMINFOPARAM": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "APIMInfoParam"]]},
+            "PDSFHIRFQDN": {"Ref": "PDSFHIRFQDN"},
+            "PDSFHIRPATH": {"Ref": "PDSFHIRPATH"},
             "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}}
           }
         },
@@ -94,8 +112,9 @@
           "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "enrichRequestsFunction"]]
         },
         "Handler": "enrichrequests.handler",
+        "Layers": [{"Fn::Join": ["", ["arn:aws:lambda:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"} ,":layer:", { "Ref": "BRANCHNAME" },"-", { "Ref": "PROJECTNAME" }, "-","queuescalingLambdaLayer" ,":3" ]]}],
         "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
         }],
         "Timeout": 300
