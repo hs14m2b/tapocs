@@ -1,0 +1,17 @@
+{
+  "private": true,
+  "type":"module",
+  "scripts": {},
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.294.0",
+    "@aws-sdk/lib-dynamodb":"^3.294.0",
+    "@aws-sdk/client-dynamodb":"^3.294.0",
+    "@aws-sdk/client-sqs": "^3.294.0",
+    "@aws-sdk/util-dynamodb": "^3.294.0",
+    "@types/aws-lambda": "^8.10.114",
+    "notifications-node-client": "^7.0.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+  }
+}
