@@ -1,0 +1,153 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "Cloudformation template to create inbound lambda processing and S3 trigger",
+  "Parameters": {
+    "SHORTCODE": {
+      "Type": "String",
+      "Description": "The shortcode for tags",
+      "Default": "mabr8"
+    },
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "Branchname for the deployment"
+    },
+    "PROJECTNAME": {
+      "Type": "String",
+      "Default": "typescriptpoc",
+      "Description": "Project name for the deployment"
+    },
+    "CERTARN": {
+      "Type": "String",
+      "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/a707a2d1-5966-4ac3-abe6-e17e71a41f4a"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Description": "NHSD TA Hosted Zone identifier for DNS entries",
+      "Default": "Z1075FNTZPAM5I"
+    },
+    "HOSTEDZONESUFFIX": {
+      "Type": "String",
+      "Description": "Hosted Zone DNS suffix",
+      "Default": "nhsdta.com"
+    }
+  },
+  "Globals": {
+    "Function": {
+      "Tags": {
+        "shortcode": { "Ref": "SHORTCODE" }
+      },
+      "Environment": {
+        "Variables": {
+          "BRANCHNAME": { "Ref": "BRANCHNAME" }
+        }
+      },
+      "Timeout": 300
+    }
+  },
+  "Resources": {
+    "typescriptpocLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess",
+          "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+          "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+          "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB"
+        ],
+        "Path": "/service-role/",
+        "RoleName": {
+          "Fn::Join": ["-",[{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "typescriptpocLambdaRole-001"]]
+        }
+      }
+    },
+    "typescriptpocLambdaRolePolicy":{
+        "Type" : "AWS::IAM::Policy",
+        "Properties" : {
+            "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "typescriptpocLambdaRolePolicy","001"]]},
+            "PolicyDocument" : {
+                "Statement": [
+                    {
+                        "Action": [
+                            "apigateway:*",
+                            "autoscaling:*",
+                            "cloudwatch:*",
+                            "cloudformation:*",
+                            "cloudfront:*",
+                            "codebuild:*",
+                            "codedeploy:*",
+                            "codepipeline:*",
+                            "dynamodb:*",
+                            "ecs:*",
+                            "elasticbeanstalk:*",
+                            "ec2:*",
+                            "elasticloadbalancing:*",
+                            "iam:*",
+                            "lambda:*",
+                            "rds:*",
+                            "route53:*",
+                            "route53domains:*",
+                            "s3:*",
+                            "sns:*",
+                            "sqs:*",
+                            "sts:AssumeRole",
+                            "iam:PassRole",
+                            "kms:*"
+                        ],
+                        "Resource": "*",
+                        "Effect": "Allow"
+                    }
+                ],
+                "Version": "2012-10-17"
+                },
+              "Roles": [ {"Ref": "typescriptpocLambdaRole"	} ]
+            }
+    },
+    "processInputFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": "stack001lambdas.zip",
+        "Description": "The lambda function that opens the input S3 file and publishes the records to SQS",
+        "Environment": {
+          "Variables" : {
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processInputFunction"]]
+        },
+        "Handler": "processinput.lambdaHandler",
+        "MemorySize": "4096",
+        "ReservedConcurrentExecutions": 5,
+        "Role": { "Fn::GetAtt": ["typescriptpocLambdaRole", "Arn"] },
+        "Runtime": "nodejs18.x",
+        "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
+        }],
+        "Timeout": 900
+      },
+      "DependsOn": ["typescriptpocLambdaRole"]
+    }
+  },
+  "Outputs" : {
+      "LambdaExecRole" : {
+          "Description" : "The Arn of the role for running Lambda Functions",
+          "Value" : { "Fn::GetAtt": ["typescriptpocLambdaRole", "Arn"] },
+          "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "typescriptpocLambdaRoleArn"]]}}
+      }
+  }
+}
