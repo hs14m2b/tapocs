@@ -21,7 +21,7 @@
     "CERTARN": {
       "Type": "String",
       "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
-      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/6736e423-7278-444e-aa34-7d849d896d4f"
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/a707a2d1-5966-4ac3-abe6-e17e71a41f4a"
     },
     "HOSTEDZONEID": {
       "Type": "String",
@@ -80,7 +80,7 @@
     "processAnalyticsStreamFunction": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
-        "Code": "stack008lambdas.zip",
+        "Code": "1683283760stack008lambdas.zip",
         "Description": "The lambda function that receives items from the DDB Stream and publishes to S3 for analytics",
         "Environment": {
           "Variables" : {

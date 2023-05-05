@@ -1,6 +1,6 @@
 #!/bin/sh
 
-./deploy-Stack000.sh
+#./deploy-Stack000.sh
 ./deploy-Stack001.sh
 ./deploy-Stack002.sh
 ./deploy-Stack003.sh
