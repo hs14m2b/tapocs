@@ -20,11 +20,11 @@
     "CFCERTARN": {
       "Type": "String",
       "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
-      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/a707a2d1-5966-4ac3-abe6-e17e71a41f4a"
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/6736e423-7278-444e-aa34-7d849d896d4f"
     },
     "CERTIFICATEARN": {
       "Type": "String",
-      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/1445ff7f-f847-48fe-b9d7-aaf7f37414d2",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/c4bf4fbf-7440-4345-8720-eff73b19bcce",
       "Description": "The certificate ARN for the nhsdta.com domain"
     },
     "DEPLOYMENTSTAGENAME": {
