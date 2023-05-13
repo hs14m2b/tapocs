@@ -9,6 +9,7 @@ echo $TIMESTAMP
 
 cd ..
 cd nextjs-blog
+npm install
 npm run build
 npx --package @sladg/nextjs-lambda cli pack
 cd next.out
@@ -55,3 +56,4 @@ unzip ${TIMESTAMP}code.zip -d code
 cp ./code/.next/server/pages/*.html ./assets/
 cd assets
 aws s3 sync . s3://main-mabr8-nextjsassets
+echo "application available at https://main-nextjsfe.nhsdta.com/"
