@@ -245,6 +245,17 @@
             "queuescalingconsumerRestApi"
         ]
     },
+    "requestQueueAPIPath": {
+        "Type": "AWS::ApiGateway::Resource",
+        "Properties": {
+            "ParentId": { "Ref": "consumerAPIPath" },
+            "PathPart": "requestqueue",
+            "RestApiId": { "Ref": "queuescalingconsumerRestApi" }
+        },
+          "DependsOn": [
+            "queuescalingconsumerRestApi"
+        ]
+    },
     "helloworldFunction": {
         "Type": "AWS::Lambda::Function",
         "Properties": {
@@ -267,6 +278,39 @@
         "Properties": {
             "Action": "lambda:invokeFunction",
             "FunctionName": {"Ref": "helloworldFunction"},
+            "Principal": "apigateway.amazonaws.com",
+            "SourceArn": {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "queuescalingconsumerRestApi"}, "/*"]]}
+        }
+    },
+    "processapirequestFunction": {
+        "Type": "AWS::Lambda::Function",
+        "Properties": {
+          "Code": "stack010lambdas.zip",
+          "Description": "The lambda function puts the comms batch request onto the queue and database for processing",
+          "Environment": {
+            "Variables" : {
+                "PROCESSINGMETRICSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "processingMetricsTable"]]}},
+                "MONITORINGQUEUEURL" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "monitoringQueueUrl"]]}},
+                "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}}
+            }
+          },
+          "FunctionName": {
+            "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processapirequestFunction"]]
+          },
+          "Handler": "processapirequest.handler",
+          "Layers": [{"Fn::Join": ["", ["arn:aws:lambda:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"} ,":layer:", { "Ref": "BRANCHNAME" },"-", { "Ref": "PROJECTNAME" }, "-","queuescalingLambdaLayer" ,":3" ]]}],
+          "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
+          "Runtime": "nodejs18.x",
+          "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
+          }],
+          "Timeout": 300
+        }
+    },
+    "processapirequestFunctionLambdaPermission": {
+        "Type": "AWS::Lambda::Permission",
+        "Properties": {
+            "Action": "lambda:invokeFunction",
+            "FunctionName": {"Ref": "processapirequestFunction"},
             "Principal": "apigateway.amazonaws.com",
             "SourceArn": {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "queuescalingconsumerRestApi"}, "/*"]]}
         }
@@ -317,7 +361,7 @@
             ]
         }
     },
-    "requestAPIMethodPOST": {
+    "requestqueueAPIMethodPOST": {
     "Type": "AWS::ApiGateway::Method",
     "Properties": {
         "AuthorizationType": "NONE",
@@ -373,7 +417,7 @@
             }
         ],
         "ResourceId": {
-            "Ref": "requestAPIPath"
+            "Ref": "requestQueueAPIPath"
         },
         "RestApiId": {
             "Ref": "queuescalingconsumerRestApi"
@@ -396,6 +440,24 @@
         },
         "DependsOn": [
             "requestAPIPath", "helloworldFunctionLambdaPermission"
+        ]
+    },
+    "requestAPIMethodPOST": {
+        "Type": "AWS::ApiGateway::Method",
+        "Properties": {
+            "AuthorizationType": "NONE",
+            "ApiKeyRequired" : false,
+            "HttpMethod" : "POST",
+            "Integration" : {
+                "IntegrationHttpMethod" : "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {"Fn::Join" : ["", ["arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["processapirequestFunction", "Arn"]}, "/invocations"]]}
+            },
+            "ResourceId": { "Ref": "requestAPIPath" },
+            "RestApiId": { "Ref": "queuescalingconsumerRestApi" }
+        },
+        "DependsOn": [
+            "requestAPIPath", "processapirequestFunctionLambdaPermission"
         ]
     }
   },

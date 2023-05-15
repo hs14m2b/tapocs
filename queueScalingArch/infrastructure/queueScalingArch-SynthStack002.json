@@ -35,7 +35,7 @@
     },
     "CERTIFICATEARN" : {
       "Type" : "String",
-      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/1445ff7f-f847-48fe-b9d7-aaf7f37414d2",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/c4bf4fbf-7440-4345-8720-eff73b19bcce",
       "Description" : "The certificate ARN for the domain"
     },
     "HOSTEDZONEID": {

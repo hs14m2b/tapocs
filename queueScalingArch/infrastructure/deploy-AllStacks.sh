@@ -10,4 +10,5 @@
 ./deploy-Stack007.sh
 ./deploy-Stack008.sh
 ./deploy-Stack009.sh
+./deploy-Stack010.sh
 ./deploy-SynthStack002.sh
