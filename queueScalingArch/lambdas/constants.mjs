@@ -1,5 +1,5 @@
-import { BatchWriteCommand, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { TransactWriteItemsCommand  } from "@aws-sdk/client-dynamodb";
+import { BatchWriteCommand, PutCommand, QueryCommand, UpdateCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { TransactWriteItemsCommand } from "@aws-sdk/client-dynamodb";
 
 export const DEFAULTEXPIRY = 3600;
 export const REQITEM = "REQITEM";
@@ -34,6 +34,36 @@ function sleep(ms) {
     console.log("sleeping for " + ms + "ms");
     return new Promise((resolve) => { setTimeout(resolve, ms); });
 }
+
+export const getItemDDB = async (key, tableName, ddbDocClient) => {
+    let params = {
+        "TableName": tableName,
+        "Key": key
+    };
+    let in_error = true;
+    let iteration = 0;
+    while (in_error)
+    {
+        iteration += 1;
+        try {
+            const data = await ddbDocClient.send(new GetCommand(params));
+            console.log("Success - item retrieved", data);
+            in_error = false;
+            return data;
+        } catch (error) {
+            console.log("Failed - item NOT retrieved", error.name, error.message);
+            if (DDBSCALINGERRORS.includes(error.name)) {
+                console.log("this is a scaling error so backing off for 1 second")
+                await sleep(1000 * iteration);
+            }
+            else {
+                console.log("not a scaling error so throwing exception");
+                throw error;
+            }
+        }
+        
+    }
+} 
 
 export const putItemsDDB = async (items, tableName, ddbDocClient) => {
     let params = {

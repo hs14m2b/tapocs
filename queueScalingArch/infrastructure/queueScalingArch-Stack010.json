@@ -245,6 +245,17 @@
             "queuescalingconsumerRestApi"
         ]
     },
+    "requestpathparamAPIPath": {
+        "Type": "AWS::ApiGateway::Resource",
+        "Properties": {
+            "ParentId": { "Ref": "requestAPIPath" },
+            "PathPart": "{pathparam+}",
+            "RestApiId": { "Ref": "queuescalingconsumerRestApi" }
+        },
+          "DependsOn": [
+            "queuescalingconsumerRestApi"
+        ]
+    },
     "requestQueueAPIPath": {
         "Type": "AWS::ApiGateway::Resource",
         "Properties": {
@@ -311,6 +322,39 @@
         "Properties": {
             "Action": "lambda:invokeFunction",
             "FunctionName": {"Ref": "processapirequestFunction"},
+            "Principal": "apigateway.amazonaws.com",
+            "SourceArn": {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "queuescalingconsumerRestApi"}, "/*"]]}
+        }
+    },
+    "processapiqueryFunction": {
+        "Type": "AWS::Lambda::Function",
+        "Properties": {
+          "Code": "stack010lambdas.zip",
+          "Description": "The lambda function puts the comms batch request onto the queue and database for processing",
+          "Environment": {
+            "Variables" : {
+                "PROCESSINGMETRICSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "processingMetricsTable"]]}},
+                "MONITORINGQUEUEURL" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "monitoringQueueUrl"]]}},
+                "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}}
+            }
+          },
+          "FunctionName": {
+            "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processapiqueryFunction"]]
+          },
+          "Handler": "processapiquery.handler",
+          "Layers": [{"Fn::Join": ["", ["arn:aws:lambda:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"} ,":layer:", { "Ref": "BRANCHNAME" },"-", { "Ref": "PROJECTNAME" }, "-","queuescalingLambdaLayer" ,":3" ]]}],
+          "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
+          "Runtime": "nodejs18.x",
+          "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
+          }],
+          "Timeout": 300
+        }
+    },
+    "processapiqueryFunctionLambdaPermission": {
+        "Type": "AWS::Lambda::Permission",
+        "Properties": {
+            "Action": "lambda:invokeFunction",
+            "FunctionName": {"Ref": "processapiqueryFunction"},
             "Principal": "apigateway.amazonaws.com",
             "SourceArn": {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "queuescalingconsumerRestApi"}, "/*"]]}
         }
@@ -423,6 +467,24 @@
             "Ref": "queuescalingconsumerRestApi"
         }
       }
+    },
+    "requestpathparamAPIMethodGET": {
+        "Type": "AWS::ApiGateway::Method",
+        "Properties": {
+            "AuthorizationType": "NONE",
+            "ApiKeyRequired" : false,
+            "HttpMethod" : "GET",
+            "Integration" : {
+                "IntegrationHttpMethod" : "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {"Fn::Join" : ["", ["arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["processapiqueryFunction", "Arn"]}, "/invocations"]]}
+            },
+            "ResourceId": { "Ref": "requestpathparamAPIPath" },
+            "RestApiId": { "Ref": "queuescalingconsumerRestApi" }
+        },
+        "DependsOn": [
+            "requestpathparamAPIPath", "processapiqueryFunctionLambdaPermission"
+        ]
     },
     "requestAPIMethodGET": {
         "Type": "AWS::ApiGateway::Method",
