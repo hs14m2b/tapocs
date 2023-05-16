@@ -113,6 +113,7 @@ export const handler = async (event) => {
             response = await putItemDDB(sub_batch_item, PROCESSINGMETRICSTABLENAME, ddbDocClient);
             console.log("have put sub batch item into ddb");
             itemsAdded += items.length;
+            console.log("items are " + JSON.stringify(items));
             let data = await putItemsDDB(items,REQUESTSTABLENAME, ddbDocClient);
             while (data.UnprocessedItems[REQUESTSTABLENAME] &&
                 data.UnprocessedItems[REQUESTSTABLENAME].length > 0)
