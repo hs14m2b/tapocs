@@ -6,6 +6,7 @@ import {
     REQITEM,
     REQSUBBATCH,
     getItemDDB,
+    runQueryDDB,
     putItemDDB,
     putItemsDDB,
     putUnprocessedItemsDDB,
@@ -27,7 +28,6 @@ function sleep(ms) {
 
 export const handler = async (event) => {
     console.log(JSON.stringify(event));
-    console.log("DDB table name is " + REQUESTSTABLENAME);
     console.log("Starting to process request at " + (Date.now()/1000));
     try {
         //check this is a GET request
@@ -39,24 +39,13 @@ export const handler = async (event) => {
             };
         }
         let path_param = event.pathParameters.pathparam;
-        let clientId = path_param.split("/")[0];
-        let batchId = path_param.split("/")[1];
-        console.log("client id is " + clientId + " and batch id is " + batchId);
-        let key = {
-            request_partition: clientId,
-            request_sort: batchId + REQBATCH,
-        };
-        let batch_item = (await getItemDDB(key, REQUESTSTABLENAME, ddbDocClient)).Item;
-        batch_item = (batch_item == undefined) ? {}: batch_item;
-        console.log("batch_item is " + JSON.stringify(batch_item));
-        let final_response = {
-            "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json"
-            },
-            "body": JSON.stringify(batch_item)
-        };
-        return final_response;
+        if (path_param.indexOf("/") > -1){
+            return await getBatch(event);
+        }
+        else
+        {
+            return await getBatches(event);
+        }
     } catch (error) {
         console.log("caught error " + error.message);
         let final_response = {
@@ -69,3 +58,49 @@ export const handler = async (event) => {
         return final_response;
     }
 }
+
+async function getBatch(event){
+    let path_param = event.pathParameters.pathparam;
+    let clientId = path_param.split("/")[0];
+    let batchId = path_param.split("/")[1];
+    console.log("client id is " + clientId + " and batch id is " + batchId);
+    let key = {
+        request_partition: clientId,
+        request_sort: batchId + REQBATCH,
+    };
+    let batch_item = (await getItemDDB(key, REQUESTSTABLENAME, ddbDocClient)).Item;
+    batch_item = (batch_item == undefined) ? {}: batch_item;
+    console.log("batch_item is " + JSON.stringify(batch_item));
+    let final_response = {
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "body": JSON.stringify(batch_item)
+    };
+    return final_response;
+} 
+
+async function getBatches(event){
+    let path_param = event.pathParameters.pathparam;
+    let clientId = path_param;
+    console.log("client id is " + clientId);
+    let queryParams = {
+        KeyConditionExpression: "request_partition = :rp",
+        FilterExpression: "record_type = :rt1",
+        ExpressionAttributeValues: {
+            ":rp": clientId,
+            ":rt1": REQBATCH
+        },
+        TableName: REQUESTSTABLENAME
+    };
+    let data = await runQueryDDB(queryParams, ddbDocClient);
+    let final_response = {
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "body": JSON.stringify(data)
+    };
+    return final_response;
+} 

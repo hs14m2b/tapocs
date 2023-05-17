@@ -87,4 +87,7 @@ for (let i = 1; i <= maxRows; i++){
     batchRequest.items.push(request_item);
 }
 console.log(JSON.stringify(batchRequest));
-await makerequest(batchRequest)
+await makerequest(batchRequest);
+let status_url = "https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/extapi/consumer/request/"+client_id+"/"+batch_id;
+console.log("URL to retrieve status of batch is " + status_url);
+console.log("curl -X GET " + status_url + " -H \"apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J\"");
