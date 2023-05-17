@@ -1,0 +1,528 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "Cloudformation template for inbound submission API and status API",
+  "Parameters": {
+    "SHORTCODE": {
+      "Type": "String",
+      "Description": "The shortcode for tags",
+      "Default": "mabr8"
+    },
+    "CONSUMERAPIDOMAIN": {
+      "Type": "String",
+      "Description": "The domain qualifier for the API",
+      "Default": "consumerapi"
+    },
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "Branchname for the deployment"
+    },
+    "PROJECTNAME": {
+      "Type": "String",
+      "Default": "queuescaling",
+      "Description": "Project name for the deployment"
+    },
+    "CERTARN": {
+      "Type": "String",
+      "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/6736e423-7278-444e-aa34-7d849d896d4f"
+    },
+    "CERTIFICATEARN" : {
+      "Type" : "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/c4bf4fbf-7440-4345-8720-eff73b19bcce",
+      "Description" : "The certificate ARN for the domain"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Description": "NHSD TA Hosted Zone identifier for DNS entries",
+      "Default": "Z1075FNTZPAM5I"
+    },
+    "HOSTEDZONESUFFIX": {
+      "Type": "String",
+      "Description": "Hosted Zone DNS suffix",
+      "Default": "nhsdta.com"
+    }
+  },
+  "Globals": {
+    "Function": {
+      "Tags": {
+        "shortcode": { "Ref": "SHORTCODE" }
+      },
+      "Environment": {
+        "Variables": {
+          "HOSTEDZONESUFFIX": { "Ref": "HOSTEDZONESUFFIX" },
+          "BRANCHNAME": { "Ref": "BRANCHNAME" },
+          "PROJECTNAME": { "Ref": "PROJECTNAME" },
+          "CONSUMERAPIDOMAIN": { "Ref": "CONSUMERAPIDOMAIN" }
+        }
+      },
+      "Timeout": 300
+    }
+  },
+  "Resources": {
+    "apirequestsQueue": {
+    "Type" : "AWS::SQS::Queue",
+    "Properties" : {
+        "DelaySeconds" : 0,
+        "KmsMasterKeyId" : "alias/aws/sqs",
+        "MaximumMessageSize" : 262144,
+        "MessageRetentionPeriod" : 345600,
+        "QueueName" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "apirequestsQueue"]]},
+        "Tags" : [ {
+            "Key" : "shortcode",
+            "Value" : { "Ref" : "SHORTCODE" }
+        }],
+        "VisibilityTimeout" : 300
+      }
+    },
+    "apirequestsQueuePolicySQS": {
+        "Type": "AWS::SQS::QueuePolicy",
+        "Properties": {
+            "PolicyDocument": {
+                "Statement": [
+                    {
+                        "Action": "SQS:*",
+                        "Effect": "Allow",
+                        "Principal": {
+                            "AWS": { "Ref" : "AWS::AccountId" }
+                        },
+                        "Resource": {
+                            "Fn::GetAtt": ["apirequestsQueue", "Arn"]
+                        },
+                        "Sid": "Sid1517269801413"
+                    }
+                ],
+                "Version": "2012-10-17"
+            },
+            "Queues": [
+                {
+                "Ref": "apirequestsQueue"
+                }
+            ]
+        }
+    },
+    "queuescalingconsumerRestApi": {
+        "Type": "AWS::ApiGateway::RestApi",
+        "Properties" : {
+          "DisableExecuteApiEndpoint": true,
+          "Name": {
+            "Fn::Join": ["i", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingconsumerRestApi"]]
+          },
+           "Description" : "This is the REST API to receive consumer requests and queue them on SQS or fulfil via Lambda",
+            "EndpointConfiguration" : {
+                "Types" : ["REGIONAL"]
+            }
+        }
+    },
+    "queueScalingConsumerAPIDomainName": {
+        "Type": "AWS::ApiGateway::DomainName",
+        "Properties": {
+            "DomainName": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "CONSUMERAPIDOMAIN" }]]},{ "Ref": "HOSTEDZONESUFFIX" }]]},
+            "RegionalCertificateArn": { "Ref": "CERTIFICATEARN" },
+            "SecurityPolicy":"TLS_1_2",
+            "EndpointConfiguration" : {
+                "Types" : ["REGIONAL"]
+            },
+            "MutualTlsAuthentication": {
+                "TruststoreUri" : "s3://main-queuescaling-mabr8-inputs/certs/tsassolarchdemoapitruststore.pem"
+            }
+        }
+    },
+    "queueScalingConsumerAPIR53Alias" : {
+        "Type" : "AWS::Route53::RecordSet",
+        "Properties" : {
+            "AliasTarget" : {
+                "DNSName" : { "Fn::GetAtt": ["queueScalingConsumerAPIDomainName", "RegionalDomainName"] },
+                "EvaluateTargetHealth" : "false",
+                "HostedZoneId" : { "Fn::GetAtt": ["queueScalingConsumerAPIDomainName", "RegionalHostedZoneId"] }
+            },
+            "Comment" : "DNS entry pointing at API Gateway",
+            "HostedZoneId" : { "Ref" : "HOSTEDZONEID" },
+            "Name" : {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "CONSUMERAPIDOMAIN" }]]},{ "Ref": "HOSTEDZONESUFFIX" }]]},
+            "Type" : "A"
+        }
+    },
+    "queueScalingConsumerAPIDeployment": {
+        "Type": "AWS::ApiGateway::Deployment",
+        "Properties": {
+            "RestApiId": { "Ref": "queuescalingconsumerRestApi" },
+            "StageName" : "prod",
+            "Description": {"Fn::Join": ["",["Automatic API Deployment by Cloudformation ", "prod"]]}
+        },
+        "DependsOn": [
+            "requestAPIMethodOPTIONS", 
+            "requestAPIMethodPOST"
+        ]
+    },
+    "queueScalingConsumerAPIBaseMapping": {
+        "Type" : "AWS::ApiGateway::BasePathMapping",
+        "Properties" : {
+            "BasePath" : "",
+            "DomainName": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "CONSUMERAPIDOMAIN" }]]},{ "Ref": "HOSTEDZONESUFFIX" }]]},
+            "RestApiId": { "Ref": "queuescalingconsumerRestApi" },
+            "Stage" : "prod"
+        },
+        "DependsOn": [
+            "queueScalingConsumerAPIDomainName", "queueScalingConsumerAPIDeployment"
+        ]
+    },
+    "queuescalingconsumerRestApiRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+              {
+                  "Action": ["sts:AssumeRole"],
+                  "Effect": "Allow",
+                  "Principal": {
+                      "Service": ["apigateway.amazonaws.com"]
+                  }
+              }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Path": "/",
+        "Policies": [
+            {
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": "sqs:SendMessage",
+                            "Effect": "Allow",
+                            "Resource": {
+                                "Fn::GetAtt": ["apirequestsQueue", "Arn"]
+                            }
+                        },
+                        {
+                            "Action": [
+                            "logs:CreateLogGroup",
+                            "logs:CreateLogStream",
+                            "logs:PutLogEvents"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": "*"
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                },
+                "PolicyName": "api-gateway-sqs-send-msg-policy"
+            }
+        ],
+        "RoleName": "api-gateway-sqs-send-msg-role-consumer-api"
+      }
+    },
+    "extapiAPIPath": {
+        "Type": "AWS::ApiGateway::Resource",
+        "Properties": {
+            "ParentId": { "Fn::GetAtt": ["queuescalingconsumerRestApi", "RootResourceId"] },
+            "PathPart": "extapi",
+            "RestApiId": { "Ref": "queuescalingconsumerRestApi" }
+        },
+          "DependsOn": [
+            "queuescalingconsumerRestApi"
+        ]
+    },
+    "consumerAPIPath": {
+        "Type": "AWS::ApiGateway::Resource",
+        "Properties": {
+            "ParentId": { "Ref": "extapiAPIPath" },
+            "PathPart": "consumer",
+            "RestApiId": { "Ref": "queuescalingconsumerRestApi" }
+        },
+          "DependsOn": [
+            "queuescalingconsumerRestApi"
+        ]
+    },
+    "requestAPIPath": {
+        "Type": "AWS::ApiGateway::Resource",
+        "Properties": {
+            "ParentId": { "Ref": "consumerAPIPath" },
+            "PathPart": "request",
+            "RestApiId": { "Ref": "queuescalingconsumerRestApi" }
+        },
+          "DependsOn": [
+            "queuescalingconsumerRestApi"
+        ]
+    },
+    "requestpathparamAPIPath": {
+        "Type": "AWS::ApiGateway::Resource",
+        "Properties": {
+            "ParentId": { "Ref": "requestAPIPath" },
+            "PathPart": "{pathparam+}",
+            "RestApiId": { "Ref": "queuescalingconsumerRestApi" }
+        },
+          "DependsOn": [
+            "queuescalingconsumerRestApi"
+        ]
+    },
+    "requestQueueAPIPath": {
+        "Type": "AWS::ApiGateway::Resource",
+        "Properties": {
+            "ParentId": { "Ref": "consumerAPIPath" },
+            "PathPart": "requestqueue",
+            "RestApiId": { "Ref": "queuescalingconsumerRestApi" }
+        },
+          "DependsOn": [
+            "queuescalingconsumerRestApi"
+        ]
+    },
+    "helloworldFunction": {
+        "Type": "AWS::Lambda::Function",
+        "Properties": {
+          "Code": "stack010lambdas.zip",
+          "Description": "The lambda function logs the request and returns hello world",
+          "FunctionName": {
+            "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "helloworldFunction"]]
+          },
+          "Handler": "helloworld.handler",
+          "Layers": [{"Fn::Join": ["", ["arn:aws:lambda:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"} ,":layer:", { "Ref": "BRANCHNAME" },"-", { "Ref": "PROJECTNAME" }, "-","queuescalingLambdaLayer" ,":3" ]]}],
+          "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
+          "Runtime": "nodejs18.x",
+          "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
+          }],
+          "Timeout": 300
+        }
+    },
+    "helloworldFunctionLambdaPermission": {
+        "Type": "AWS::Lambda::Permission",
+        "Properties": {
+            "Action": "lambda:invokeFunction",
+            "FunctionName": {"Ref": "helloworldFunction"},
+            "Principal": "apigateway.amazonaws.com",
+            "SourceArn": {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "queuescalingconsumerRestApi"}, "/*"]]}
+        }
+    },
+    "processapirequestFunction": {
+        "Type": "AWS::Lambda::Function",
+        "Properties": {
+          "Code": "stack010lambdas.zip",
+          "Description": "The lambda function puts the comms batch request onto the queue and database for processing",
+          "Environment": {
+            "Variables" : {
+                "PROCESSINGMETRICSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "processingMetricsTable"]]}},
+                "MONITORINGQUEUEURL" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "monitoringQueueUrl"]]}},
+                "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}}
+            }
+          },
+          "FunctionName": {
+            "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processapirequestFunction"]]
+          },
+          "Handler": "processapirequest.handler",
+          "Layers": [{"Fn::Join": ["", ["arn:aws:lambda:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"} ,":layer:", { "Ref": "BRANCHNAME" },"-", { "Ref": "PROJECTNAME" }, "-","queuescalingLambdaLayer" ,":3" ]]}],
+          "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
+          "Runtime": "nodejs18.x",
+          "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
+          }],
+          "Timeout": 300
+        }
+    },
+    "processapirequestFunctionLambdaPermission": {
+        "Type": "AWS::Lambda::Permission",
+        "Properties": {
+            "Action": "lambda:invokeFunction",
+            "FunctionName": {"Ref": "processapirequestFunction"},
+            "Principal": "apigateway.amazonaws.com",
+            "SourceArn": {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "queuescalingconsumerRestApi"}, "/*"]]}
+        }
+    },
+    "processapiqueryFunction": {
+        "Type": "AWS::Lambda::Function",
+        "Properties": {
+          "Code": "stack010lambdas.zip",
+          "Description": "The lambda function puts the comms batch request onto the queue and database for processing",
+          "Environment": {
+            "Variables" : {
+                "PROCESSINGMETRICSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "processingMetricsTable"]]}},
+                "MONITORINGQUEUEURL" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "monitoringQueueUrl"]]}},
+                "REQUESTSTABLENAME" : {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "requestsTable"]]}}
+            }
+          },
+          "FunctionName": {
+            "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "processapiqueryFunction"]]
+          },
+          "Handler": "processapiquery.handler",
+          "Layers": [{"Fn::Join": ["", ["arn:aws:lambda:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"} ,":layer:", { "Ref": "BRANCHNAME" },"-", { "Ref": "PROJECTNAME" }, "-","queuescalingLambdaLayer" ,":3" ]]}],
+          "Role": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "queuescalingpocLambdaRoleArn"]]}},
+          "Runtime": "nodejs18.x",
+          "Tags": [{"Key": "shortcode", "Value": { "Ref": "SHORTCODE" }
+          }],
+          "Timeout": 300
+        }
+    },
+    "processapiqueryFunctionLambdaPermission": {
+        "Type": "AWS::Lambda::Permission",
+        "Properties": {
+            "Action": "lambda:invokeFunction",
+            "FunctionName": {"Ref": "processapiqueryFunction"},
+            "Principal": "apigateway.amazonaws.com",
+            "SourceArn": {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "queuescalingconsumerRestApi"}, "/*"]]}
+        }
+    },
+    "requestAPIMethodOPTIONS": {
+        "Type": "AWS::ApiGateway::Method",
+        "Properties": {
+            "AuthorizationType": "NONE",
+            "ResourceId": {
+                "Ref": "requestAPIPath"
+            },
+            "RestApiId": {
+                "Ref": "queuescalingconsumerRestApi"
+            },
+            "HttpMethod": "OPTIONS",
+            "Integration": {
+                "IntegrationResponses": [
+                    {
+                        "StatusCode": 200,
+                        "ResponseParameters": {
+                            "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                            "method.response.header.Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
+                            "method.response.header.Access-Control-Allow-Origin": "'*'"
+                        },
+                        "ResponseTemplates": {
+                            "application/json": ""
+                        }
+                    }
+                ],
+                "PassthroughBehavior": "WHEN_NO_MATCH",
+                "RequestTemplates": {
+                    "application/json": "{\"statusCode\": 200}"
+                },
+                "Type": "MOCK"
+            },
+            "MethodResponses": [
+                {
+                    "StatusCode": 200,
+                    "ResponseModels": {
+                        "application/json": "Empty"
+                    },
+                    "ResponseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": false,
+                        "method.response.header.Access-Control-Allow-Methods": false,
+                        "method.response.header.Access-Control-Allow-Origin": false
+                    }
+                }
+            ]
+        }
+    },
+    "requestqueueAPIMethodPOST": {
+    "Type": "AWS::ApiGateway::Method",
+    "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "POST",
+        "Integration": {
+            "Credentials": {
+                "Fn::GetAtt": ["queuescalingconsumerRestApiRole", "Arn"]
+            },
+            "IntegrationHttpMethod": "POST",
+            "IntegrationResponses": [
+                {
+                    "StatusCode": "200",
+                    "ResponseParameters": {
+                        "method.response.header.Access-Control-Allow-Origin": "'*'"
+                    }
+                }
+            ],
+            "PassthroughBehavior": "NEVER",
+            "RequestParameters": {
+                "integration.request.header.Content-Type": "'application/x-www-form-urlencoded'"
+            },
+            "RequestTemplates": {
+                "application/json": "Action=SendMessage&MessageBody=$input.body"
+            },
+            "Type": "AWS",
+            "Uri": {
+                "Fn::Join": [
+                    "",
+                    [
+                        "arn:aws:apigateway:",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        ":sqs:path/",
+                        {
+                            "Ref": "AWS::AccountId"
+                        },
+                        "/",
+                        {"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } , "apirequestsQueue"]]}
+                    ]
+                ]
+            }
+        },
+        "MethodResponses": [
+            {
+                "ResponseModels": {
+                    "application/json": "Empty"
+                },
+                "StatusCode": "200",
+                "ResponseParameters": {
+                    "method.response.header.Access-Control-Allow-Origin": false
+                }
+            }
+        ],
+        "ResourceId": {
+            "Ref": "requestQueueAPIPath"
+        },
+        "RestApiId": {
+            "Ref": "queuescalingconsumerRestApi"
+        }
+      }
+    },
+    "requestpathparamAPIMethodGET": {
+        "Type": "AWS::ApiGateway::Method",
+        "Properties": {
+            "AuthorizationType": "NONE",
+            "ApiKeyRequired" : false,
+            "HttpMethod" : "GET",
+            "Integration" : {
+                "IntegrationHttpMethod" : "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {"Fn::Join" : ["", ["arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["processapiqueryFunction", "Arn"]}, "/invocations"]]}
+            },
+            "ResourceId": { "Ref": "requestpathparamAPIPath" },
+            "RestApiId": { "Ref": "queuescalingconsumerRestApi" }
+        },
+        "DependsOn": [
+            "requestpathparamAPIPath", "processapiqueryFunctionLambdaPermission"
+        ]
+    },
+    "requestAPIMethodGET": {
+        "Type": "AWS::ApiGateway::Method",
+        "Properties": {
+            "AuthorizationType": "NONE",
+            "ApiKeyRequired" : false,
+            "HttpMethod" : "GET",
+            "Integration" : {
+                "IntegrationHttpMethod" : "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {"Fn::Join" : ["", ["arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["helloworldFunction", "Arn"]}, "/invocations"]]}
+            },
+            "ResourceId": { "Ref": "requestAPIPath" },
+            "RestApiId": { "Ref": "queuescalingconsumerRestApi" }
+        },
+        "DependsOn": [
+            "requestAPIPath", "helloworldFunctionLambdaPermission"
+        ]
+    },
+    "requestAPIMethodPOST": {
+        "Type": "AWS::ApiGateway::Method",
+        "Properties": {
+            "AuthorizationType": "NONE",
+            "ApiKeyRequired" : false,
+            "HttpMethod" : "POST",
+            "Integration" : {
+                "IntegrationHttpMethod" : "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {"Fn::Join" : ["", ["arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["processapirequestFunction", "Arn"]}, "/invocations"]]}
+            },
+            "ResourceId": { "Ref": "requestAPIPath" },
+            "RestApiId": { "Ref": "queuescalingconsumerRestApi" }
+        },
+        "DependsOn": [
+            "requestAPIPath", "processapirequestFunctionLambdaPermission"
+        ]
+    }
+  },
+  "Outputs" : {
+  }
+}
