@@ -1,0 +1,255 @@
+
+https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/extapi/consumer/request
+
+curl -X GET https://main-queuescaling-consumerapi.nhsdta.com/extapi/consumer/request -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+
+curl -X GET https://main-queuescaling-consumerapi.nhsdta.com/extapi/consumer/request --cert tsassolarchdemoapi.crt --key tsassolarchdemoapi.key -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+curl -X GET https://main-queuescaling-consumerapi.nhsdta.com/extapi/consumer/request --cert testcert.crt --key test_key.key -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+
+curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/hello -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+
+curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/extapi/consumer/request -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+
+curl -X POST https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/extapi/consumer/request -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J" -H 'Content-Type: application/json' -d '{"clientid": "12345", "batchid": "67890", "items":[{"requestId":"0987654321", "nhsnumber": "9990134243", "requestTime": "1684175557000"}]}'
+
+curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/extapi/consumer/request/12345/1684246186120 -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+
+curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/extapi/consumer/request/12345 -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+
+
+
+
+curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/extapi/consumer/request -H "Authorization: Bearer GuKOg5aP8ifjFmgcFfhW3NzqkZAe"
+
+eera or eerena
+
+lemonadecreator
+
+ssh-keygen -t rsa -b 4096 -f test.key
+ssh-keygen -t rsa -b 4096 -m PEM -f tsassolarchdemoapi.key
+
+#generate encrypted key
+openssl genrsa -des3 -out testkey.pem 4096
+#export unencrypted
+openssl rsa -in testkey.pem -outform PEM -pubout -out testkey.key.pub
+openssl rsa -in testkey.pem -out testkey.key
+openssl req -new -in testkey.key -nodes -sha256 -out testcert.csr
+openssl x509 -req -in testcert.csr -CA rootCA.crt -CAkey rootCA.key -CAcreateserial -out testcert.crt -days 700 -sha256
+
+#generate private key, unencrypted
+openssl genpkey -algorithm RSA -out test_key.pem -pkeyopt rsa_keygen_bits:4096
+openssl rsa -in test_key.pem -out test_key.key
+openssl req -new -in test_key.key -nodes -sha256 -out testcert.csr
+openssl x509 -req -in testcert.csr -CA rootCA.crt -CAkey rootCA.key -CAcreateserial -out testcert.crt -days 700 -sha256
+
+
+openssl req -new -in tsassolarchdemoapi.key -nodes -sha256 -config tsassolarchdemoapi.conf -out tsassolarchdemoapi.csr
+
+
+
+create request with auto-generated private key - this works - the ones above don't for some reason
+#openssl req -new -newkey rsa:4096 -nodes -x509 -sha256 -config tsassolarchdemoapi.conf -out tsassolarchdemoapi.csr -keyout tsassolarchdemoapi.key
+openssl req -new -newkey rsa:4096 -nodes -sha256 -out tsassolarchdemoapi.csr -keyout tsassolarchdemoapi.key
+
+
+
+openssl x509 -req -in tsassolarchdemoapi.csr -CA rootCA.crt -CAkey rootCA.key -CAcreateserial -out tsassolarchdemoapi.crt -days 700 -sha256
+
+
+verify certificate
+openssl x509 -in tsassolarchdemoapi.crt -text -noout
+
+
+openssl rsa -noout -modulus -in tsassolarchdemoapi.key | openssl md5
+openssl x509 -noout -modulus -in tsassolarchdemoapi.crt | openssl md5 
+
+client certificate
+-----BEGIN CERTIFICATE-----
+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
+tEHM
+-----END CERTIFICATE-----
+
+
+private key
+-----BEGIN PRIVATE KEY-----
+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
+2VDG9h+pn2jiA8wioI3TTCeHhjRabw==
+-----END PRIVATE KEY-----
+
+
+root CA
+-----BEGIN CERTIFICATE-----
+MIIGQzCCBCugAwIBAgIUd5nApOMAyr+XS8EVT+c9GJDeCQ4wDQYJKoZIhvcNAQEL
+BQAwgbAxCzAJBgNVBAYTAlVLMRIwEAYDVQQIDAlZb3Jrc2hpcmUxDjAMBgNVBAcM
+BUxlZWRzMRQwEgYDVQQKDAtOSFMgRW5nbGFuZDENMAsGA1UECwwEVFNBUzExMC8G
+A1UEAwwobWFpbi1xdWV1ZXNjYWxpbmctY29uc3VtZXJhcGkubmhzZHRhLmNvbTEl
+MCMGCSqGSIb3DQEJARYWbWF0dGhldy5icm93bjFAbmhzLm5ldDAeFw0yMzA1MTEy
+MDQxNThaFw0yNjAyMjgyMDQxNThaMIGwMQswCQYDVQQGEwJVSzESMBAGA1UECAwJ
+WW9ya3NoaXJlMQ4wDAYDVQQHDAVMZWVkczEUMBIGA1UECgwLTkhTIEVuZ2xhbmQx
+DTALBgNVBAsMBFRTQVMxMTAvBgNVBAMMKG1haW4tcXVldWVzY2FsaW5nLWNvbnN1
+bWVyYXBpLm5oc2R0YS5jb20xJTAjBgkqhkiG9w0BCQEWFm1hdHRoZXcuYnJvd24x
+QG5ocy5uZXQwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCzssWBwkx8
+ervr7pZ0z4rZ+KwXE2riXLxSusRcE91pqaPAbXYPqzaLh25P03kE/Twr3yc2nyAI
+EiEZ6bk+AxDgzVj4pAWCJGcseEnwFW//wQrh0b82ILE6CRhn6RFK/ldOIekzra4Z
+wjbyqtScs1As+61jDr14W1AGosdmVUonE5DBYK19OpvzA/PZpZIZIxl0xYgkYZib
+v+weokCG5bbfKTSVZSBDlpgl+q8nG/kqE7TG47nW4ZYSCHgT688BoSVlU7NUmHhx
+bKEQd5GFz+CQyKjoLJJpTsy32FFcnfWgvDK7jaFOB8DJ8gEf7F7EPeZJse/AXylc
+1l4ymc1xqUpGBNeIS0tt9RBtGYuQSrOIb7WagMYvTZj+bjS2NGfZOtJbtVw74gOn
+jX1OH+bM44uoFizSzltiOPEW+6J43w6AIUgKVIXElmu+dddPauv2wAB6BndJnA2i
+XjvgrImcuP8HCE1YtIVCe0ChY6sXDhmVPPIZPzYd7dJVfpKkXeRJ5BgtCiHsduzt
+NvegS7if/C0/cIkLPKuQME4d9m+LQOH30RdQDwJ8L/jJV/zbB7FOTQZ+3HKyxLY+
+7dR28CAD9WZxGdGiJkIItwi4FSHQRm0j1pCtByvZSbeUtsRNlgELThaLZFY8wGSJ
+8dH4V0kFeFXkbce+hNNLkA5ZTQe5r4GymQIDAQABo1MwUTAdBgNVHQ4EFgQUay4x
+KfeB6qduhVysEi2l8aZZftswHwYDVR0jBBgwFoAUay4xKfeB6qduhVysEi2l8aZZ
+ftswDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAgEAEXVF6/PwgXn7
+fBFG0TuuAmJal1yjUFetzemPhQIB9EUbQFxTiiyL7sQls0qMeQX22H4dGpRSqffL
++v/rtP37G+U0VCoJSvMVxFoDAyL8Ap88I4Cc0AyUbTjCDKIya5PvAcol+FW75d2n
+vhvPFN4krAKp3XtJLGayryI9pOdv7uyQXiqkupMvkYs3mUcOgJ2Ci2cdPJ1cHeBd
+i11L4FdLF3OkXcfNNGy4LSybou8lQe+LXKGUtrT0n337WKKqQkypNWmZ/FH6kQZV
+HXU4rbofWx15Q7K55g2Mq0pgcH1fUBEqxJjAK2A73vxaw0G3mZ96PDWMXiq0cp6M
+OQhyJuFG+cJV/wf6J8jX9xRKhCI+yPbJJND9gZzUXbT6Tm1JeUxGakX95Hymo5qk
+di80EBn5oFQ7+lNjD2twHXBJ972Gz6xWOVESrf+NVpv8fIy14O9jb7PcKzDzweJF
+ep6nIS8IqUD+oZ5QO9nOUIRlIzIZFoxSuGaFIQ5TZPTnxobM/R0h3BeDYQFytBrj
+KKIbvRF8+EdTxrz8Iw1uhBqIjZKJP8s2dLwPLf7XWsSvsgT+gg3rdEyQrj9Aeisn
+UxfJBYIf9TjP3ZFEgz/GyFAJi8LdVV2+xmpmcKnrjLsfgTDCMADZjxfrdnw1eAXG
+myuBT7haErSm/rEgkFvICR0KA0JFttQ=
+-----END CERTIFICATE-----
+
+
+rootCA private key Sqwj3irf
+-----BEGIN ENCRYPTED PRIVATE KEY-----
+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
+S6nSRvGIL/zZX9vQ9cAWhQ==
+-----END ENCRYPTED PRIVATE KEY-----
+
+
+
+{"clientid": "12345", "batchid": "67890", "items":[{"requestId":"0987654321", "nhsnumber": "9990134243", "requestTime": "1684175557000"}]}
