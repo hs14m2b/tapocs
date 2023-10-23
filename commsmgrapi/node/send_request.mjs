@@ -6,11 +6,11 @@ try {
 } catch (err) {
   console.error('https support is disabled!');
 }
-let apiKey = "Gy4tfYPuNAoyIEFU1cYvZabTAmZb2nD2";
+let apiKey = "Gy4tfYPuNAoyIEFU1cYvZabTAmZb2nD2"; //covid cert status app - integration environment
 let kid = "test-001";
 const privatekey = fs.readFileSync('./api_client_RS512.key', 'ascii');
-let APIMDOMAIN = "dev.api.service.nhs.uk";
-let APIAUTHENDPOINT = "https://dev.api.service.nhs.uk/oauth2/token";
+let APIMDOMAIN = "int.api.service.nhs.uk";
+let APIAUTHENDPOINT = "https://int.api.service.nhs.uk/oauth2/token";
 let APIAUTHPATH = "/oauth2/token";
 let AWSREGIONNAME = "eu-west-2";
 
