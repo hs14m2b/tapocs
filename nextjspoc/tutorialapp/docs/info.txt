@@ -1,7 +1,10 @@
 first install nextjs
 
 go to nextjs-blog folder
-npm install next@latest react@latest react-dom@latest
+//npm install next@latest react@latest react-dom@latest
+npm install next@13.4.2 react@18.2.0 react-dom@18.2.0
+
+The above requires node 16.8.0 as minimum
 
 using https://github.com/sladg/nextjs-lambda to package and deploy to AWS.
 

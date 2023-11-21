@@ -237,7 +237,7 @@
             "Properties": {
               "ApiId": { "Ref": "nextjsHttpApi" },
               "Method": "ANY",
-              "Path": "/FHIR/R4/dummyfhirendpoint",
+              "Path": "/extapi/FHIR/R4/dummyfhirendpoint",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
