@@ -226,6 +226,33 @@
       },
       "DependsOn": ["nextjspocbeLambdaRole"]
     },
+    "dummyFhirEndpointFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjspocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsHttpApi" },
+              "Method": "ANY",
+              "Path": "/FHIR/R4/dummyfhirendpoint",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-dummyFhirEndpointFunction"]]
+        },
+        "Handler": "dummyfhirendpoint.handler",
+        "Role": { "Fn::GetAtt": ["nextjspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs16.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjspocbeLambdaRole"]
+    },
     "nextjsHttpApi": {
       "Type": "AWS::Serverless::HttpApi",
       "Properties": {
