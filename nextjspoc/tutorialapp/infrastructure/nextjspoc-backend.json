@@ -253,6 +253,60 @@
       },
       "DependsOn": ["nextjspocbeLambdaRole"]
     },
+    "DocumentReferenceFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjspocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint for DocumentReference resources",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/FHIR/R4/dummyfhirendpoint/DocumentReference/{documentid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-DocumentReferenceFunction"]]
+        },
+        "Handler": "DocumentReference.handler",
+        "Role": { "Fn::GetAtt": ["nextjspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs16.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjspocbeLambdaRole"]
+    },
+    "DocumentManifestFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjspocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint for DocumentManifest resources",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/FHIR/R4/dummyfhirendpoint/DocumentManifest",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-DocumentManifestFunction"]]
+        },
+        "Handler": "DocumentManifest.handler",
+        "Role": { "Fn::GetAtt": ["nextjspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs16.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjspocbeLambdaRole"]
+    },
     "nextjsHttpApi": {
       "Type": "AWS::Serverless::HttpApi",
       "Properties": {
