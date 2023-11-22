@@ -28,7 +28,7 @@ export const handler = async (event) => {
         console.log(event.body);
         
         //get the documentReferenceId query parameter 
-        const drid = event.queryStringParameters.identifier.replace("urn:oid:", "");
+        const drid = event.queryStringParameters.identifier;
         //GET /asbestos/proxy/default__selftest_limited/DocumentManifest?identifier=urn:oid:1.2.10.0.2.15.2023.11.21.15.58.23.80.2&status=current&patient.identifier=urn:oid:1.3.6.1.4.1.21367.13.20.1000%7CIHERED-2654
         let key = "DocumentReference-"+drid;
         let params = {

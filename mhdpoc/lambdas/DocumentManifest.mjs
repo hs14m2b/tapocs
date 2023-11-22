@@ -27,16 +27,25 @@ export const handler = async (event) => {
     try {
         console.log(event.body);
         
-        //get the documentReferenceId query parameter 
-        const dmid = event.queryStringParameters.identifier.replace("urn:oid:", "");
-        //GET /asbestos/proxy/default__selftest_limited/DocumentManifest?identifier=urn:oid:1.2.10.0.2.15.2023.11.21.15.58.23.80.2&status=current&patient.identifier=urn:oid:1.3.6.1.4.1.21367.13.20.1000%7CIHERED-2654
-        let key = "DocumentManifest-"+dmid;
+        //get the dmid path parameter and put into template
+        const dmid = event.pathParameters.dmid;
+        let key = "DocumentManifest-urn:uuid:"+dmid;
         let params = {
           Key: key,
           Bucket: S3BUCKET,
         };
 
-        let buf = await getS3Object(params);
+        let buf;
+        try {
+          buf = await getS3Object(params);
+        } catch (error) {
+          key = "DocumentManifest-urn:oid:"+dmid;
+          params = {
+            Key: key,
+            Bucket: S3BUCKET,
+          };
+          buf = await getS3Object(params);
+        }
         //convert the Buffer to a string
         let docManString = buf.toString();
         console.log(docManString);

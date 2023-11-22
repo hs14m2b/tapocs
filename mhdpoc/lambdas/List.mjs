@@ -27,46 +27,35 @@ export const handler = async (event) => {
     try {
         console.log(event.body);
         
-        //get the documentReferenceId query parameter 
-        const dmid = event.queryStringParameters.identifier;
-        //GET /asbestos/proxy/default__selftest_limited/DocumentManifest?identifier=urn:oid:1.2.10.0.2.15.2023.11.21.15.58.23.80.2&status=current&patient.identifier=urn:oid:1.3.6.1.4.1.21367.13.20.1000%7CIHERED-2654
-        let key = "DocumentManifest-"+dmid;
+        //get the dmid path parameter and put into template
+        const listid = event.pathParameters.listid;
+        let key = "List-urn:uuid:"+listid;
         let params = {
           Key: key,
           Bucket: S3BUCKET,
         };
 
-        let buf = await getS3Object(params);
+        let buf;
+        try {
+          buf = await getS3Object(params);
+        } catch (error) {
+          key = "List-urn:oid:"+listid;
+          params = {
+            Key: key,
+            Bucket: S3BUCKET,
+          };
+          buf = await getS3Object(params);
+        }
         //convert the Buffer to a string
-        let docManString = buf.toString();
-        console.log(docManString);
-        let docMan = JSON.parse(docManString);
-        let fullUrl = "https://" + event.headers.host + event.rawPath + "/" + docMan.id;
-
-        let searchsetTemplate = {
-          "resourceType": "Bundle",
-          "type": "searchset",
-          "total": 1,
-          "link": [ {
-            "relation": "self",
-            "url": "https://" + event.headers.host + event.rawPath + "?" + event.rawQueryString
-          } ],
-          "entry": [ {
-            "fullUrl": fullUrl,
-            "resource": docMan,
-            "search": {
-              "mode": "match"
-            }
-          } ]
-        };      
-
+        let listString = buf.toString();
+        console.log(listString);
 
         let response = {
             statusCode: 200,
             "headers": {
                 "Content-Type": "application/fhir+json"
             },
-            body: JSON.stringify(searchsetTemplate)
+            body: listString
         };
         console.log(JSON.stringify(response));
         return response;

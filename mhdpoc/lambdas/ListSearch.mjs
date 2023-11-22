@@ -28,9 +28,9 @@ export const handler = async (event) => {
         console.log(event.body);
         
         //get the documentReferenceId query parameter 
-        const dmid = event.queryStringParameters.identifier;
-        //GET /asbestos/proxy/default__selftest_limited/DocumentManifest?identifier=urn:oid:1.2.10.0.2.15.2023.11.21.15.58.23.80.2&status=current&patient.identifier=urn:oid:1.3.6.1.4.1.21367.13.20.1000%7CIHERED-2654
-        let key = "DocumentManifest-"+dmid;
+        const listid = event.queryStringParameters.identifier;
+        //GET /asbestos/proxy/default__selftest_limited/List?identifier=urn:oid:1.2.10.0.2.15.2023.11.21.15.58.23.80.2&status=current&patient.identifier=urn:oid:1.3.6.1.4.1.21367.13.20.1000%7CIHERED-2654
+        let key = "List-"+listid;
         let params = {
           Key: key,
           Bucket: S3BUCKET,
@@ -38,10 +38,10 @@ export const handler = async (event) => {
 
         let buf = await getS3Object(params);
         //convert the Buffer to a string
-        let docManString = buf.toString();
-        console.log(docManString);
-        let docMan = JSON.parse(docManString);
-        let fullUrl = "https://" + event.headers.host + event.rawPath + "/" + docMan.id;
+        let listString = buf.toString();
+        console.log(listString);
+        let list = JSON.parse(listString);
+        let fullUrl = "https://" + event.headers.host + event.rawPath + "/" + list.id;
 
         let searchsetTemplate = {
           "resourceType": "Bundle",
@@ -53,7 +53,7 @@ export const handler = async (event) => {
           } ],
           "entry": [ {
             "fullUrl": fullUrl,
-            "resource": docMan,
+            "resource": list,
             "search": {
               "mode": "match"
             }

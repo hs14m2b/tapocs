@@ -360,6 +360,80 @@
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
     },
+    "ListFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "mhdpocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint for List resources",
+        "Environment": {
+          "Variables" : {
+            "S3BUCKET" : {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
+              ]
+            }
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/FHIR/R4/dummyfhirendpoint/List/{listid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-ListFunction"]]
+        },
+        "Handler": "List.handler",
+        "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs16.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["mhdpocbeLambdaRole"]
+    },
+    "ListSearchFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "mhdpocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint for List resources",
+        "Environment": {
+          "Variables" : {
+            "S3BUCKET" : {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
+              ]
+            }
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/FHIR/R4/dummyfhirendpoint/List",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-ListSearchFunction"]]
+        },
+        "Handler": "ListSearch.handler",
+        "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs16.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["mhdpocbeLambdaRole"]
+    },
     "mhdHttpApi": {
       "Type": "AWS::Serverless::HttpApi",
       "Properties": {
