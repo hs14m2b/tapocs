@@ -6,9 +6,11 @@ const s3Client = new S3Client({
 });
 
 const S3BUCKET = process.env['S3BUCKET'];
-const MHD_3_MINIMAL_PROFILE = "http://ihe.net/fhir/StructureDefinition/IHE_MHD_Provide_Minimal_DocumentBundle";
-const MHD_4_MINIMAL_PROFILE = "http://profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Minimal.ProvideBundle";
-
+const MHD_3_MINIMAL_PROFILE = "ihe.net/fhir/StructureDefinition/IHE_MHD_Provide_Minimal_DocumentBundle";
+const MHD_3_COMPREHENSIVE_PROFILE = "ihe.net/fhir/StructureDefinition/IHE_MHD_Provide_Comprehensive_DocumentBundle";
+const MHD_4_MINIMAL_PROFILE = "profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Minimal.ProvideBundle";
+const MHD_4_COMPREHENSIVE_PROFILE = "profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Comprehensive.ProvideBundle";
+                                      
 async function writeFile(body, bucket, key)
 {
     let params = {
@@ -39,11 +41,14 @@ async function processmhd3(event, requestJson)
         //add id
         DocumentReferenceObject["id"] = DRUUID;
         //add  identifier
-        DocumentReferenceObject["identifier"] = [ {
-          "use": "official",
-          "system": "urn:ietf:rfc:3986",
-          "value": "urn:uuid:" + DRUUID
-        } ];
+        if (!DocumentReferenceObject.identifier)
+        {
+          DocumentReferenceObject["identifier"] = [ {
+            "use": "official",
+            "system": "urn:ietf:rfc:3986",
+            "value": "urn:uuid:" + DRUUID
+          } ];
+        }
         //set content URL
         //https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/Binary/
         DocumentReferenceObject.content[0].attachment.url = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/Binary/"+DOCID;
@@ -220,8 +225,10 @@ export const handler = async (event) => {
         //check bundle profile
         const bundleprofile = requestJson.meta.profile[0];
         console.log("profile of bundle is " + bundleprofile);
-        if (bundleprofile == MHD_3_MINIMAL_PROFILE) return await processmhd3(event, requestJson);
-        if (bundleprofile == MHD_4_MINIMAL_PROFILE) return await processmhd4(event, requestJson);
+        if (bundleprofile.endsWith(MHD_3_MINIMAL_PROFILE)) return await processmhd3(event, requestJson);
+        if (bundleprofile.endsWith(MHD_3_COMPREHENSIVE_PROFILE)) return await processmhd3(event, requestJson);
+        if (bundleprofile.endsWith(MHD_4_MINIMAL_PROFILE)) return await processmhd4(event, requestJson);
+        if (bundleprofile.endsWith(MHD_4_COMPREHENSIVE_PROFILE)) return await processmhd4(event, requestJson);
     } catch (error) {
         console.log("caught error " + error.message);
         let response = {
