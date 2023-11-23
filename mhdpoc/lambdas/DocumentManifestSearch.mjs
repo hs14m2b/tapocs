@@ -36,29 +36,37 @@ export const handler = async (event) => {
           Bucket: S3BUCKET,
         };
 
-        let buf = await getS3Object(params);
-        //convert the Buffer to a string
-        let docManString = buf.toString();
-        console.log(docManString);
-        let docMan = JSON.parse(docManString);
-        let fullUrl = "https://" + event.headers.host + event.rawPath + "/" + docMan.id;
-
         let searchsetTemplate = {
           "resourceType": "Bundle",
           "type": "searchset",
-          "total": 1,
+          "total": 0,
           "link": [ {
             "relation": "self",
             "url": "https://" + event.headers.host + event.rawPath + "?" + event.rawQueryString
           } ],
-          "entry": [ {
-            "fullUrl": fullUrl,
-            "resource": docMan,
-            "search": {
-              "mode": "match"
-            }
-          } ]
+          "entry": [  ]
         };      
+
+        try {
+          let buf = await getS3Object(params);
+          //convert the Buffer to a string
+          let docManString = buf.toString();
+          console.log(docManString);
+          let docMan = JSON.parse(docManString);
+          let fullUrl = "https://" + event.headers.host + event.rawPath + "/" + docMan.id;
+  
+          let searchsetEntry = {
+              "fullUrl": fullUrl,
+              "resource": docMan,
+              "search": {
+                "mode": "match"
+              }
+          };
+          searchsetTemplate.total = 1;
+          searchsetTemplate.entry.push(searchsetEntry);
+        } catch (error) {
+          console.log("unable to find any DocumentManifest objects");
+        }
 
 
         let response = {

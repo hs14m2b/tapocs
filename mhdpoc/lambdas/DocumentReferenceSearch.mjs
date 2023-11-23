@@ -35,30 +35,37 @@ export const handler = async (event) => {
           Key: key,
           Bucket: S3BUCKET,
         };
-
-        let buf = await getS3Object(params);
-        //convert the Buffer to a string
-        let docRefString = buf.toString();
-        console.log(docRefString);
-        let docRef = JSON.parse(docRefString);
-        let fullUrl = "https://" + event.headers.host + event.rawPath + "/" + docRef.id;
-
         let searchsetTemplate = {
           "resourceType": "Bundle",
           "type": "searchset",
-          "total": 1,
+          "total": 0,
           "link": [ {
             "relation": "self",
             "url": "https://" + event.headers.host + event.rawPath + "?" + event.rawQueryString
           } ],
-          "entry": [ {
-            "fullUrl": fullUrl,
-            "resource": docRef,
-            "search": {
-              "mode": "match"
-            }
-          } ]
+          "entry": [  ]
         };      
+
+        try {
+          let buf = await getS3Object(params);
+          //convert the Buffer to a string
+          let docRefString = buf.toString();
+          console.log(docRefString);
+          let docRef = JSON.parse(docRefString);
+          let fullUrl = "https://" + event.headers.host + event.rawPath + "/" + docRef.id;
+  
+          let searchsetEntry = {
+              "fullUrl": fullUrl,
+              "resource": docRef,
+              "search": {
+                "mode": "match"
+              }
+          };
+          searchsetTemplate.entry.push(searchsetEntry);
+          searchsetTemplate.total = 1;   
+        } catch (error) {
+          console.log("unable to find any DocumentReference objects");
+        }
 
 
         let response = {
