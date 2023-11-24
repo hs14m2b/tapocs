@@ -1,4 +1,7 @@
 import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+
+import { getDocRef } from './get_document_ref_sandpit.mjs'
+
 const REGION = "eu-west-2";
 const s3Client = new S3Client({
     apiVersion: '2006-03-01',
@@ -52,10 +55,35 @@ export const handler = async (event) => {
           console.log(docRefString);
           let docRef = JSON.parse(docRefString);
           let fullUrl = "https://" + event.headers.host + event.rawPath + "/" + docRef.id;
-  
+          let NRLParams = {
+            "subject": {
+              "identifier": {
+                "system": "https://fhir.nhs.uk/Id/nhs-number",
+                "value": "4409815415"
+              }
+            },
+            "type": {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "736253002",
+                  "display": "Mental Health Crisis Plan"
+                }
+              ]
+            },
+            "custodian": {
+              "identifier": {
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                "value": "Y05868"
+              }
+            }
+          }
+          let nrlresponse = await getDocRef(NRLParams.custodian.identifier.value + "-" + docRef.id);
+          let nrlDocRef = JSON.parse(nrlresponse.body);
+          console.log(nrlresponse);
           let searchsetEntry = {
               "fullUrl": fullUrl,
-              "resource": docRef,
+              "resource": nrlDocRef,
               "search": {
                 "mode": "match"
               }

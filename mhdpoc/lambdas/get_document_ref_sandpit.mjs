@@ -13,7 +13,7 @@ try {
 let drId = "Y05868-" + "1e404af3-077f-4bee-b7a6-a9be97e1ce01";
 
  
-async function getDocRef (drId) 
+export const getDocRef = async (id) => 
   {
     let XRequestID = uuidv4();
     // request option
@@ -21,7 +21,7 @@ async function getDocRef (drId)
       host: "sandbox.api.service.nhs.uk",
       port: 443,
       method: 'GET',
-      path: "/record-locator/producer/FHIR/R4/DocumentReference/" + drId,
+      path: "/record-locator/producer/FHIR/R4/DocumentReference/" + id,
       rejectUnauthorized: false,
       headers: {
         //'Authorization': 'Bearer '+ access_token,

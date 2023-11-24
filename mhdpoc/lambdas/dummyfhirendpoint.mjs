@@ -1,4 +1,7 @@
 import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+
+import { sendDocRef } from './post_document_ref_sandpit.mjs';
+
 const REGION = "eu-west-2";
 const s3Client = new S3Client({
     apiVersion: '2006-03-01',
@@ -267,7 +270,42 @@ async function processmhd4(event, requestJson)
         key = "DocumentReference-urn:uuid:"+DRUUID;
         s3response = await writeFile(body, S3BUCKET, key);
         console.log(JSON.stringify(s3response));
+        //add item to NRL
+        let NRLParams = {
+          "subject": {
+            "identifier": {
+              "system": "https://fhir.nhs.uk/Id/nhs-number",
+              "value": "4409815415"
+            }
+          },
+          "type": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "736253002",
+                "display": "Mental Health Crisis Plan"
+              }
+            ]
+          },
+          "custodian": {
+            "identifier": {
+              "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+              "value": "Y05868"
+            }
+          }
+        }
+        let nrlDocRef = JSON.parse(JSON.stringify(DocumentReferenceObject));
+        nrlDocRef.id = NRLParams.custodian.identifier.value + "-" + nrlDocRef.id;
+        nrlDocRef.subject = NRLParams.subject;
+        nrlDocRef.custodian = NRLParams.custodian;
+        nrlDocRef.type = NRLParams.type;
+        //delete nrlDocRef.text;
+        delete nrlDocRef.contained;
+        //
+
         responseTemplate.entry.push(JSON.parse(JSON.stringify(entryTemplate)));
+        let nrlresponse = await sendDocRef(nrlDocRef);
+        console.log(nrlresponse);
       }
       if (entry.resource.resourceType == "List") 
       {
