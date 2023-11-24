@@ -209,8 +209,8 @@ async function processmhd4(event, requestJson)
       if (entry.resource.resourceType == "DocumentReference")
       {
         DRID = entry.resource.masterIdentifier.value.replace("urn:oid:", "");
-        entryTemplate.response.location = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/DocumentReference/" + DRID;
         let DRUUID = entry.fullUrl.replace("urn:uuid:", "");
+        entryTemplate.response.location = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/DocumentReference/" + DRUUID;
         let DOCID = entry.resource.content[0].attachment.url.replace("urn:uuid:", "");
         DocumentReferenceObject = entry.resource;
         //add id
@@ -277,8 +277,8 @@ async function processmhd4(event, requestJson)
             break;
           }
         }
-        entryTemplate.response.location = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/List/" + LISTID;
         let LISTUUID = entry.fullUrl.replace("urn:uuid:", "");
+        entryTemplate.response.location = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/List/" + LISTUUID;
         let LISTDRID = entry.resource.entry[0].item.reference.replace("urn:uuid:", "");
         ListObject = entry.resource;
         //add id
