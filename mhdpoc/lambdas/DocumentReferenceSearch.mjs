@@ -78,7 +78,8 @@ export const handler = async (event) => {
               }
             }
           }
-          let nrlresponse = await getDocRef(NRLParams.custodian.identifier.value + "-" + docRef.id);
+          let nrlDocRefId = (docRef.id.startsWith(NRLParams.custodian.identifier.value)) ? docRef.id : NRLParams.custodian.identifier.value + "-" + docRef.id; 
+          let nrlresponse = await getDocRef(nrlDocRefId);
           let nrlDocRef = JSON.parse(nrlresponse.body);
           console.log(nrlresponse);
           let searchsetEntry = {

@@ -1,5 +1,6 @@
 import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
+import { deleteDocRef } from './delete_document_ref_sandpit.mjs';
 import { sendDocRef } from './post_document_ref_sandpit.mjs';
 
 const REGION = "eu-west-2";
@@ -213,20 +214,25 @@ async function processmhd4(event, requestJson)
       {
         DRID = entry.resource.masterIdentifier.value.replace("urn:oid:", "");
         let DRUUID = entry.fullUrl.replace("urn:uuid:", "");
-        entryTemplate.response.location = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/DocumentReference/" + DRUUID;
         let DOCID = entry.resource.content[0].attachment.url.replace("urn:uuid:", "");
         DocumentReferenceObject = entry.resource;
-        //add id
-        DocumentReferenceObject["id"] = DRUUID;
+        //add id if not present
+        if (!DocumentReferenceObject.id) 
+        {
+          console.log("setting the id...");
+          DocumentReferenceObject["id"] = DRUUID;
+        }
+        //set URL location of DR in response
+        entryTemplate.response.location = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/DocumentReference/" + DocumentReferenceObject.id;
         //add  identifier
-        DocumentReferenceObject["identifier"] = [ {
-          "use": "official",
-          "system": "urn:ietf:rfc:3986",
-          "value": "urn:uuid:" + DRUUID
-        } ];
+        //DocumentReferenceObject["identifier"] = [ {
+        //  "use": "official",
+        //  "system": "urn:ietf:rfc:3986",
+        //  "value": "urn:uuid:" + DRUUID
+        //} ];
         //set content URL
         //https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/Binary/
-        DocumentReferenceObject.content[0].attachment.url = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/Binary/"+DOCID;
+        //DocumentReferenceObject.content[0].attachment.url = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/Binary/"+DOCID;
         //check if the DocumentReference replaces another one
         if (DocumentReferenceObject.relatesTo && DocumentReferenceObject.relatesTo.length > 0)
         {
@@ -235,21 +241,31 @@ async function processmhd4(event, requestJson)
             console.log("this reference replaces another one");
             for (let relatesTo of DocumentReferenceObject.relatesTo)
             {
+              //nothing specific needed here as NRL manages this
               let code = relatesTo.code;
               let targetReference = relatesTo.target.reference;
               let targetId = targetReference.substring(targetReference.lastIndexOf("/")+1);
               console.log("target id is " + targetId);
-              //get the object from S3
-              let supersededDocumentReference = JSON.parse(await getDocumentReference(targetId));
-              supersededDocumentReference.status = "superseded";
-              let SDRUUID = supersededDocumentReference.id;
-              let SDRID = supersededDocumentReference.masterIdentifier.value.replace("urn:oid:", "");
-              //overwrite superseded objects
-              let skey = "DocumentReference-urn:oid:"+SDRID;
-              let ss3response = await writeFile(JSON.stringify(supersededDocumentReference), S3BUCKET, skey);
-              skey = "DocumentReference-urn:uuid:"+SDRUUID;
-              ss3response = await writeFile(JSON.stringify(supersededDocumentReference), S3BUCKET, skey);
-              console.log(JSON.stringify(ss3response));
+              try {
+                if (relatesTo.target.identifier && relatesTo.target.identifier.value && relatesTo.target.identifier.value.startsWith("DocumentReference"))
+                {
+                  console.log("replacing the target identifier value");
+                  relatesTo.target.identifier.value = targetId;
+                }
+              } catch (error) {
+                console.log("failed to update the target identifier value");
+              }
+              ////get the object from S3
+              //let supersededDocumentReference = JSON.parse(await getDocumentReference(targetId));
+              //supersededDocumentReference.status = "superseded";
+              //let SDRUUID = supersededDocumentReference.id;
+              //let SDRID = supersededDocumentReference.masterIdentifier.value.replace("urn:oid:", "");
+              ////overwrite superseded objects
+              //let skey = "DocumentReference-urn:oid:"+SDRID;
+              //let ss3response = await writeFile(JSON.stringify(supersededDocumentReference), S3BUCKET, skey);
+              //skey = "DocumentReference-urn:uuid:"+SDRUUID;
+              //ss3response = await writeFile(JSON.stringify(supersededDocumentReference), S3BUCKET, skey);
+              //console.log(JSON.stringify(ss3response));
             }
           }
           else if (DocumentReferenceObject.relatesTo[0].code == "transforms")
@@ -295,15 +311,22 @@ async function processmhd4(event, requestJson)
           }
         }
         let nrlDocRef = JSON.parse(JSON.stringify(DocumentReferenceObject));
-        nrlDocRef.id = NRLParams.custodian.identifier.value + "-" + nrlDocRef.id;
-        nrlDocRef.subject = NRLParams.subject;
-        nrlDocRef.custodian = NRLParams.custodian;
-        nrlDocRef.type = NRLParams.type;
+        //nrlDocRef.id = NRLParams.custodian.identifier.value + "-" + nrlDocRef.id;
+        //nrlDocRef.subject = NRLParams.subject;
+        //nrlDocRef.custodian = NRLParams.custodian;
+        //nrlDocRef.type = NRLParams.type;
         //delete nrlDocRef.text;
         delete nrlDocRef.contained;
         //
 
         responseTemplate.entry.push(JSON.parse(JSON.stringify(entryTemplate)));
+        console.log("delete doc first in case already exists");
+        try {
+          let nrldelete = await deleteDocRef(nrlDocRef);
+          console.log(JSON.stringify(nrldelete));
+        } catch (error) {
+          console.log(error.message);
+        }
         let nrlresponse = await sendDocRef(nrlDocRef);
         console.log(nrlresponse);
       }
