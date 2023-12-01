@@ -36,29 +36,36 @@ export const handler = async (event) => {
           Bucket: S3BUCKET,
         };
 
-        let buf = await getS3Object(params);
-        //convert the Buffer to a string
-        let listString = buf.toString();
-        console.log(listString);
-        let list = JSON.parse(listString);
-        let fullUrl = "https://" + event.headers.host + event.rawPath + "/" + list.id;
-
         let searchsetTemplate = {
           "resourceType": "Bundle",
           "type": "searchset",
-          "total": 1,
+          "total": 0,
           "link": [ {
             "relation": "self",
             "url": "https://" + event.headers.host + event.rawPath + "?" + event.rawQueryString
           } ],
-          "entry": [ {
-            "fullUrl": fullUrl,
-            "resource": list,
-            "search": {
-              "mode": "match"
-            }
-          } ]
+          "entry": [  ]
         };      
+    
+        try {
+            let buf = await getS3Object(params);
+            //convert the Buffer to a string
+            let listString = buf.toString();
+            console.log(listString);
+            let list = JSON.parse(listString);
+            let fullUrl = "https://" + event.headers.host + event.rawPath + "/" + list.id;
+            let searchsetEntry = {
+              "fullUrl": fullUrl,
+              "resource": list,
+              "search": {
+                "mode": "match"
+              }
+            }
+            searchsetTemplate.total = 1;
+            searchsetTemplate.entry.push(searchsetEntry);
+          } catch (error) {
+            console.log("unable to find any List objects");
+        }
 
 
         let response = {

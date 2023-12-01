@@ -1,4 +1,7 @@
 import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+
+import { getDocRef } from './get_document_ref_sandpit.mjs'
+
 const REGION = "eu-west-2";
 const s3Client = new S3Client({
     apiVersion: '2006-03-01',
@@ -29,36 +32,68 @@ export const handler = async (event) => {
         
         //get the documentReferenceId query parameter 
         const drid = event.queryStringParameters.identifier;
-        //GET /asbestos/proxy/default__selftest_limited/DocumentManifest?identifier=urn:oid:1.2.10.0.2.15.2023.11.21.15.58.23.80.2&status=current&patient.identifier=urn:oid:1.3.6.1.4.1.21367.13.20.1000%7CIHERED-2654
         let key = "DocumentReference-"+drid;
         let params = {
           Key: key,
           Bucket: S3BUCKET,
         };
-
-        let buf = await getS3Object(params);
-        //convert the Buffer to a string
-        let docRefString = buf.toString();
-        console.log(docRefString);
-        let docRef = JSON.parse(docRefString);
-        let fullUrl = "https://" + event.headers.host + event.rawPath + "/" + docRef.id;
-
         let searchsetTemplate = {
           "resourceType": "Bundle",
           "type": "searchset",
-          "total": 1,
+          "total": 0,
           "link": [ {
             "relation": "self",
             "url": "https://" + event.headers.host + event.rawPath + "?" + event.rawQueryString
           } ],
-          "entry": [ {
-            "fullUrl": fullUrl,
-            "resource": docRef,
-            "search": {
-              "mode": "match"
-            }
-          } ]
+          "entry": [  ]
         };      
+
+        try {
+          let buf = await getS3Object(params);
+          //convert the Buffer to a string
+          let docRefString = buf.toString();
+          console.log(docRefString);
+          let docRef = JSON.parse(docRefString);
+          let fullUrl = "https://" + event.headers.host + event.rawPath + "/" + docRef.id;
+          let NRLParams = {
+            "subject": {
+              "identifier": {
+                "system": "https://fhir.nhs.uk/Id/nhs-number",
+                "value": "4409815415"
+              }
+            },
+            "type": {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "736253002",
+                  "display": "Mental Health Crisis Plan"
+                }
+              ]
+            },
+            "custodian": {
+              "identifier": {
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                "value": "Y05868"
+              }
+            }
+          }
+          let nrlDocRefId = (docRef.id.startsWith(NRLParams.custodian.identifier.value)) ? docRef.id : NRLParams.custodian.identifier.value + "-" + docRef.id; 
+          let nrlresponse = await getDocRef(nrlDocRefId);
+          let nrlDocRef = JSON.parse(nrlresponse.body);
+          console.log(nrlresponse);
+          let searchsetEntry = {
+              "fullUrl": fullUrl,
+              "resource": nrlDocRef,
+              "search": {
+                "mode": "match"
+              }
+          };
+          searchsetTemplate.entry.push(searchsetEntry);
+          searchsetTemplate.total = 1;   
+        } catch (error) {
+          console.log("unable to find any DocumentReference objects");
+        }
 
 
         let response = {
