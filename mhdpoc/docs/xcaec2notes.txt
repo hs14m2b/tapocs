@@ -12,3 +12,18 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
 
 # install latest version of 16
 nvm install Gallium
+
+
+#create and copy files in the node directory
+
+#start node server
+node xcaserver.mjs
+
+connect to server using public DNS address on port 9443
+e.g. https://ec2-13-40-168-0.eu-west-2.compute.amazonaws.com:9443/
+
+curl --cert main-xcapoc-xcapocbe.nhsdta.com.pem --key main-xcapoc-xcapocbe.nhsdta.com.key --cacert gazelle-ca.pem https://ec2-13-40-168-0.eu-west-2.compute.amazonaws.com:9443/ --insecure
+
+#create Route53 record and point to public IP for EC2 instance
+# main-xcapoc-xcapocbe.nhsdta.com.nhsdta.com
+curl --cert main-xcapoc-xcapocbe.nhsdta.com.pem --key main-xcapoc-xcapocbe.nhsdta.com.key --cacert gazelle-ca.pem https://main-xcapoc-xcapocbe.nhsdta.com:9443/ 

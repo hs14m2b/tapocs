@@ -175,7 +175,19 @@
             }
           } ]
         }
+    },
+    "xcaR53Entry": {
+      "Type" : "AWS::Route53::RecordSet",
+      "Properties" : {
+          "Comment" : "Target is the public IP of the EC2 instance",
+          "HostedZoneId" : {"Ref": "HOSTEDZONEID"},
+          "Name" : {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "BEDOMAIN" }]]},{ "Ref": "ROOTDOMAIN" }]]},
+          "ResourceRecords" : [ {"Fn::GetAtt": ["xcaGatewayEC2", "PublicIp"]} ],
+          "TTL" : "60",
+          "Type" : "A"
+        }
     }
+    
     
   }
 }
