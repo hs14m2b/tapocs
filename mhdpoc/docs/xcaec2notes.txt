@@ -1,0 +1,14 @@
+Stand up EC2 instance with amazon linux
+
+connect via ssh
+ssh -i "mabr8-xcakeypair.pem" ec2-user@ec2-13-40-168-0.eu-west-2.compute.amazonaws.com
+
+
+#install nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+
+#activate nvm
+. ~/.nvm/nvm.sh
+
+# install latest version of 16
+nvm install Gallium

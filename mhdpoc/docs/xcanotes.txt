@@ -1,0 +1,50 @@
+Tooling documentation
+https://gazelle.ihe.net/gazelle-documentation/
+
+XD* tooling
+https://gazelle.ihe.net/XDStarClient/home.seam
+https://gazelle.ihe.net/gazelle-documentation/XDStar-Client/user.html
+
+
+Security suite tooling
+https://gazelle.ihe.net/gss/home.seam
+https://gazelle.ihe.net/gazelle-documentation/Gazelle-Security-Suite/user.html
+
+
+
+This service's endpoint 
+https://main-xcapoc-xcapocbe.nhsdta.com
+
+creating a CSR for ihe
+openssl genrsa -out main-xcapoc-xcapocbe.nhsdta.com.key 2048
+openssl req -new -key main-xcapoc-xcapocbe.nhsdta.com.key -out main-xcapoc-xcapocbe.nhsdta.com.csr
+
+openssl req -new -newkey rsa:2048 -nodes -keyout main-xcapoc-xcapocbe.nhsdta.com.key -out main-xcapoc-xcapocbe.nhsdta.com.csr
+
+Org = "NHS England SolArch" otherwise it won't work...
+CN = main-xcapoc-001-xcapocbe.nhsdta.com
+
+
+In XDStarClient
+Create a SUT configuration (System Under Test)
+URL = https://main-xcapoc-001-xcapocbe.nhsdta.com/extapi/XCA/dummyXCAendpoint
+Type - Responding Gateway
+
+
+
+
+Content-Type: application/soap+xml
+
+<s:Envelope xmlns:a="http://www.w3.org/2005/08/addressing" xmlns:s="http://www.w3.org/2003/05/soap-envelope"><s:Header xmlns:s="http://www.w3.org/2003/05/soap-envelope"><a:Action s:mustUnderstand="1">urn:ihe:iti:2007:CrossGatewayQuery</a:Action><a:MessageID>urn:uuid:427e5bfd-a5a9-4d76-bfe1-efea18ee922a</a:MessageID><a:ReplyTo><a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address></a:ReplyTo><a:To s:mustUnderstand="1">https://main-xcapoc-001-xcapocbe.nhsdta.com/extapi/XCA/dummyXCAendpoint</a:To></s:Header><s:Body xmlns:s="http://www.w3.org/2003/05/soap-envelope"><query:AdhocQueryRequest xmlns:lcm="urn:oasis:names:tc:ebxml-regrep:xsd:lcm:3.0" xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:3.0" xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:3.0" xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:3.0" xmlns:xdsb="urn:ihe:iti:xds-b:2007" xmlns:xop="http://www.w3.org/2004/08/xop/include">
+    <query:ResponseOption returnComposedObjects="true" returnType="LeafClass"></query:ResponseOption>
+    <rim:AdhocQuery home="nhsehomecommunity" id="urn:uuid:14d4debf-8f97-4251-9a74-a90016b0af0d">
+        <rim:Slot name="$XDSDocumentEntryPatientId">
+            <rim:ValueList></rim:ValueList>
+        </rim:Slot>
+        <rim:Slot name="$XDSDocumentEntryStatus">
+            <rim:ValueList>
+                <rim:Value>('urn:oasis:names:tc:ebxml-regrep:StatusType:Approved')</rim:Value>
+            </rim:ValueList>
+        </rim:Slot>
+    </rim:AdhocQuery>
+</query:AdhocQueryRequest></s:Body></s:Envelope>
