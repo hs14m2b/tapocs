@@ -24,8 +24,8 @@
     },
     "CERTIFICATEARN": {
       "Type": "String",
-      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/784b9c71-c7bb-42b5-a568-0dd7d2a8f8ae",
-      "Description": "The certificate ARN for the gazelle-issued main-xcapoc-001-xcapocbe.nhsdta.com domain"
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/00f7f457-ab67-40fe-a846-10a4ba5790d8",
+      "Description": "The certificate ARN for the gazelle-issued main-xcapoc-001.xcapocbe.nhsesolarch.com domain"
     },
     "DEPLOYMENTSTAGENAME": {
       "Type": "String",
@@ -39,12 +39,12 @@
     },
     "HOSTEDZONEID": {
       "Type": "String",
-      "Default": "Z1075FNTZPAM5I",
+      "Default": "Z03247032R0Q3F51JOPQT",
       "Description": "The ID of the Route53 hosted zone"
     },
     "ROOTDOMAIN": {
       "Type": "String",
-      "Default": "nhsdta.com",
+      "Default": "nhsesolarch.com",
       "Description": "The root domain name"
     },
     "SHORTCODE": {
@@ -199,8 +199,13 @@
         "Domain": {
           "BasePath": ["/"],
           "CertificateArn": {"Ref": "CERTIFICATEARN"},
-          "DomainName": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "BEDOMAIN" }]]},{ "Ref": "ROOTDOMAIN" }]]},
+          "DisableExecuteApiEndpoint": true,
+          "DomainName": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" } ]]},{ "Ref": "BEDOMAIN" },{ "Ref": "ROOTDOMAIN" }]]},
           "EndpointConfiguration": "REGIONAL",
+          "MutualTlsAuthentication": {
+            "TruststoreUri" : "s3://cv19-testing/certificates/gazelle-ca.pem"
+          },
+          "OwnershipVerificationCertificateArn": "arn:aws:acm:eu-west-2:865198111306:certificate/8434695e-f319-4304-a489-bb11b24fdd08",
           "Route53": {
             "HostedZoneId": {"Ref": "HOSTEDZONEID"}
           },

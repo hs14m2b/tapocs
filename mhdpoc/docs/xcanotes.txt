@@ -22,13 +22,25 @@ openssl req -new -key main-xcapoc-xcapocbe.nhsdta.com.key -out main-xcapoc-xcapo
 openssl req -new -newkey rsa:2048 -nodes -keyout main-xcapoc-xcapocbe.nhsdta.com.key -out main-xcapoc-xcapocbe.nhsdta.com.csr
 
 Org = "NHS England SolArch" otherwise it won't work...
-CN = main-xcapoc-001-xcapocbe.nhsdta.com
+CN = main-xcapoc-001.xcapocbe.nhsesolarch.com
+
+
+manually checking TLS MA
+curl --cert main-xcapoc-001.xcapocbe.nhsesolarch.com.pem --key main-xcapoc-001.xcapocbe.nhsesolarch.com.key --cacert gazelle-ca.pem https://main-xcapoc-001.xcapocbe.nhsesolarch.com/extapi/XCA/dummyXCAendpoint -v
+
+curl --cert main-xcapoc-001.xcapocbe.nhsesolarch.com.pem --key main-xcapoc-001.xcapocbe.nhsesolarch.com.key --cacert gazelle-ca.pem --tlsv1.2 --tls-max 1.2 https://main-xcapoc-001.xcapocbe.nhsesolarch.com:443/extapi/XCA/dummyXCAendpoint -H "Content-Type: application/soap+xml" -H "Host: main-xcapoc-001.xcapocbe.nhsesolarch.com:443" -H "Connection: close" --http1.1 -X POST -d "<xm1 />" -v
+
+manually checking w/o TLS MA
+curl --cacert gazelle-ca.pem https://main-xcapoc-001.xcapocbe.nhsesolarch.com/extapi/XCA/dummyXCAendpoint -v
 
 
 In XDStarClient
 Create a SUT configuration (System Under Test)
-URL = https://main-xcapoc-001-xcapocbe.nhsdta.com/extapi/XCA/dummyXCAendpoint
+URL = https://main-xcapoc-001.xcapocbe.nhsesolarch.com/extapi/XCA/dummyXCAendpoint
 Type - Responding Gateway
+
+
+
 
 
 
