@@ -14,12 +14,17 @@ https
       cert: readFileSync('main-xcapoc-xcapocbe.nhsdta.com.pem'),
       key: readFileSync('main-xcapoc-xcapocbe.nhsdta.com.key'),
       requestCert: true,
-      rejectUnauthorized: true,
+      rejectUnauthorized: false,
       ca: readFileSync('gazelle-ca.pem'),
       // ...
     },
     (req, res) => {
-      console.log(inspect(req, false, 2));
+      //console.log(inspect(req, false, 2));
+      console.log("got a request");
+      console.log(req.method);
+      console.log(req.path);
+      console.log(req.host);
+      console.log(JSON.stringify(req.getHeaders()));
       res.writeHead(200);
       res.end('Hello, world!');
     }
