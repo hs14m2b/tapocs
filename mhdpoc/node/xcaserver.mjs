@@ -19,7 +19,7 @@ https
       // ...
     },
     (req, res) => {
-      console.log(inspect(req, true, null));
+      console.log(inspect(req, false, 2));
       res.writeHead(200);
       res.end('Hello, world!');
     }
