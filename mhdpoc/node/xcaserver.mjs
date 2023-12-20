@@ -16,6 +16,7 @@ https
       requestCert: true,
       rejectUnauthorized: false,
       ca: readFileSync('gazelle-ca.pem'),
+      enableTrace: true
       // ...
     },
     (req, res) => {
