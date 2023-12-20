@@ -18,6 +18,7 @@ https
       // ...
     },
     (req, res) => {
+      console.log(JSON.stringify(req));
       res.writeHead(200);
       res.end('Hello, world!');
     }
