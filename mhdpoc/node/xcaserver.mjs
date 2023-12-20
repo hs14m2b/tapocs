@@ -21,10 +21,8 @@ https
     (req, res) => {
       //console.log(inspect(req, false, 2));
       console.log("got a request");
-      console.log(req.method);
-      console.log(req.path);
-      console.log(req.host);
-      console.log(JSON.stringify(req.getHeaders()));
+      console.log(req.url);
+      console.log(JSON.stringify(req.headers));
       res.writeHead(200);
       res.end('Hello, world!');
     }
