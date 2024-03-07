@@ -226,6 +226,40 @@
       },
       "DependsOn": ["nextjspocbeLambdaRole"]
     },
+    "oidcresponseFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjspocapilambdas.zip",
+        "Description": "The lambda function that checks submitted favourite colour and randomly returns true or false",
+        "Environment": {
+          "Variables":{
+            "NHSMAILSECRETPARAM": {
+              "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, "nextjspoc-nhsmail"]]
+            }
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/oidcresponse",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-oidcresponseFunction"]]
+        },
+        "Handler": "oidcresponse.handler",
+        "Role": { "Fn::GetAtt": ["nextjspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs16.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjspocbeLambdaRole"]
+    },
     "nextjsHttpApi": {
       "Type": "AWS::Serverless::HttpApi",
       "Properties": {
