@@ -125,11 +125,8 @@
         },
         "ManagedPolicyArns": [
           "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
-          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-          "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess",
           "arn:aws:iam::aws:policy/AmazonS3FullAccess",
-          "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
-          "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB"
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaRole"
         ],
         "Path": "/service-role/",
         "RoleName": {"Fn::Join": ["-",[{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "servicerole"]]}
@@ -143,7 +140,10 @@
             "Statement": [
               {
                 "Sid": "Stmt1709827347702",
-                "Action": "healthlake:*",
+                "Action": [
+                  "healthlake:*",
+                  "kms:*"
+                ],
                 "Effect": "Allow",
                 "Resource": "*"
               }
@@ -229,6 +229,16 @@
       "Properties" : {
           "AliasName" : "alias/healthlake",
           "TargetKeyId" : {"Ref": "healthlakeKey"}
+        }
+    },
+    "smartonfhirauthFunctionPermission": {
+        "Type": "AWS::Lambda::Permission",
+        "Properties": {
+            "Action": "lambda:InvokeFunction",
+            "FunctionName": {"Ref": "smartonfhirauthFunction"},
+            "Principal": "healthlake.amazonaws.com",
+            "SourceAccount": {"Ref": "AWS::AccountId"},
+            "SourceArn": { "Fn::Join": ["", ["arn:aws:healthlake:", {"Ref": "AWS::Region"},":", {"Ref": "AWS::AccountId"},":datastore/fhir/*" ]] }
         }
     }
   }

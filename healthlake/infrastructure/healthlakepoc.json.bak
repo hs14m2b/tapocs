@@ -150,7 +150,7 @@
             ]
           },
           "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "fhiruserpolicy"]]},
-          "Roles": [{"Fn::GetAtt" : ["healthlakeServiceRole", "Arn"] }]
+          "Roles": [{"Ref": "healthlakeServiceRole"}]
         },
         "DependsOn": ["healthlakeServiceRole"]
     },
@@ -159,6 +159,11 @@
       "Properties": {
         "CodeUri": "healthlakepoclambdas.zip",
         "Description": "The lambda function that evaluates the bearer token and authorizes the FHIR request to the Healthlake datastore",
+        "Environment": {
+          "Variables":{
+            "ROLEARN": { "Fn::GetAtt": ["healthlakeServiceRole", "Arn"] }
+          }
+        },
         "FunctionName": {
           "Fn::Join": ["-", [{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "smartonfhirauth"]]
         },
@@ -211,7 +216,7 @@
               }
             ]
           },
-          "KeySpec" : "SYMMETRIC_DEFAULT ",
+          "KeySpec" : "SYMMETRIC_DEFAULT",
           "KeyUsage" : "ENCRYPT_DECRYPT",
           "MultiRegion" : false,
           "Origin" : "AWS_KMS",
@@ -226,6 +231,15 @@
           "TargetKeyId" : {"Ref": "healthlakeKey"}
         }
     },
+    "smartonfhirauthFunctionPermission": {
+        "Type": "AWS::Lambda::Permission",
+        "Properties": {
+            "Action": "lambda:invokeFunction",
+            "FunctionName": {"Ref": "smartonfhirauthFunction"},
+            "Principal": "healthlake.amazonaws.com",
+            "SourceArn": {"Fn::Join": ["", ["arn:aws:healthlake:",{ "Ref": "AWS::Region" },":",{ "Ref": "AWS::AccountId" }, ":*"]]}
+        }
+    },
     "healthlakepocDatastore":{
       "Type" : "AWS::HealthLake::FHIRDatastore",
       "Properties" : {
@@ -234,7 +248,8 @@
           "IdentityProviderConfiguration" : {
             "AuthorizationStrategy" : "SMART_ON_FHIR_V1",
             "FineGrainedAuthorizationEnabled" : false,
-            "IdpLambdaArn" : { "Fn::GetAtt": ["smartonfhirauthFunction", "Arn"] }
+            "IdpLambdaArn" : { "Fn::GetAtt": ["smartonfhirauthFunction", "Arn"] },
+            "Metadata": "{\"authorization_endpoint\":\"https://endpoint/authorization\",\"grant_types_supported\":[\"authorization_code\",\"client_credentials\"],\"token_endpoint\":\"https://endpoint/token\",\"code_challenge_methods_supported\":[\"S256\"],\"capabilities\":[\"launch-standalone\",\"client-confidential-symmetric\",\"sso-openid-connect\"]}"
           },
           "SseConfiguration" : {
             "KmsEncryptionConfig" : {
@@ -243,7 +258,8 @@
             }
           },
           "Tags" : [ {"Key": "shortcode", "Value": {"Ref": "SHORTCODE"}}]
-        }
+        },
+        "DependsOn": ["smartonfhirauthFunctionPermission"]
     }
   }
 }
