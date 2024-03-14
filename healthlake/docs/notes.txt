@@ -1,3 +1,6 @@
+Searching
+ - doesn't look like all parameter types of "reference" can actually be searched with the qualifier "identifier" - e.g. Immunizations - patient:identifier
+
 creating a healthlake with SMART_ON_FHIR_V1
  - create role for healthlake user to assume.
  - create lambda function to decode the Bearer token and return the authorization information + the role. 
