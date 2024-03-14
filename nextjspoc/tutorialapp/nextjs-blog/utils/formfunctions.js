@@ -92,3 +92,15 @@ module.exports.checkData = function (formdata) {
     (addresspostcode == "" || !addresspostcode || typeof addresspostcode == "undefined" || !this.valid_postcode(addresspostcode)) ? formdataResponse['pcerror'] = true : formdataResponse['pcerror'] = false;
     return formdataResponse;
 }
+
+function cancelNav(event){
+    console.log("triggered the popstate handler " +JSON.stringify(event));
+    history.go(1);
+}
+console.log("loaded formfunctions");
+try {
+    window.addEventListener('popstate', cancelNav);
+    console.log("added event listener");
+} catch (error) {
+    console.log("couldn't add event listener");
+}
