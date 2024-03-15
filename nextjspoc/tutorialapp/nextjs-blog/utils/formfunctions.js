@@ -97,9 +97,19 @@ function cancelNav(event){
     console.log("triggered the popstate handler " +JSON.stringify(event));
     history.go(1);
 }
+
+const beforeUnloadHandler = (event) => {
+    console.log("triggered beforeunload");
+    // Recommended
+    event.preventDefault();
+  
+    // Included for legacy support, e.g. Chrome/Edge < 119
+    event.returnValue = true;
+};
 console.log("loaded formfunctions");
 try {
-    window.addEventListener('popstate', cancelNav);
+    //window.addEventListener('popstate', cancelNav);
+    window.addEventListener("beforeunload", beforeUnloadHandler);
     console.log("added event listener");
 } catch (error) {
     console.log("couldn't add event listener");
