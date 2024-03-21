@@ -18,7 +18,7 @@ export default function Home(props) {
           Next.js app running in AWS Lambda {props.prop1}
       </h2>
       <p>
-        <a href='https://blah'>Launch NHSmail authentication</a>
+        <a href='/extapi/oidcrequest'>Launch NHSmail authentication</a>
       </p>
 
 

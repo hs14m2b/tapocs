@@ -101,29 +101,27 @@
         }
       }
     },
-    "nextjspocbeCWRole": {
-      "Type": "AWS::IAM::Role",
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Action": "sts:AssumeRole",
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "events.amazonaws.com"
+    "nextjspocbeLambdaSSMPolicy":{
+      "Type" : "AWS::IAM::Policy",
+      "Properties" : {
+          "PolicyDocument" : {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "Stmt1709827347702",
+                "Action": [
+                  "ssm:GetParameter",
+                  "kms:*"
+                ],
+                "Effect": "Allow",
+                "Resource": "*"
               }
-            }
-          ]
+            ]
+          },
+          "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "BRANCHNAME" }, "nextjspocbeLambdaSSMPolicy"]]},
+          "Roles": [{"Ref": "nextjspocbeLambdaRole"}]
         },
-        "ManagedPolicyArns": [
-          "arn:aws:iam::aws:policy/CloudWatchEventsFullAccess"
-        ],
-        "Path": "/service-role/",
-        "RoleName": {
-          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-", "nextjspocbeCWRole"]]
-        }
-      }
+        "DependsOn": ["nextjspocbeLambdaRole"]
     },
     "nextjsServerFunction": {
       "Type": "AWS::Serverless::Function",
@@ -230,11 +228,11 @@
       "Type": "AWS::Serverless::Function",
       "Properties": {
         "CodeUri": "nextjspocapilambdas.zip",
-        "Description": "The lambda function that checks submitted favourite colour and randomly returns true or false",
+        "Description": "The lambda function that receives the OIDC response from NHSmail",
         "Environment": {
           "Variables":{
             "NHSMAILSECRETPARAM": {
-              "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, "nextjspoc-nhsmail"]]
+              "Fn::Join": ["", ["arn:aws:ssm:",{"Ref": "AWS::Region"},":",{"Ref": "AWS::AccountId"},":parameter/", { "Ref": "BRANCHNAME" }, "-nextjspoc-nhsmail"]]
             }
           }
         },
@@ -255,7 +253,41 @@
         },
         "Handler": "oidcresponse.handler",
         "Role": { "Fn::GetAtt": ["nextjspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjspocbeLambdaRole"]
+    },
+    "oidcrequestFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjspocapilambdas.zip",
+        "Description": "The lambda function that redirects the client to NHSmail for authentication",
+        "Environment": {
+          "Variables":{
+            "NHSMAILSECRETPARAM": {
+              "Fn::Join": ["", ["arn:aws:ssm:",{"Ref": "AWS::Region"},":",{"Ref": "AWS::AccountId"},":parameter/", { "Ref": "BRANCHNAME" }, "-nextjspoc-nhsmail"]]
+            }
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/oidcrequest",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-oidcrequestFunction"]]
+        },
+        "Handler": "oidcrequest.handler",
+        "Role": { "Fn::GetAtt": ["nextjspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjspocbeLambdaRole"]

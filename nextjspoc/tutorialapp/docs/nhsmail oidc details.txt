@@ -1,0 +1,17 @@
+OAuth 2.0 authorization endpoint (v2)  - https://login.microsoftonline.com/37c354b2-85b0-47f5-b222-07b48d774ee3/oauth2/v2.0/authorize
+OAuth 2.0 token endpoint (v2) -  https://login.microsoftonline.com/37c354b2-85b0-47f5-b222-07b48d774ee3/oauth2/v2.0/token
+OpenID Connect metadata document - https://login.microsoftonline.com/37c354b2-85b0-47f5-b222-07b48d774ee3/v2.0/.well-known/openid-configuration
+
+Display Name : NHSESolArchPOC (X26)
+Application ID : 66dcf442-2933-4d84-b50d-30c7404632b6
+
+
+shared secret is held in main-nextjspoc-nhsmail parameter
+credential expires 21/3/2025
+
+
+Redirect URI:
+https://main-nextjsfe.nhsdta.com/nhsmailform
+https://main-nextjsfe.nhsdta.com/extapi/oidcresponse
+
+
