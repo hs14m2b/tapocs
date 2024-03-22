@@ -1,3 +1,8 @@
-curl -X GET "https://healthlake.us-east-1.amazonaws.com/datastore/22a0fb0dbfb52c17ca716f0b92c64d11/r4/DocumentReference" \
+#!/bin/sh
+
+. ./setHealthlakeEndpoint.sh
+
+curl -X GET "${HEALTHLAKEENDPOINT}DocumentReference" \
     -G --data-urlencode 'subject%3Aidentifier=https://fhir.nhs.uk/Id/nhs-number|6700028191' \
-    -H "Authorization: Bearer THISISTHETOKEN" --verbose
+    -G --data-urlencode 'type=http://snomed.info/sct|736253002' \
+    -H "Authorization: Bearer THISISTHETOKEN"
