@@ -20,6 +20,9 @@ export default function Home(props) {
       <p>
         <a href='/extapi/oidcrequest'>Launch NHSmail authentication</a>
       </p>
+      <p>
+        <a href='/extapi/oidcrequest?prompt=login'>Launch NHSmail authentication forcing re-authentication</a>
+      </p>
 
 
     </>

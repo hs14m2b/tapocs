@@ -4,6 +4,7 @@ exports.handler = async (event) => {
     try {
         let redirect_uri = (event.queryStringParameters && event.queryStringParameters.redirect_uri && event.queryStringParameters.redirect_uri.length > 0) ? event.queryStringParameters.redirect_uri: false;
         let state = (event.queryStringParameters && event.queryStringParameters.state && event.queryStringParameters.state.length > 0) ? event.queryStringParameters.state: false;
+        let prompt = (event.queryStringParameters && event.queryStringParameters.prompt && event.queryStringParameters.prompt.length > 0) ? event.queryStringParameters.prompt: false;
         let authorization_endpoint= "https://login.microsoftonline.com/37c354b2-85b0-47f5-b222-07b48d774ee3/oauth2/v2.0/authorize"
         let qsvalues = {
             client_id: "66dcf442-2933-4d84-b50d-30c7404632b6",
@@ -12,6 +13,7 @@ exports.handler = async (event) => {
             scope: "openid profile email phone",
             response_type: "code"
         }
+        if (prompt) qsvalues['prompt'] = prompt;
         let searchparams = new URLSearchParams(qsvalues).toString();
         let response = {
             "statusCode": 302,
