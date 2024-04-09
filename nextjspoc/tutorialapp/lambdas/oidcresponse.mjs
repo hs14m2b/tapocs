@@ -107,6 +107,8 @@ async function getTokens(nhsmailclientid,
 	let client_id = nhsmailclientid;
 	console.log("client id is " + client_id);
 
+    let endpoint = (requestParams.state) ? requestParams.state.substring(requestParams.state.lastIndexOf("|")+1) : "v2";
+
 	// form data
 	let postData = new URLSearchParams({
 		"code": requestParams.code,
@@ -118,12 +120,13 @@ async function getTokens(nhsmailclientid,
   
 	console.log("request POST data is " + JSON.stringify(postData));
    
+    let endpointPath = (endpoint == "v2") ? "/37c354b2-85b0-47f5-b222-07b48d774ee3/oauth2/v2.0/token" : "https://login.microsoftonline.com/37c354b2-85b0-47f5-b222-07b48d774ee3/oauth2/token";
 	// request option
 	let options = {
 		host: "login.microsoftonline.com",
 		port: 443,
 		method: 'POST',
-		path: '/37c354b2-85b0-47f5-b222-07b48d774ee3/oauth2/v2.0/token',
+		path: endpointPath,
 		rejectUnauthorized: false,
 		headers: {
 		  'Content-Type': 'application/x-www-form-urlencoded',
