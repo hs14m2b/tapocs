@@ -1,0 +1,172 @@
+Searching
+ - doesn't look like all parameter types of "reference" can actually be searched with the qualifier "identifier" - e.g. Immunizations - patient:identifier
+
+creating a healthlake with SMART_ON_FHIR_V1
+ - create role for healthlake user to assume.
+ - create lambda function to decode the Bearer token and return the authorization information + the role. 
+    Note that the response needs to include the "aud" as being the healthlake datastore, but the creation of the healthlake datastore needs the urn
+    of the lambda to be created and tests that it can invoke the lambda at creation time - this is a circular reference!
+    Resource policy for lambda is uncertain - need to check with AWS. 
+- some details provided at https://docs.aws.amazon.com/healthlake/latest/devguide/smart-on-fhir-access.html#smart-on-fhir-lambda-example
+- needed to create the datastore manually (via cli) as couldn't get config right via cloudformation!
+- metadata doc in datastore config needs more data elements than are described in the documentation
+- could potentially point the datastore config at API-M...?
+
+
+https://catalog.us-east-1.prod.workshops.aws/workshops/498fdbc5-46e1-4cb0-97a0-f4ec3a30f26a/en-US/introduction/getting-started
+
+Deleting the stack
+
+S3 bucket - Delete any synthetic data or S3 buckets you created in this workshop.
+HealthLake Data Store. - To delete the datastore follow these steps: a. Open AWS Console, and search for HealthLake. b. Open HealthLake console, click on 'Data Stores' link on the left. c. Select the checkbox in the data store that says 'healthlake-workshop' and click on 'Delete'.
+QuickSight subscription - As part of this workshop, we will be creating a QuickSight subcription. If you have an existing subscription then you can delete the dataset, analysis and dashboard that you create in this workshop. If you have created a subscription for this workshop, then you can keep the subscription or unsubscribe using the steps shown here https://docs.aws.amazon.com/quicksight/latest/user/closing-account.html
+CloudFormation stacks - Delete the CloudFormation stack created for this workshop. The steps to delete the stack can be found here 
+
+Also need to delete log groups (*[[name of stack]]*)
+
+So - recommendation - don't create the same stack name twice
+
+
+
+"subject": {
+    "identifier": {
+      "system": "https://fhir.nhs.uk/Id/nhs-number",
+      "value": "6700028191"
+    }
+  }
+  
+  
+https://fhir.nhs.uk/Id/nhs-number|6700028191
+subject%3Aidentifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C6700028191
+custodian%3Aidentifier=Y05868
+
+033f9fcd-f74d-48ba-b9e9-84ee919af77b
+
+
+curl https://healthlake.us-east-1.amazonaws.com/datastore/3a359b4ee4fe489c4e17c9e51694d9d7/r4/metadata
+
+
+
+{
+  "resourceType": "DocumentReference",
+  "id": "033f9fcd-f74d-48ba-b9e9-84ee919af77b",
+  "status": "current",
+  "docStatus": "final",
+  "type": {
+    "coding": [
+      {
+        "system": "http://snomed.info/sct",
+        "code": "736253002",
+        "display": "Mental health crisis plan"
+      }
+    ]
+  },
+  "category": [
+    {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "734163000",
+          "display": "Care plan"
+        }
+      ]
+    }
+  ],
+  "subject": {
+    "identifier": {
+      "system": "https://fhir.nhs.uk/Id/nhs-number",
+      "value": "6700028191"
+    }
+  },
+  "author": [
+    {
+      "identifier": {
+        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+        "value": "Y05868"
+      }
+    },
+    {
+      "identifier": {
+        "system": "https://fhir.nhs.uk/Id/nhsSpineASID",
+        "value": "012345678910"
+      }
+    }
+  ],
+  "custodian": {
+    "identifier": {
+      "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+      "value": "Y05868"
+    }
+  },
+  "description": "Physical document mental health crisis plan",
+  "securityLabel": [
+    {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-Confidentiality",
+          "code": "V",
+          "display": "very restricted"
+        }
+      ]
+    }
+  ],
+  "content": [
+    {
+      "attachment": {
+        "contentType": "application/pdf",
+        "language": "en-US",
+        "url": "https://spine-proxy.national.ncrs.nhs.uk/https%3A%2F%2Fp1.nhs.uk%2FMentalhealthCrisisPlanReport.pdf",
+        "size": 3654,
+        "hash": "2jmj7l5rSw0yVb/vlWAYkK/YBwk=",
+        "title": "Mental health crisis plan report",
+        "creation": "2022-12-21T10:45:41+11:00"
+      },
+      "format": {
+        "system": "https://fhir.nhs.uk/STU3/CodeSystem/NRL-FormatCode-1",
+        "code": "urn:nhs-ic:unstructured",
+        "display": "Unstructured document"
+      }
+    }
+  ],
+  "context": {
+    "practiceSetting": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "788002001",
+          "display": "Adult mental health service"
+        }
+      ]
+    },
+    "sourcePatientInfo": {
+      "identifier": {
+        "system": "https://fhir.nhs.uk/Id/nhs-number",
+        "value": "6700028191"
+      }
+    }
+  },
+  "meta": {
+    "lastUpdated": "2024-03-06T20:33:04.986Z"
+  }
+}
+
+
+
+curl 'https://healthlake.us-east-1.amazonaws.com/datastore/3a359b4ee4fe489c4e17c9e51694d9d7/r4/DocumentReference?subject%3Aidentifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C6700028191&custodian%3Aidentifier=Y05869&' \
+  -H 'authority: healthlake.us-east-1.amazonaws.com' \
+  -H 'accept: */*' \
+  -H 'accept-language: en-GB,en-US;q=0.9,en;q=0.8' \
+  -H 'authorization: AWS4-HMAC-SHA256 Credential=ASIA4S4OTPJFL7B4RAN3/20240307/us-east-1/healthlake/aws4_request, SignedHeaders=host;x-amz-date;x-amz-security-token, Signature=320ff7f4ae43fd36fb6e4d08b9051af3b8c42dce417fb2ff23811375bc79da4c' \
+  -H 'cache-control: no-cache' \
+  -H 'origin: https://us-east-1.console.aws.amazon.com' \
+  -H 'pragma: no-cache' \
+  -H 'referer: https://us-east-1.console.aws.amazon.com/' \
+  -H 'sec-ch-ua: "Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"' \
+  -H 'sec-ch-ua-mobile: ?0' \
+  -H 'sec-ch-ua-platform: "Windows"' \
+  -H 'sec-fetch-dest: empty' \
+  -H 'sec-fetch-mode: cors' \
+  -H 'sec-fetch-site: cross-site' \
+  -H 'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36' \
+  -H 'x-amz-date: 20240307T105831Z' \
+  -H 'x-amz-security-token: IQoJb3JpZ2luX2VjEMP//////////wEaCXVzLWVhc3QtMSJHMEUCIDLyS8agZEXBr3TabeNLDpktjgMLeSQ4SdVZMnBjqz+AAiEA1O9azYVWYWTIdPo376CervyfO/5hXRaLAU+SkqpIh/gq7QMIvP//////////ARADGgw4NjUxOTgxMTEzMDYiDD+bf6jDRbquXnmwHirBA+8B8Ur2oISqSAGD3SD3aHkILiQNLqgYT3F9InbRQvsSHoxaQwAupbFO5CHfaUaqWxYP9XWATXQBZizr5YywW5lx45WQfYiAc7bTGCFdjAfM4h03iU8rCRaGesFu/Y1zYY5RDpVtTw/fI36k1YDswtxANQ+DbDFfSxzywTBdonc//rcuIficBaPwWbMSlsdakKSM8PKlcVD0mvAlRPzyElqw7UjyTirWPO3s9BeGhpdQPwgvdxaqayLqcMmOjF+KfA7YfNCuicsG4rMQwL+rV0Y8ZeBM4KBaAmpFMcjgpY1roLOS9TMu+8A1xBCzLb1wc+FHM3sdoK64e4ZOvlbKRKpmLxt8HNJPJ4CSF6PxODUZ8QK4YNNq6v+rB1fL9PG5v5I4OeJS54u8MdeRq8ryZRYmh6TSU1boThQxk8QyCJ3Ph16QkvaX99QRsHePQ2/6+RwBaKmh1xAwi+8uRBus6jK/J07g261AJZjriECRHyCq6qtXkDeUdWupbKMjDLB731IyGshwDnauin0JqAYBuT233o7C1rQomNcBG5bdE+t6pkDQCrth9em+aCBclHKhB6dyYBfuEDqjHOQ6OBCRjspJMJq6pq8GOpQC5kToE4UcPiteLLMik+GsSQiTwa/qGm5atE73i5pJQOfUeRzipqZ2zeb01J8n8+mOGRz2cK9SaJfp4BKBTuqjAQ8hryakKNHJmUSI3wIzIaqrkOSRgbcMGsbZZvKy8c+txb0ZCQalhlSTXrMF1Llq/WGTTNtlFyTo0DTGMHK2TETNzDczyvwMHhlvKiEWMl8yEoaBDtu9YLnuABlM2zsMstzHywJtJ1BWeYWsle6chC1P8RDCO9B82sop72IN0mw2cF2slYhOGka7pREKYgnk1Nq0utMBfilgPD1f+T6Bj1ypEy5rscu4WGLno3/rF5m+UC6lWI8DRUskXuTZRLzSa+sHEayIew66kA52tLVNjthBV/yh'

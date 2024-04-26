@@ -19,6 +19,8 @@ export default function Home() {
         </h1>
         <p>
         Access the <Link href="/form1">forms demo</Link>
+        <br/>
+        Access the <Link href="/nhsmailform">NHSmail authentication demo</Link>
         <Link className="nhsuk-u-visually-hidden" href="/form2" />
         <Link className="nhsuk-u-visually-hidden" href="/formx" />
         <Link className="nhsuk-u-visually-hidden" href="/confirmdata" />

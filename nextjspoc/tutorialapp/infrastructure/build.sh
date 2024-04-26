@@ -6,11 +6,13 @@ USS3CODEBUCKET="lambdacodenextjspocedge"
 #OPENSSL_CONF=/dev/null
 TIMESTAMP=$(date +%s)
 echo $TIMESTAMP
+REGION="eu-west-2"
 
 cd ..
 cd nextjs-blog
 npm install
 npm run build
+# there was a bug in the following package - now working in version 7.0.6 which is pinned in dev dependencies
 npx --package @sladg/nextjs-lambda cli pack
 cd next.out
 cp assetsLayer.zip ${TIMESTAMP}assetsLayer.zip
@@ -38,8 +40,8 @@ sed -i "s/nextjspocapilambdas\.zip/${TIMESTAMP}nextjspocapilambdas\.zip/g" nextj
 sed -i "s/BLDTIME/${TIMESTAMP}/g" nextjspoc-edge.json
 
 #backend
-aws cloudformation package --use-json --template-file nextjspoc-backend.json --s3-bucket ${S3CODEBUCKET} --output-template-file ${TIMESTAMP}nextjspoc-backend.json
-aws cloudformation deploy --template-file ${TIMESTAMP}nextjspoc-backend.json --stack-name main-mabr8-nextjspocbestack --capabilities "CAPABILITY_NAMED_IAM"
+aws cloudformation package --use-json --template-file nextjspoc-backend.json --s3-bucket ${S3CODEBUCKET} --output-template-file ${TIMESTAMP}nextjspoc-backend.json --region ${REGION}
+aws cloudformation deploy --template-file ${TIMESTAMP}nextjspoc-backend.json --stack-name main-mabr8-nextjspocbestack --capabilities "CAPABILITY_NAMED_IAM" --region ${REGION}
 #lambda at edge
 #aws cloudformation package --use-json --template-file nextjspoc-edge.json --s3-bucket ${USS3CODEBUCKET} --output-template-file ${TIMESTAMP}nextjspoc-edge.json
 #aws cloudformation deploy --template-file ${TIMESTAMP}nextjspoc-edge.json --stack-name main-mabr8-nextjspocedgestack --capabilities "CAPABILITY_NAMED_IAM" --region "us-east-1"

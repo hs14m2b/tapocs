@@ -16,6 +16,7 @@
   "devDependencies": {
     "next": "^13.4.2",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "@sladg/nextjs-lambda": "7.0.6"
   }
 }
