@@ -1,0 +1,193 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Parameters": {
+    "AWSREGIONNAME": {
+      "Type": "String",
+      "Default": "eu-west-2",
+      "Description": "The AWS region name"
+    },
+    "BEDOMAIN": {
+      "Type": "String",
+      "Default": "xcapocbe",
+      "Description": "Back end domain identifier"
+    },
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "The branchname to derive fqdn"
+    },
+    "PROJECTNAME": {
+      "Type": "String",
+      "Default": "xcapoc",
+      "Description": "Project name for the deployment"
+    },
+    "CERTIFICATEARN": {
+      "Type": "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/784b9c71-c7bb-42b5-a568-0dd7d2a8f8ae",
+      "Description": "The certificate ARN for the gazelle-issued main-xcapoc-001-xcapocbe.nhsdta.com domain"
+    },
+    "DEPLOYMENTSTAGENAME": {
+      "Type": "String",
+      "Default": "prod",
+      "Description": "The stage deployment name"
+    },
+    "FEDOMAIN": {
+      "Type": "String",
+      "Default": "xcapocfe",
+      "Description": "The frontend domain identifier"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Default": "Z1075FNTZPAM5I",
+      "Description": "The ID of the Route53 hosted zone"
+    },
+    "ROOTDOMAIN": {
+      "Type": "String",
+      "Default": "nhsdta.com",
+      "Description": "The root domain name"
+    },
+    "SHORTCODE": {
+      "Type": "String",
+      "Default": "mabr8",
+      "Description": "The shortcode for tags"
+    }
+  },
+  "Globals": {
+    "Function": {
+      "Tags": {
+        "shortcode": { "Ref": "SHORTCODE" }
+      },
+      "Environment": {
+        "Variables": {
+          "ROOTDOMAIN": { "Ref": "ROOTDOMAIN" },
+          "BRANCHNAME": { "Ref": "BRANCHNAME" },
+          "FEDOMAIN": { "Ref": "FEDOMAIN" }
+        }
+      },
+      "Timeout": 300
+    }
+  },
+  "Resources": {
+    "xcapocbeEC2Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+          "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess",
+          "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+          "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+        ],
+        "Path": "/service-role/",
+        "RoleName": {
+          "Fn::Join": [
+            "-",
+            [{ "Ref": "BRANCHNAME" },{"Ref": "PROJECTNAME"}, "xcapocbeEC2Role-001"]
+          ]
+        }
+      }
+    },
+    "xcapocbeCWRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/CloudWatchEventsFullAccess"
+        ],
+        "Path": "/service-role/",
+        "RoleName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, {"Ref": "PROJECTNAME"}, "xcapocbeCWRole"]]
+        }
+      }
+    },
+    "xcaSecurityGroup": {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+          "GroupDescription" : "Security group for XCA PoC allowing ssh and https on port 9443",
+          "GroupName" : {
+            "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, {"Ref": "PROJECTNAME"}, "xcapocsg"]]
+          },
+          "SecurityGroupIngress" : [ 
+            {
+              "CidrIp" : "0.0.0.0/0",
+              "Description" : "Rule allowing HTTPS on 9443",
+              "FromPort" : 9443,
+              "IpProtocol" : "tcp",
+              "ToPort" : 9443
+            },
+            {
+              "CidrIp" : "0.0.0.0/0",
+              "Description" : "Rule allowing ssh",
+              "FromPort" : 22,
+              "IpProtocol" : "tcp",
+              "ToPort" : 22
+            }
+          ],
+          "Tags" : [ {
+            "Key" : "shortcode",
+            "Value" : {"Ref": "SHORTCODE"}
+          }
+          ],
+          "VpcId" : "vpc-08057760"
+        }
+    },
+    "xcaGatewayEC2": {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+          "ImageId" : "ami-0cfd0973db26b893b",
+          "InstanceType" : "t2.medium",
+          "KeyName" : {
+            "Fn::Join": ["-", [{ "Ref": "SHORTCODE" }, "xcakeypair"]]
+          },
+          "SecurityGroupIds" : [ {"Ref": "xcaSecurityGroup"} ],
+          "SubnetId" : "subnet-3630745f",
+          "Tags" : [ {
+            "Key" : "shortcode",
+            "Value" : {"Ref": "SHORTCODE"}
+          },
+          {
+            "Key" : "Name",
+            "Value" : {
+              "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, {"Ref": "PROJECTNAME"}, "xcapocserver"]]
+            }
+          } ]
+        }
+    },
+    "xcaR53Entry": {
+      "Type" : "AWS::Route53::RecordSet",
+      "Properties" : {
+          "Comment" : "Target is the public IP of the EC2 instance",
+          "HostedZoneId" : {"Ref": "HOSTEDZONEID"},
+          "Name" : {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "BEDOMAIN" }]]},{ "Ref": "ROOTDOMAIN" }]]},
+          "ResourceRecords" : [ {"Fn::GetAtt": ["xcaGatewayEC2", "PublicIp"]} ],
+          "TTL" : "60",
+          "Type" : "A"
+        }
+    }
+    
+    
+  }
+}
