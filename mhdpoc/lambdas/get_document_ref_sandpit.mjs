@@ -21,7 +21,7 @@ export const getDocRef = async (id) =>
       host: "sandbox.api.service.nhs.uk",
       port: 443,
       method: 'GET',
-      path: "/record-locator/producer/FHIR/R4/DocumentReference/" + id,
+      path: "/record-locator/producer/FHIR/R4/DocumentReference/Y05868-" + id,
       rejectUnauthorized: false,
       headers: {
         //'Authorization': 'Bearer '+ access_token,

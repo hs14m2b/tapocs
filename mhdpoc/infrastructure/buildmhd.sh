@@ -37,8 +37,8 @@ sed -i "s/mhdpocapilambdas\.zip/${TIMESTAMP}mhdpocapilambdas\.zip/g" mhdpoc-back
 #sed -i "s/BLDTIME/${TIMESTAMP}/g" mhdpoc-edge.json
 
 #backend
-aws cloudformation package --use-json --template-file mhdpoc-backend.json --s3-bucket ${S3CODEBUCKET} --output-template-file ${TIMESTAMP}mhdpoc-backend.json
-aws cloudformation deploy --template-file ${TIMESTAMP}mhdpoc-backend.json --stack-name main-mabr8-mhdpocbestack --capabilities "CAPABILITY_NAMED_IAM"
+aws cloudformation package --use-json --template-file mhdpoc-backend.json --s3-bucket ${S3CODEBUCKET} --output-template-file ${TIMESTAMP}mhdpoc-backend.json --region "eu-west-2"
+aws cloudformation deploy --template-file ${TIMESTAMP}mhdpoc-backend.json --stack-name main-mabr8-mhdpocbestack --capabilities "CAPABILITY_NAMED_IAM" --region "eu-west-2"
 #lambda at edge
 #aws cloudformation package --use-json --template-file mhdpoc-edge.json --s3-bucket ${USS3CODEBUCKET} --output-template-file ${TIMESTAMP}mhdpoc-edge.json
 #aws cloudformation deploy --template-file ${TIMESTAMP}mhdpoc-edge.json --stack-name main-mabr8-mhdpocedgestack --capabilities "CAPABILITY_NAMED_IAM" --region "us-east-1"

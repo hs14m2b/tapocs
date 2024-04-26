@@ -1,0 +1,10 @@
+mhd test tooling
+https://ehealthsuisse.ihe-europe.net:9743/home
+
+edit the "sut" channel to include the FHIR base for the dummy MHD endpoint
+https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint
+
+Select the "default" channel and run the "Test_Patients" to initialise first.
+
+the "dummyfhirendpoint" augments the MHD request with org details etc and submits to the NRL sandpit.
+

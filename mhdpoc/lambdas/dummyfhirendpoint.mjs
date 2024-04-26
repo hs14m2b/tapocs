@@ -311,11 +311,12 @@ async function processmhd4(event, requestJson)
           }
         }
         let nrlDocRef = JSON.parse(JSON.stringify(DocumentReferenceObject));
-        //nrlDocRef.id = NRLParams.custodian.identifier.value + "-" + nrlDocRef.id;
-        //nrlDocRef.subject = NRLParams.subject;
-        //nrlDocRef.custodian = NRLParams.custodian;
-        //nrlDocRef.type = NRLParams.type;
-        //delete nrlDocRef.text;
+        //following attributes needed for NRL
+        nrlDocRef.id = NRLParams.custodian.identifier.value + "-" + nrlDocRef.id;
+        nrlDocRef.subject = NRLParams.subject;
+        nrlDocRef.custodian = NRLParams.custodian;
+        nrlDocRef.type = NRLParams.type;
+        delete nrlDocRef.text;
         delete nrlDocRef.contained;
         //
 
@@ -558,7 +559,8 @@ function checkPatientReference(resource){
   if (! resource.subject.identifier){
     let subjectReference = resource.subject.reference;
     //hardcoded for testing
-    if (!subjectReference.startsWith("http://localhost:9760/asbestos/proxy/default__default/Patient")) return false;
+    if (!(subjectReference.startsWith("http://localhost:9760/asbestos/proxy/default__default/Patient") || 
+      subjectReference.startsWith("http://ehealthsuisse.ihe-europe.net:9760/asbestos/proxy/default__default/Patient"))) return false;
   }
   else
   {
