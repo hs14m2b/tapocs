@@ -12,3 +12,18 @@ token=$(az account get-access-token --resource=https://mabr8ukshdsvssworkspace-h
 
 curl -X GET --header "Authorization: Bearer $token" https://mabr8ukshdsvssworkspace-healthlake.fhir.azurehealthcareapis.com/Patient --verbose
 
+Create the Azure Health Data Services and enable a FHIR Service.
+Then need to elevate access to "owner" to enable the "Add Role Assignment" option - in this select the relevant FHIR role and then find the user to add it to.
+
+
+
+Create a new Active Directory (couldn't get this to work when tried)
+https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/Overview
+Tenant ID - e4ab835f-9b95-444d-b1f0-76ea9756eac9
+endpoint - mabr8nhsesolarchhds.onmicrosoft.com
+https://login.microsoftonline.com/e4ab835f-9b95-444d-b1f0-76ea9756eac9
+
+
+Getting an access token - note scope value sets the audience for the resultant token which points to the healthlake...
+# Replace {tenant} with your tenant!
+curl -X POST -H "Content-Type: application/x-www-form-urlencoded" -d 'client_id=8723bdcd-e3d0-40ff-a894-7a778e04021a&scope=https://mabr8ukshdsvssworkspace-healthlake.fhir.azurehealthcareapis.com/.default&client_secret=__M8Q~vHm.WlCY3pzVysS3ohmE4EfkfSABEFjblV&grant_type=client_credentials' 'https://login.microsoftonline.com/e4ab835f-9b95-444d-b1f0-76ea9756eac9/oauth2/v2.0/token'
