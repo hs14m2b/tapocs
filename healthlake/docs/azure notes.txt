@@ -24,11 +24,6 @@ endpoint - mabr8nhsesolarchhds.onmicrosoft.com
 https://login.microsoftonline.com/e4ab835f-9b95-444d-b1f0-76ea9756eac9
 
 
-Client with secret
-client secret __M8Q~vHm.WlCY3pzVysS3ohmE4EfkfSABEFjblV
-secret id c156d0dd-cafa-4585-87ef-08f212131bf3
-client id 8723bdcd-e3d0-40ff-a894-7a778e04021a
-
 Getting an access token - note scope value sets the audience for the resultant token which points to the healthlake...
 # Replace {tenant} with your tenant!
 curl -X POST -H "Content-Type: application/x-www-form-urlencoded" -d 'client_id=8723bdcd-e3d0-40ff-a894-7a778e04021a&scope=https://mabr8ukshdsvssworkspace-healthlake.fhir.azurehealthcareapis.com/.default&client_secret=__M8Q~vHm.WlCY3pzVysS3ohmE4EfkfSABEFjblV&grant_type=client_credentials' 'https://login.microsoftonline.com/e4ab835f-9b95-444d-b1f0-76ea9756eac9/oauth2/v2.0/token'
