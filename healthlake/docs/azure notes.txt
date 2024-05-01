@@ -1,0 +1,14 @@
+
+https://learn.microsoft.com/en-us/azure/healthcare-apis/fhir/get-started-with-fhir
+
+first install the azure CLI
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+az login   # run this first to log into the cloud shell
+az login --use-device-code # run this to login using command line in WSL
+
+token=$(az account get-access-token --resource=https://mabr8ukshdsvssworkspace-healthlake.fhir.azurehealthcareapis.com --query accessToken --output tsv)
+
+
+curl -X GET --header "Authorization: Bearer $token" https://mabr8ukshdsvssworkspace-healthlake.fhir.azurehealthcareapis.com/Patient --verbose
+
