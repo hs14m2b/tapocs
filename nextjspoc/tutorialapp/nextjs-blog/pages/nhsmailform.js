@@ -1,17 +1,11 @@
 import Head from 'next/head';
-import Link from 'next/link';
 const FORMDATACOOKIENAME = "formdata";
 
-export default function Home(props) {
-  function clearData() {
-    document.cookie = FORMDATACOOKIENAME + "=; path=/";
-    localStorage.clear();
-    sessionStorage.clear();
-  }
+function Home(props) {
   return (
     <>
       <Head>
-        <title>Dynamic UI Framework PoC</title>
+        <title>Dynamic UI Framework PoC rendered on { props.execlocation }</title>
         <link rel="icon" href="/assets/favicons/favicon.ico" />
       </Head>
       <h2 className="nhsuk-heading-l">
@@ -35,13 +29,24 @@ export default function Home(props) {
   )
 }
 
-export async function getServerSideProps(ctx) 
-{
+Home.getInitialProps = async (ctx) => {
+  console.log("in initial props");
+  let props = {
+    "execlocation": "server",
+    "givenname": "",
+    "familyname": "",
+    "gnerror": false,
+    "fnerror": false,
+    "prop1": "blah"
+  };
   if (ctx.req) {
     console.log("running on server");
     console.log(ctx.req.method);
   }
-  return({props: {
-    "prop1": "blah"
-  }})
+  else {
+    props["execlocation"] = "client";
+  }
+  return props;
 }
+
+export default Home;

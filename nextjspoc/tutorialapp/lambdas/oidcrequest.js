@@ -15,7 +15,8 @@ exports.handler = async (event) => {
             response_type: "code",
             claims: JSON.stringify({
                 "id_token" : {
-                    "auth_time" :  { "essential" : true }
+                    "auth_time" :  { "essential" : true },
+                    "CIS2UID" :  { "essential" : false }
                 }
             })
         }
