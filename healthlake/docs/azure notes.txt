@@ -15,6 +15,10 @@ curl -X GET --header "Authorization: Bearer $token" https://mabr8ukshdsvssworksp
 Create the Azure Health Data Services and enable a FHIR Service.
 Then need to elevate access to "owner" to enable the "Add Role Assignment" option - in this select the relevant FHIR role and then find the user to add it to.
 
+Limitations
+ - need to have a Patient resource created in order to search by Patient attribute on other resources. 
+ - Also Azure HDS doesn't support search by ":identifier" modifier, just the plain reference to the "id" of the target resource.
+
 
 
 Create a new Active Directory (couldn't get this to work when tried)

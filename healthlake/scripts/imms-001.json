@@ -25,7 +25,7 @@
           } ]
         },
         "patient" : {
-          "reference" : "urn:uuid:124fcb63-669c-4a3c-af2b-caf55de167ec",
+          "reference" : "Patient/1635af25-2397-45e5-b81b-139a71a2f7b1",
           "type" : "Patient",
           "identifier" : {
             "system" : "https://fhir.nhs.uk/Id/nhs-number",
