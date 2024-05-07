@@ -1,0 +1,9 @@
+See https://nhsd-confluence.digital.nhs.uk/display/APM/Building+and+deploying+your+API+alpha+with+Proxy+Generator
+
+key id for accessing proxygen is mabr8-pxygencli-1
+
+API name is nhse-tsas-solarch-mhds-registry
+
+ - then send message on slack to get setup on proxygen for the API.
+
+ 

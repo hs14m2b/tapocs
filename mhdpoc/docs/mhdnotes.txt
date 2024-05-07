@@ -8,3 +8,5 @@ Select the "default" channel and run the "Test_Patients" to initialise first.
 
 the "dummyfhirendpoint" augments the MHD request with org details etc and submits to the NRL sandpit.
 
+The "mhdconverter" app in the NHS Developer accout is set up to connect to the NRL integration environment.
+The "test" folder has basic tests to invoke sandpit and int instances of NRL.
