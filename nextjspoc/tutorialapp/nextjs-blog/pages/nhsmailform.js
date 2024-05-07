@@ -12,16 +12,16 @@ function Home(props) {
           Next.js app running in AWS Lambda {props.prop1}
       </h2>
       <p>
-        <a href='/extapi/oidcrequest'>Launch NHSmail authentication (v2 endpoint)</a>
+        <a href='/extapi/oidcrequest'>Launch NHSmail authentication (v2 endpoint) (no amr claim available)</a>
       </p>
       <p>
-        <a href='/extapi/oidcrequest?prompt=login'>Launch NHSmail authentication forcing re-authentication (v2 endpoint)</a>
+        <a href='/extapi/oidcrequest?prompt=login'>Launch NHSmail authentication forcing re-authentication (v2 endpoint) (no amr claim available)</a>
       </p>
       <p>
-        <a href='/extapi/oidcrequest?endpoint=v1'>Launch NHSmail authentication (v1 endpoint)</a>
+        <a href='/extapi/oidcrequest?endpoint=v1'>Launch NHSmail authentication (v1 endpoint) (amr claim available)</a>
       </p>
       <p>
-        <a href='/extapi/oidcrequest?prompt=login&endpoint=v1'>Launch NHSmail authentication forcing re-authentication (v1 endpoint)</a>
+        <a href='/extapi/oidcrequest?prompt=login&endpoint=v1'>Launch NHSmail authentication forcing re-authentication (v1 endpoint) (amr claim available)</a>
       </p>
 
 
