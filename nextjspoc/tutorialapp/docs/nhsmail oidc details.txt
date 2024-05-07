@@ -1,0 +1,26 @@
+OAuth 2.0 authorization endpoint (v2)  - https://login.microsoftonline.com/37c354b2-85b0-47f5-b222-07b48d774ee3/oauth2/v2.0/authorize
+OAuth 2.0 token endpoint (v2) -  https://login.microsoftonline.com/37c354b2-85b0-47f5-b222-07b48d774ee3/oauth2/v2.0/token
+OpenID Connect metadata document - https://login.microsoftonline.com/37c354b2-85b0-47f5-b222-07b48d774ee3/v2.0/.well-known/openid-configuration
+
+Display Name : NHSESolArchPOC (X26)
+Application ID : 66dcf442-2933-4d84-b50d-30c7404632b6
+
+
+shared secret is held in main-nextjspoc-nhsmail parameter
+credential expires 21/3/2025
+
+
+Redirect URI:
+https://main-nextjsfe.nhsdta.com/nhsmailform
+https://main-nextjsfe.nhsdta.com/extapi/oidcresponse
+
+
+possible values for amr - https://learn.microsoft.com/en-us/entra/identity-platform/access-token-claims-reference#amr-claim
+the v1 endpoint needs to be invoked to get amr and auth_time
+auth_time needed to be configured manually by the NHSmail team when setting up the client.
+
+suggested request via claims param - e.g. login_hint=karen.forshaw1%40nhs.net
+    &claims=%7B%22id_token%22%3A%7B%22amr%22%3A%7B%22essential%22%3Atrue%2C%22values%22%3A%5B%22mfa%22%5D%7D%7D%2C%22access_token%22%3A%7B%22amr%22%3A%7B%22essential%22%3Atrue%2C%22values%22%3A%5B%22mfa%22%5D%7D%7D%7D
+
+
+https://login.microsoftonline.com/37c354b2-85b0-47f5-b222-07b48d774ee3/oauth2/v2.0/authorize?client_id=19db86c3-b2b9-44cc-b339-36da233a3be2&redirect_uri=https%3A%2F%2Fmysignins.microsoft.com&scope=openid+profile+email+offline_access
