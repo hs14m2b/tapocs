@@ -1,0 +1,52 @@
+
+https://learn.microsoft.com/en-us/azure/healthcare-apis/fhir/get-started-with-fhir
+
+first install the azure CLI
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+az login   # run this first to log into the cloud shell
+az login --use-device-code # run this to login using command line in WSL
+
+token=$(az account get-access-token --resource=https://mabr8ukshdsvssworkspace-healthlake.fhir.azurehealthcareapis.com --query accessToken --output tsv)
+
+
+curl -X GET --header "Authorization: Bearer $token" https://mabr8ukshdsvssworkspace-healthlake.fhir.azurehealthcareapis.com/Patient --verbose
+
+Create the Azure Health Data Services and enable a FHIR Service.
+Then need to elevate access to "owner" to enable the "Add Role Assignment" option - in this select the relevant FHIR role and then find the user to add it to.
+
+Limitations
+ - need to have a Patient resource created in order to search by Patient attribute on other resources. 
+ - Also Azure HDS doesn't support search by ":identifier" modifier, just the plain reference to the "id" of the target resource.
+
+
+
+Create a new Active Directory (couldn't get this to work when tried)
+https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/Overview
+Tenant ID - e4ab835f-9b95-444d-b1f0-76ea9756eac9
+endpoint - mabr8nhsesolarchhds.onmicrosoft.com
+https://login.microsoftonline.com/e4ab835f-9b95-444d-b1f0-76ea9756eac9
+
+
+Getting an access token - note scope value sets the audience for the resultant token which points to the healthlake...
+# Replace {tenant} with your tenant!
+curl -X POST -H "Content-Type: application/x-www-form-urlencoded" -d 'client_id=8723bdcd-e3d0-40ff-a894-7a778e04021a&scope=https://mabr8ukshdsvssworkspace-healthlake.fhir.azurehealthcareapis.com/.default&client_secret=__M8Q~vHm.WlCY3pzVysS3ohmE4EfkfSABEFjblV&grant_type=client_credentials' 'https://login.microsoftonline.com/e4ab835f-9b95-444d-b1f0-76ea9756eac9/oauth2/v2.0/token'
+
+
+
+personal subscription details
+tenant - d326ccf3-2f47-4d41-9ed6-32998e3ec11d
+domain - matthewandkarenhotmail.onmicrosoft.com
+
+log into the subscription
+az login --tenant d326ccf3-2f47-4d41-9ed6-32998e3ec11d --use-device-code
+
+create the service principle for Health Data Services
+az ad sp create --id 4f6778d8-5aef-43dc-a1ff-b073724b9495
+
+Then create the confidential client app as per the description and add permissions to Azure Healthcare APIs and switch back to Tech Arch subscription.
+
+token=$(curl -X POST -H "Content-Type: application/x-www-form-urlencoded" -d 'client_id=d129c15d-f695-4cd5-8785-28202330b124&scope=https://mabr8ukshdsvssworkspace-healthlake.fhir.azurehealthcareapis.com/.default&client_secret=INF8Q~uHlhkgxUvM~JnIIx26VP8k0wsv3w1hib~g&grant_type=client_credentials' 'https://login.microsoftonline.com/d326ccf3-2f47-4d41-9ed6-32998e3ec11d/oauth2/v2.0/token' | jq -r ".access_token")
+
+curl -X GET --header "Authorization: Bearer $token" https://mabr8ukshdsvssworkspace-healthlake.fhir.azurehealthcareapis.com/Patient --verbose
+
