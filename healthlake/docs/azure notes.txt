@@ -6,6 +6,10 @@ curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
 az login   # run this first to log into the cloud shell
 az login --use-device-code # run this to login using command line in WSL
+az login --tenant 50f6071f-bbfe-401a-8803-673748e629e2 --use-device-code  # to log into the NHS D tenant
+
+NHS D Entra Directory is 50f6071f-bbfe-401a-8803-673748e629e2
+
 
 token=$(az account get-access-token --resource=https://mabr8ukshdsvssworkspace-healthlake.fhir.azurehealthcareapis.com --query accessToken --output tsv)
 
