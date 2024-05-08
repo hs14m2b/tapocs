@@ -10,159 +10,109 @@ try {
 } catch (err) {
   console.log('https support is disabled!');
 }
-let newId = uuidv4(); //Y05868-70bce845-679e-42ea-a909-30ac78ec1956
+let newId = "00000000-make-unique-for-sandbox-requestdddef";//uuidv4(); //Y05868-70bce845-679e-42ea-a909-30ac78ec1956
 console.log(newId);
 let example = {
-    "resourceType": "DocumentReference",
-    "id": "Y05868-" + newId,
-    "meta": {
-      "profile": [
-        "http://fhir.nhs.net/StructureDefinition/nrls-documentreference-1-0"
-      ]
-    },
-    "masterIdentifier": {
-      "system": "urn:ietf:rfc:3986",
-      "value": "urn:oid:1.3.6.1.4.1.21367.2005.9.0"
-    },
-    "identifier": [
+  "resourceType": "DocumentReference",
+  "id": "Y05868-" + newId,
+  "status": "current",
+  "docStatus": "final",
+  "type": {
+    "coding": [
       {
-        "system": "urn:ietf:rfc:3986",
-        "value": "urn:oid:1.3.6.1.4.1.21367.2005.3.7.1330"
+        "system": "http://snomed.info/sct",
+        "code": "736253002",
+        "display": "Mental health crisis plan"
       }
-    ],
-    "status": "current",
-    "docStatus": "final",
-    "type": {
+    ]
+  },
+  "category": [
+    {
       "coding": [
         {
           "system": "http://snomed.info/sct",
-          "code": "736253002",
-          "display": "Mental Health Crisis Plan"
+          "code": "734163000",
+          "display": "Care plan"
         }
       ]
-    },
-    "category": [
-      {
-        "coding": [
-          {
-            "system": "http://loinc.org",
-            "code": "55112-7",
-            "display": "Document summary"
-          }
-        ]
-      }
-    ],
-    "subject": {
-      "identifier": {
-        "system": "https://fhir.nhs.uk/Id/nhs-number",
-        "value": "4409815415"
-      }
-    },
-    "date": "2022-12-21T10:45:41+11:00",
-    "author": [
-      {
-        "identifier": {
-          "value": "Practitioner/A985657ZA"
-        }
-      }
-    ],
-    "authenticator": {
-      "identifier": {
-        "value": "Organization/Y05868"
-      }
-    },
-    "custodian": {
+    }
+  ],
+  "subject": {
+    "identifier": {
+      "system": "https://fhir.nhs.uk/Id/nhs-number",
+      "value": "6700028191"
+    }
+  },
+  "author": [
+    {
       "identifier": {
         "system": "https://fhir.nhs.uk/Id/ods-organization-code",
         "value": "Y05868"
       }
-    },
-    "description": "Physical",
-    "securityLabel": [
-      {
-        "coding": [
-          {
-            "system": "http://terminology.hl7.org/CodeSystem/v3-Confidentiality",
-            "code": "V",
-            "display": "very restricted"
-          }
-        ]
-      }
-    ],
-    "content": [
-      {
-        "attachment": {
-          "contentType": "application/pdf",
-          "language": "en-US",
-          "url": "https://spine-proxy.national.ncrs.nhs.uk/p1.nhs.uk/EPAACS/MHCPummaryReport.pdf",
-          "size": 3654,
-          "hash": "2jmj7l5rSw0yVb/vlWAYkK/YBwk=",
-          "title": "Physical",
-          "creation": "2022-12-21T10:45:41+11:00"
-        },
-        "format": {
-          "system": "urn:oid:1.3.6.1.4.1.19376.1.2.3",
-          "code": "urn:ihe:pcc:cm:2008",
-          "display": "History and Physical Specification"
-        }
-      }
-    ],
-    "context": {
-      "encounter": [
+    }
+  ],
+  "custodian": {
+    "identifier": {
+      "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+      "value": "Y05868"
+    }
+  },
+  "description": "Physical document mental health crisis plan",
+  "securityLabel": [
+    {
+      "coding": [
         {
-          "identifier": {
-            "value": "Encounter/4409815415"
-          }
-        }
-      ],
-      "event": [
-        {
-          "coding": [
-            {
-              "system": "http://snomed.info/sct",
-              "code": "736253002",
-              "display": "Mental Health Crisis Plan"
-            }
-          ]
-        }
-      ],
-      "period": {
-        "start": "2022-12-21T09:00:41+11:00",
-        "end": "2022-12-21T10:45:41+11:00"
-      },
-      "facilityType": {
-        "coding": [
-          {
-            "system": "http://snomed.info/sct",
-            "code": "73770003",
-            "display": "Mental health caregiver support"
-          }
-        ]
-      },
-      "practiceSetting": {
-        "coding": [
-          {
-            "system": "http://snomed.info/sct",
-            "code": "390826005",
-            "display": "Mental health caregiver support"
-          }
-        ]
-      },
-      "sourcePatientInfo": {
-        "identifier": {
-          "value": "Patient/4409815415"
-        }
-      },
-      "related": [
-        {
-          "identifier": {
-            "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-            "value": "MENTAL HEALTH OUTREACH"
-          }
+          "system": "http://terminology.hl7.org/CodeSystem/v3-Confidentiality",
+          "code": "V",
+          "display": "very restricted"
         }
       ]
     }
-  };
+  ],
+  "content": [
+    {
+      "attachment": {
+        "contentType": "application/pdf",
+        "language": "en-US",
+        "url": "https://spine-proxy.national.ncrs.nhs.uk/https%3A%2F%2Fp1.nhs.uk%2FMentalhealthCrisisPlanReport.pdf",
+        "size": 3654,
+        "hash": "2jmj7l5rSw0yVb/vlWAYkK/YBwk=",
+        "title": "Mental health crisis plan report",
+        "creation": "2022-12-21T10:45:41+11:00"
+      },
+      "format": {
+        "system": "https://fhir.nhs.uk/England/CodeSystem/England-NRLFormatCode",
+        "code": "urn:nhs-ic:unstructured",
+        "display": "Unstructured document"
+      }
+    }
+  ],
+  "context": {
+    "practiceSetting": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "788002001",
+          "display": "Adult mental health service"
+        }
+      ]
+    },
+    "sourcePatientInfo": {
+      "identifier": {
+        "system": "https://fhir.nhs.uk/Id/nhs-number",
+        "value": "6700028191"
+      }
+    },
+    "related": [
+      {
+        "identifier": {
+          "system": "https://fhir.nhs.uk/Id/nhsSpineASID",
+          "value": "012345678910"
+        }
+      }
+    ]
+  }
+};
 
  
 async function sendDocRef (docRef) 
@@ -174,16 +124,17 @@ async function sendDocRef (docRef)
     let options = {
       host: "sandbox.api.service.nhs.uk",
       port: 443,
-      method: 'POST',
+      method: 'PUT',
       path: "/record-locator/producer/FHIR/R4/DocumentReference",
       rejectUnauthorized: false,
       headers: {
         //'Authorization': 'Bearer '+ access_token,
         'accept': 'application/fhir+json;version=1',
-        'X-Request-ID': XRequestID,
-        'NHSD-End-User-Organisation-ODS': 'Y05868',
-        'Content-Type': 'application/fhir+json;version=1',
-        'Content-Length': datalength
+        'x-request-id': XRequestID,
+        'x-correlation-id': '11C46F5F-CDEF-4865-94B2-0EE0EDCC26DA',
+        'nhsd-end-user-organisation-ods': 'Y05868',
+        'content-type': 'application/fhir+json;version=1',
+        'content-length': datalength
     }
     };
   

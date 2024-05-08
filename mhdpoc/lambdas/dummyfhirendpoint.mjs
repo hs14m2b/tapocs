@@ -2,6 +2,7 @@ import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCom
 
 import { deleteDocRef } from './delete_document_ref_sandpit.mjs';
 import { sendDocRef } from './post_document_ref_sandpit.mjs';
+import { v4 as uuidv4 } from 'uuid';
 
 const REGION = "eu-west-2";
 const s3Client = new S3Client({
@@ -212,6 +213,30 @@ async function processmhd4(event, requestJson)
   for (let entry of requestJson.entry) {
       if (entry.resource.resourceType == "DocumentReference")
       {
+        let NRLParams = {
+          "subject": {
+            "identifier": {
+              "system": "https://fhir.nhs.uk/Id/nhs-number",
+              "value": "4409815415"
+            }
+          },
+          "type": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "736253002",
+                "display": "Mental Health Crisis Plan"
+              }
+            ]
+          },
+          "custodian": {
+            "identifier": {
+              "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+              "value": "Y05868"
+            }
+          }
+        }
+        let resourceNewId = NRLParams.custodian.identifier.value + "-" + uuidv4();
         DRID = entry.resource.masterIdentifier.value.replace("urn:oid:", "");
         let DRUUID = entry.fullUrl.replace("urn:uuid:", "");
         let DOCID = entry.resource.content[0].attachment.url.replace("urn:uuid:", "");
@@ -220,7 +245,7 @@ async function processmhd4(event, requestJson)
         if (!DocumentReferenceObject.id) 
         {
           console.log("setting the id...");
-          DocumentReferenceObject["id"] = DRUUID;
+          DocumentReferenceObject["id"] = resourceNewId;
         }
         //set URL location of DR in response
         entryTemplate.response.location = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/DocumentReference/" + DocumentReferenceObject.id;
@@ -285,35 +310,14 @@ async function processmhd4(event, requestJson)
         let s3response = await writeFile(body, S3BUCKET, key);
         key = "DocumentReference-urn:uuid:"+DRUUID;
         s3response = await writeFile(body, S3BUCKET, key);
+        key = "DocumentReference-urn:uuid:"+resourceNewId;
+        s3response = await writeFile(body, S3BUCKET, key);
         console.log(JSON.stringify(s3response));
         //add item to NRL
-        let NRLParams = {
-          "subject": {
-            "identifier": {
-              "system": "https://fhir.nhs.uk/Id/nhs-number",
-              "value": "4409815415"
-            }
-          },
-          "type": {
-            "coding": [
-              {
-                "system": "http://snomed.info/sct",
-                "code": "736253002",
-                "display": "Mental Health Crisis Plan"
-              }
-            ]
-          },
-          "custodian": {
-            "identifier": {
-              "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-              "value": "Y05868"
-            }
-          }
-        }
         let nrlDocRef = JSON.parse(JSON.stringify(DocumentReferenceObject));
         //following attributes needed for NRL
-        nrlDocRef.id = NRLParams.custodian.identifier.value + "-" + nrlDocRef.id;
-        nrlDocRef.subject = NRLParams.subject;
+        //id has been set above
+        nrlDocRef.subject.identifier = NRLParams.subject.identifier;
         nrlDocRef.custodian = NRLParams.custodian;
         nrlDocRef.type = NRLParams.type;
         delete nrlDocRef.text;

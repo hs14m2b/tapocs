@@ -10,7 +10,6 @@ try {
 } catch (err) {
   console.log('https support is disabled!');
 }
-let drId = "Y05868-" + "1e404af3-077f-4bee-b7a6-a9be97e1ce01";
 
  
 export const getDocRef = async (id) => 
@@ -21,7 +20,7 @@ export const getDocRef = async (id) =>
       host: "sandbox.api.service.nhs.uk",
       port: 443,
       method: 'GET',
-      path: "/record-locator/producer/FHIR/R4/DocumentReference/Y05868-" + id,
+      path: "/record-locator/producer/FHIR/R4/DocumentReference/" + id,
       rejectUnauthorized: false,
       headers: {
         //'Authorization': 'Bearer '+ access_token,
@@ -63,6 +62,3 @@ export const getDocRef = async (id) =>
         req.end();
     });
   }
-
-let result = await getDocRef(drId);
-console.log(result);

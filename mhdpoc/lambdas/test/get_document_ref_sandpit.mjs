@@ -10,7 +10,7 @@ try {
 } catch (err) {
   console.log('https support is disabled!');
 }
-let drId = "Y05868-" + "65752748-e615-45ce-b3e6-ce274e70e6e2";//"1e404af3-077f-4bee-b7a6-a9be97e1ce01";
+let drId = "Y05868-" + "1e404af3-077f-4bee-b7a6-a9be97e1ce01";// "1e404af3-077f-4bee-b7a6-a9be97e1ce01";
 
  
 async function getDocRef (drId) 
@@ -26,8 +26,9 @@ async function getDocRef (drId)
       headers: {
         //'Authorization': 'Bearer '+ access_token,
         'accept': 'application/fhir+json;version=1',
-        'X-Request-ID': XRequestID,
-        'NHSD-End-User-Organisation-ODS': 'Y05868'
+        'x-request-id': XRequestID,
+        'x-correlation-id': '11C46F5F-CDEF-4865-94B2-0EE0EDCC26DA',
+        'nhsd-end-user-organisation-ods': 'Y05868'
       }
     };
   
