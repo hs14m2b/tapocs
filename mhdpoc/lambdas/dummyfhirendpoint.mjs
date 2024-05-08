@@ -310,7 +310,7 @@ async function processmhd4(event, requestJson)
         let s3response = await writeFile(body, S3BUCKET, key);
         key = "DocumentReference-urn:uuid:"+DRUUID;
         s3response = await writeFile(body, S3BUCKET, key);
-        key = "DocumentReference-urn:uuid:"+resourceNewId;
+        key = "DocumentReference-"+resourceNewId;
         s3response = await writeFile(body, S3BUCKET, key);
         console.log(JSON.stringify(s3response));
         //add item to NRL
