@@ -2,7 +2,7 @@ mhd test tooling
 https://ehealthsuisse.ihe-europe.net:9743/home
 
 edit the "sut" channel to include the FHIR base for the dummy MHD endpoint
-https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint
+https://internal--mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint
 
 Select the "default" channel and run the "Test_Patients" to initialise first.
 
@@ -10,3 +10,7 @@ the "dummyfhirendpoint" augments the MHD request with org details etc and submit
 
 The "mhdconverter" app in the NHS Developer accout is set up to connect to the NRL integration environment.
 The "test" folder has basic tests to invoke sandpit and int instances of NRL.
+
+When running locally
+go to asbestos/tomcat/bin and run ./start.sh jre1.8  (when using java 8 runtime)
+

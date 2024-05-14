@@ -11,14 +11,15 @@ const s3Client = new S3Client({
 });
 
 const S3BUCKET = process.env['S3BUCKET'];
+const APIENVIRONMENT = process.env['APIENVIRONMENT'];
 const MHD_3_MINIMAL_PROFILE = "ihe.net/fhir/StructureDefinition/IHE_MHD_Provide_Minimal_DocumentBundle";
 const MHD_3_COMPREHENSIVE_PROFILE = "ihe.net/fhir/StructureDefinition/IHE_MHD_Provide_Comprehensive_DocumentBundle";
 const MHD_4_MINIMAL_PROFILE = "profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Minimal.ProvideBundle";
 const MHD_4_COMPREHENSIVE_PROFILE = "profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Comprehensive.ProvideBundle";
 
 //hard coded endpoint values
-const DIRECT_ENDPOINT = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/";
-const APIM_ENDPOINT = "https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/dummyfhirendpoint/"
+const DIRECT_ENDPOINT = "https://" + APIENVIRONMENT + "-mhdpoc-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/dummyfhirendpoint/";
+const APIM_ENDPOINT = "https://" + APIENVIRONMENT + ".api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/dummyfhirendpoint/"
 
 
 async function writeFile(body, bucket, key)

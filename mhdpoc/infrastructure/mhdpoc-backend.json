@@ -209,6 +209,16 @@
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
+          },
+          "ApiSecure": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
           }
         },
         "FunctionName": {
@@ -242,6 +252,16 @@
             "Type": "HttpApi",
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentReference/{documentid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiSecure": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
               "Method": "ANY",
               "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentReference/{documentid+}",
               "TimeoutInMillis": 29000,
@@ -284,6 +304,16 @@
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
+          },
+          "ApiSecure": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentReference",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
           }
         },
         "FunctionName": {
@@ -316,6 +346,16 @@
             "Type": "HttpApi",
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentManifest/{dmid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiSecure": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
               "Method": "ANY",
               "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentManifest/{dmid+}",
               "TimeoutInMillis": 29000,
@@ -358,6 +398,16 @@
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
+          },
+          "ApiSecure": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentManifest",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
           }
         },
         "FunctionName": {
@@ -395,6 +445,16 @@
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
+          },
+          "ApiSecure": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/List/{listid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
           }
         },
         "FunctionName": {
@@ -427,6 +487,16 @@
             "Type": "HttpApi",
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/List",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiSecure": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
               "Method": "ANY",
               "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/List",
               "TimeoutInMillis": 29000,
@@ -517,81 +587,6 @@
         },
         "StageName": "$default"
       }
-    },
-    "dummyFhirEndpointFunctionSecure": {
-      "Type": "AWS::Serverless::Function",
-      "Properties": {
-        "CodeUri": "mhdpocapilambdas.zip",
-        "Description": "The lambda function that acts as a dummy FHIR endpoint",
-        "Environment": {
-          "Variables" : {
-            "S3BUCKET" : {
-              "Fn::Join": [
-                "-",
-                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
-              ]
-            }
-          }
-        },
-        "Events": {
-          "Api": {
-            "Type": "HttpApi",
-            "Properties": {
-              "ApiId": { "Ref": "mhdHttpApiSecure" },
-              "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint",
-              "TimeoutInMillis": 29000,
-              "PayloadFormatVersion": "2.0"
-            }
-          }
-        },
-        "FunctionName": {
-          "Fn::Join": ["-", [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAMESECURE" }, "dummyFhirEndpointFunction"]]
-        },
-        "Handler": "dummyfhirendpoint.handler",
-        "Layers": [{"Ref": "mhdServerFunctionLayer"}],
-        "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
-        "Timeout": 300
-      },
-      "DependsOn": ["mhdpocbeLambdaRole"]
-    },
-    "DocumentReferenceFunctionSecure": {
-      "Type": "AWS::Serverless::Function",
-      "Properties": {
-        "CodeUri": "mhdpocapilambdas.zip",
-        "Description": "The lambda function that acts as a dummy FHIR endpoint for DocumentReference resources",
-        "Environment": {
-          "Variables" : {
-            "S3BUCKET" : {
-              "Fn::Join": [
-                "-",
-                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
-              ]
-            }
-          }
-        },
-        "Events": {
-          "Api": {
-            "Type": "HttpApi",
-            "Properties": {
-              "ApiId": { "Ref": "mhdHttpApiSecure" },
-              "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentReference/{documentid+}",
-              "TimeoutInMillis": 29000,
-              "PayloadFormatVersion": "2.0"
-            }
-          }
-        },
-        "FunctionName": {
-          "Fn::Join": ["-", [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAMESECURE" }, "DocumentReferenceFunction"]]
-        },
-        "Handler": "DocumentReference.handler",
-        "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
-        "Timeout": 300
-      },
-      "DependsOn": ["mhdpocbeLambdaRole"]
     }
   }
 }
