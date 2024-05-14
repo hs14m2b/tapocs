@@ -15,7 +15,12 @@ const MHD_3_MINIMAL_PROFILE = "ihe.net/fhir/StructureDefinition/IHE_MHD_Provide_
 const MHD_3_COMPREHENSIVE_PROFILE = "ihe.net/fhir/StructureDefinition/IHE_MHD_Provide_Comprehensive_DocumentBundle";
 const MHD_4_MINIMAL_PROFILE = "profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Minimal.ProvideBundle";
 const MHD_4_COMPREHENSIVE_PROFILE = "profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Comprehensive.ProvideBundle";
-                                      
+
+//hard coded endpoint values
+const DIRECT_ENDPOINT = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/";
+const APIM_ENDPOINT = "https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/dummyfhirendpoint/"
+
+
 async function writeFile(body, bucket, key)
 {
     let params = {
@@ -28,7 +33,7 @@ async function writeFile(body, bucket, key)
     return response;
 }
 
-async function processmhd3(event, requestJson)
+async function processmhd3(event, requestJson, targetEndpoint)
 {
   let issue = validatemhd(requestJson);
   if (issue.length > 0)
@@ -69,7 +74,7 @@ async function processmhd3(event, requestJson)
     if (entry.resource.resourceType == "DocumentReference")
     {
       DRID = entry.resource.masterIdentifier.value.replace("urn:oid:", "");
-      entryTemplate.response.location = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/DocumentReference/" + DRID;
+      entryTemplate.response.location = targetEndpoint + "DocumentReference/" + DRID;
       let DRUUID = entry.fullUrl.replace("urn:uuid:", "");
       let DOCID = entry.resource.content[0].attachment.url.replace("urn:uuid:", "");
       DocumentReferenceObject = entry.resource;
@@ -83,7 +88,7 @@ async function processmhd3(event, requestJson)
       } ];
       //set content URL
       //https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/Binary/
-      DocumentReferenceObject.content[0].attachment.url = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/Binary/"+DOCID;
+      DocumentReferenceObject.content[0].attachment.url = targetEndpoint + "Binary/"+DOCID;
       //check if the DocumentReference replaces another one
       if (DocumentReferenceObject.relatesTo && DocumentReferenceObject.relatesTo.length > 0)
       {
@@ -132,7 +137,7 @@ async function processmhd3(event, requestJson)
     if (entry.resource.resourceType == "DocumentManifest") 
     {
       DMID = entry.resource.masterIdentifier.value.replace("urn:oid:", "");
-      entryTemplate.response.location = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/DocumentManifest/" + DMID;
+      entryTemplate.response.location = targetEndpoint + "DocumentManifest/" + DMID;
       let DMUUID = entry.fullUrl.replace("urn:uuid:", "");
       let DMDRID = entry.resource.content[0].reference.replace("urn:uuid:", "");
       DocumentManifestObject = entry.resource;
@@ -145,7 +150,7 @@ async function processmhd3(event, requestJson)
         "value": "urn:uuid:" + DMUUID
       } ];
       //set content URL
-      DocumentManifestObject.content[0].reference = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/DocumentReference/"+DMDRID;
+      DocumentManifestObject.content[0].reference = targetEndpoint + "DocumentReference/"+DMDRID;
       //save item to S3
       let body = JSON.stringify(DocumentManifestObject);
       let key = "DocumentManifest-urn:oid:"+DMID;
@@ -156,7 +161,7 @@ async function processmhd3(event, requestJson)
       responseTemplate.entry.push(JSON.parse(JSON.stringify(entryTemplate)));
     }
     if (entry.resource.resourceType == "Binary"){
-      entryTemplate.response.location = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/Binary/" + entry.fullUrl.replace("urn:uuid:", "");
+      entryTemplate.response.location = targetEndpoint + "Binary/" + entry.fullUrl.replace("urn:uuid:", "");
       responseTemplate.entry.push(JSON.parse(JSON.stringify(entryTemplate)));
     }
   }
@@ -172,7 +177,7 @@ async function processmhd3(event, requestJson)
   return response;
 }
 
-async function processmhd4(event, requestJson)
+async function processmhd4(event, requestJson, targetEndpoint)
 {
   let issue = validatemhd(requestJson);
   if (issue.length > 0)
@@ -248,7 +253,7 @@ async function processmhd4(event, requestJson)
           DocumentReferenceObject["id"] = resourceNewId;
         }
         //set URL location of DR in response
-        entryTemplate.response.location = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/DocumentReference/" + DocumentReferenceObject.id;
+        entryTemplate.response.location = targetEndpoint + "DocumentReference/" + DocumentReferenceObject.id;
         //add  identifier
         //DocumentReferenceObject["identifier"] = [ {
         //  "use": "official",
@@ -344,7 +349,7 @@ async function processmhd4(event, requestJson)
           }
         }
         let LISTUUID = entry.fullUrl.replace("urn:uuid:", "");
-        entryTemplate.response.location = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/List/" + LISTUUID;
+        entryTemplate.response.location = targetEndpoint + "List/" + LISTUUID;
         let LISTDRID = entry.resource.entry[0].item.reference.replace("urn:uuid:", "");
         ListObject = entry.resource;
         //add id
@@ -361,7 +366,7 @@ async function processmhd4(event, requestJson)
         responseTemplate.entry.push(JSON.parse(JSON.stringify(entryTemplate)));
       }
       if (entry.resource.resourceType == "Binary"){
-        entryTemplate.response.location = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/Binary/" + entry.fullUrl.replace("urn:uuid:", "");
+        entryTemplate.response.location = targetEndpoint + "Binary/" + entry.fullUrl.replace("urn:uuid:", "");
         responseTemplate.entry.push(JSON.parse(JSON.stringify(entryTemplate)));
       }
   }
@@ -380,9 +385,16 @@ async function processmhd4(event, requestJson)
 
 export const handler = async (event) => {
   console.log(JSON.stringify(event));
+  /// TODO - determine if request came via API-M and adjust the return URL accordingly
+  // take the presence of nhsd-correlation-id header (event.headers.nhsd-correlation-id) and nhsd-request-id as evidence of being processed
+  // via NHS E API-M
     try {
+        let targetEndpoint = DIRECT_ENDPOINT;
         console.log(event.body);
-        
+        if (event.headers["nhsd-correlation-id"]){
+          targetEndpoint = APIM_ENDPOINT;
+        }
+        console.log("targetEndpoint is " + targetEndpoint);
         const plain = Buffer.from(event.body, 'base64').toString('utf8');
         const requestJson = JSON.parse(plain);
         console.log(JSON.stringify(requestJson));
@@ -390,10 +402,10 @@ export const handler = async (event) => {
         //check bundle profile
         const bundleprofile = requestJson.meta.profile[0];
         console.log("profile of bundle is " + bundleprofile);
-        if (bundleprofile.endsWith(MHD_3_MINIMAL_PROFILE)) return await processmhd3(event, requestJson);
-        if (bundleprofile.endsWith(MHD_3_COMPREHENSIVE_PROFILE)) return await processmhd3(event, requestJson);
-        if (bundleprofile.endsWith(MHD_4_MINIMAL_PROFILE)) return await processmhd4(event, requestJson);
-        if (bundleprofile.endsWith(MHD_4_COMPREHENSIVE_PROFILE)) return await processmhd4(event, requestJson);
+        if (bundleprofile.endsWith(MHD_3_MINIMAL_PROFILE)) return await processmhd3(event, requestJson, targetEndpoint);
+        if (bundleprofile.endsWith(MHD_3_COMPREHENSIVE_PROFILE)) return await processmhd3(event, requestJson, targetEndpoint);
+        if (bundleprofile.endsWith(MHD_4_MINIMAL_PROFILE)) return await processmhd4(event, requestJson, targetEndpoint);
+        if (bundleprofile.endsWith(MHD_4_COMPREHENSIVE_PROFILE)) return await processmhd4(event, requestJson, targetEndpoint);
         return returnError("Unknown Bundle meta profile");
     } catch (error) {
         console.log("caught error " + error.message);

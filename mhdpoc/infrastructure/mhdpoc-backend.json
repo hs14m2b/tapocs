@@ -7,6 +7,10 @@
       "Default": "eu-west-2",
       "Description": "The AWS region name"
     },
+    "APIENVIRONMENT": {
+      "Type": "String",
+      "Description": "The API-M environment the deployment supports - values are internal-dev, internal-dev-sandbox, internal-qa, internal-qa-sandbox, ref (all previous are non-prod), sandbox, dev, int, prod"
+    },
     "BEDOMAIN": {
       "Type": "String",
       "Default": "mhdpocbe",
@@ -20,6 +24,11 @@
     "PROJECTNAME": {
       "Type": "String",
       "Default": "mhdpoc",
+      "Description": "Project name for the deployment"
+    },
+    "PROJECTNAMESECURE": {
+      "Type": "String",
+      "Default": "mhdpoctlsma",
       "Description": "Project name for the deployment"
     },
     "CFCERTARN": {
@@ -67,7 +76,8 @@
         "Variables": {
           "ROOTDOMAIN": { "Ref": "ROOTDOMAIN" },
           "BRANCHNAME": { "Ref": "BRANCHNAME" },
-          "FEDOMAIN": { "Ref": "FEDOMAIN" }
+          "FEDOMAIN": { "Ref": "FEDOMAIN" },
+          "APIENVIRONMENT": {"Ref": "APIENVIRONMENT"}
         }
       },
       "Timeout": 300
@@ -101,7 +111,7 @@
         "RoleName": {
           "Fn::Join": [
             "",
-            [{ "Ref": "BRANCHNAME" }, "-", "mhdpocbeLambdaRole-001"]
+            [{ "Ref": "APIENVIRONMENT" }, "-", "mhdpocbeLambdaRole-001"]
           ]
         }
       }
@@ -126,7 +136,7 @@
         ],
         "Path": "/service-role/",
         "RoleName": {
-          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-", "mhdpocbeCWRole"]]
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-", "mhdpocbeCWRole"]]
         }
       }
     },
@@ -146,7 +156,7 @@
         "BucketName": {
           "Fn::Join": [
             "-",
-            [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
+            [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
           ]
         },
         "ObjectLockEnabled": false,
@@ -168,7 +178,7 @@
         "LayerName": {
           "Fn::Join": [
             "",
-            [{ "Ref": "BRANCHNAME" }, "-mhdServerDependencies"]
+            [{ "Ref": "APIENVIRONMENT" }, "-mhdServerDependencies"]
           ]
         },
         "RetentionPolicy": "Delete"
@@ -184,7 +194,7 @@
             "S3BUCKET" : {
               "Fn::Join": [
                 "-",
-                [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
               ]
             }
           }
@@ -195,14 +205,14 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/extapi/FHIR/R4/dummyfhirendpoint",
+              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
           }
         },
         "FunctionName": {
-          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-dummyFhirEndpointFunction"]]
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-dummyFhirEndpointFunction"]]
         },
         "Handler": "dummyfhirendpoint.handler",
         "Layers": [{"Ref": "mhdServerFunctionLayer"}],
@@ -222,7 +232,7 @@
             "S3BUCKET" : {
               "Fn::Join": [
                 "-",
-                [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
               ]
             }
           }
@@ -233,14 +243,14 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/extapi/FHIR/R4/dummyfhirendpoint/DocumentReference/{documentid+}",
+              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentReference/{documentid+}",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
           }
         },
         "FunctionName": {
-          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-DocumentReferenceFunction"]]
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-DocumentReferenceFunction"]]
         },
         "Handler": "DocumentReference.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
@@ -259,7 +269,7 @@
             "S3BUCKET" : {
               "Fn::Join": [
                 "-",
-                [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
               ]
             }
           }
@@ -270,14 +280,14 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/extapi/FHIR/R4/dummyfhirendpoint/DocumentReference",
+              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentReference",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
           }
         },
         "FunctionName": {
-          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-DocumentReferenceSearchFunction"]]
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-DocumentReferenceSearchFunction"]]
         },
         "Handler": "DocumentReferenceSearch.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
@@ -296,7 +306,7 @@
             "S3BUCKET" : {
               "Fn::Join": [
                 "-",
-                [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
               ]
             }
           }
@@ -307,14 +317,14 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/extapi/FHIR/R4/dummyfhirendpoint/DocumentManifest/{dmid+}",
+              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentManifest/{dmid+}",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
           }
         },
         "FunctionName": {
-          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-DocumentManifestFunction"]]
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-DocumentManifestFunction"]]
         },
         "Handler": "DocumentManifest.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
@@ -333,7 +343,7 @@
             "S3BUCKET" : {
               "Fn::Join": [
                 "-",
-                [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
               ]
             }
           }
@@ -344,14 +354,14 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/extapi/FHIR/R4/dummyfhirendpoint/DocumentManifest",
+              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentManifest",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
           }
         },
         "FunctionName": {
-          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-DocumentManifestSearchFunction"]]
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-DocumentManifestSearchFunction"]]
         },
         "Handler": "DocumentManifestSearch.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
@@ -370,7 +380,7 @@
             "S3BUCKET" : {
               "Fn::Join": [
                 "-",
-                [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
               ]
             }
           }
@@ -381,14 +391,14 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/extapi/FHIR/R4/dummyfhirendpoint/List/{listid+}",
+              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/List/{listid+}",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
           }
         },
         "FunctionName": {
-          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-ListFunction"]]
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-ListFunction"]]
         },
         "Handler": "List.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
@@ -407,7 +417,7 @@
             "S3BUCKET" : {
               "Fn::Join": [
                 "-",
-                [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
               ]
             }
           }
@@ -418,14 +428,14 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/extapi/FHIR/R4/dummyfhirendpoint/List",
+              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/List",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
           }
         },
         "FunctionName": {
-          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-ListSearchFunction"]]
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-ListSearchFunction"]]
         },
         "Handler": "ListSearch.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
@@ -441,7 +451,7 @@
         "Domain": {
           "BasePath": ["/"],
           "CertificateArn": {"Ref": "CERTIFICATEARN"},
-          "DomainName": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, { "Ref": "BEDOMAIN" }]]},{ "Ref": "ROOTDOMAIN" }]]},
+          "DomainName": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "BEDOMAIN" }]]},{ "Ref": "ROOTDOMAIN" }]]},
           "EndpointConfiguration": "REGIONAL",
           "Route53": {
             "HostedZoneId": {"Ref": "HOSTEDZONEID"}
@@ -449,10 +459,139 @@
           "SecurityPolicy": "TLS_1_2"
         },
         "Name": {
-          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-mhdHttpApi"]]
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-mhdHttpApi"]]
         },
         "StageName": "$default"
       }
+    },
+    "S3CertsBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "BucketKeyEnabled": true,
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        },
+        "BucketName": {
+          "Fn::Join": [
+            "-",
+            [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "certs"]
+          ]
+        },
+        "ObjectLockEnabled": false,
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }]
+      },
+      "DependsOn": []
+    },
+    "mhdHttpApiSecure": {
+      "Type": "AWS::Serverless::HttpApi",
+      "Properties": {
+        "Description": "HTTP API for the mhd server requests",
+        "DisableExecuteApiEndpoint": true,
+        "Domain": {
+          "BasePath": ["/"],
+          "CertificateArn": {"Ref": "CERTIFICATEARN"},
+          "DomainName": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAMESECURE" }, { "Ref": "BEDOMAIN" }]]},{ "Ref": "ROOTDOMAIN" }]]},
+          "EndpointConfiguration": "REGIONAL",
+          "MutualTlsAuthentication": {
+            "TruststoreUri" :  { "Fn::Join": ["", ["s3://", { "Ref": "S3CertsBucket" }, "/certs/tsassolarchdemoapitruststore.pem"]]} 
+          },
+          "Route53": {
+            "HostedZoneId": {"Ref": "HOSTEDZONEID"}
+          },
+          "SecurityPolicy": "TLS_1_2"
+        },
+        "Name": {
+          "Fn::Join": ["-", [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAMESECURE" },"mhdHttpApi"]]
+        },
+        "StageName": "$default"
+      }
+    },
+    "dummyFhirEndpointFunctionSecure": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "mhdpocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint",
+        "Environment": {
+          "Variables" : {
+            "S3BUCKET" : {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
+              ]
+            }
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAMESECURE" }, "dummyFhirEndpointFunction"]]
+        },
+        "Handler": "dummyfhirendpoint.handler",
+        "Layers": [{"Ref": "mhdServerFunctionLayer"}],
+        "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs16.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["mhdpocbeLambdaRole"]
+    },
+    "DocumentReferenceFunctionSecure": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "mhdpocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint for DocumentReference resources",
+        "Environment": {
+          "Variables" : {
+            "S3BUCKET" : {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
+              ]
+            }
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentReference/{documentid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAMESECURE" }, "DocumentReferenceFunction"]]
+        },
+        "Handler": "DocumentReference.handler",
+        "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs16.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["mhdpocbeLambdaRole"]
     }
   }
 }
