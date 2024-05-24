@@ -3,6 +3,7 @@ import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCom
 import { deleteDocRef } from './delete_document_ref_sandpit.mjs';
 import { sendDocRef } from './post_document_ref_sandpit.mjs';
 import { v4 as uuidv4 } from 'uuid';
+import { gunzipSync } from 'zlib';
 
 const REGION = "eu-west-2";
 const s3Client = new S3Client({
@@ -18,8 +19,8 @@ const MHD_4_MINIMAL_PROFILE = "profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.
 const MHD_4_COMPREHENSIVE_PROFILE = "profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Comprehensive.ProvideBundle";
 
 //hard coded endpoint values
-const DIRECT_ENDPOINT = "https://" + APIENVIRONMENT + "-mhdpoc-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/dummyfhirendpoint/";
-const APIM_ENDPOINT = "https://" + APIENVIRONMENT + ".api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/dummyfhirendpoint/"
+const DIRECT_ENDPOINT = "https://" + APIENVIRONMENT + "-mhdpoc-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/";
+const APIM_ENDPOINT = "https://" + APIENVIRONMENT + ".api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/"
 
 
 async function writeFile(body, bucket, key)
@@ -88,7 +89,7 @@ async function processmhd3(event, requestJson, targetEndpoint)
         "value": "urn:uuid:" + DRUUID
       } ];
       //set content URL
-      //https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/Binary/
+      //https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/Binary/
       DocumentReferenceObject.content[0].attachment.url = targetEndpoint + "Binary/"+DOCID;
       //check if the DocumentReference replaces another one
       if (DocumentReferenceObject.relatesTo && DocumentReferenceObject.relatesTo.length > 0)
@@ -211,9 +212,9 @@ async function processmhd4(event, requestJson, targetEndpoint)
       "location": ""
     }
   };
-  let DRID = "";
+  let DRMASTERID = "";
   let LISTID = "";
-  let DOCID = "";
+  //let DOCID = "";
   let DocumentReferenceObject = {};
   let ListObject = {};
   for (let entry of requestJson.entry) {
@@ -243,18 +244,16 @@ async function processmhd4(event, requestJson, targetEndpoint)
           }
         }
         let resourceNewId = NRLParams.custodian.identifier.value + "-" + uuidv4();
-        DRID = entry.resource.masterIdentifier.value.replace("urn:oid:", "");
+        DRMASTERID = entry.resource.masterIdentifier.value.replace("urn:oid:", "");
         let DRUUID = entry.fullUrl.replace("urn:uuid:", "");
-        let DOCID = entry.resource.content[0].attachment.url.replace("urn:uuid:", "");
+        //let DOCID = entry.resource.content[0].attachment.url.replace("urn:uuid:", "");
         DocumentReferenceObject = entry.resource;
         //add id if not present
-        if (!DocumentReferenceObject.id) 
-        {
-          console.log("setting the id...");
-          DocumentReferenceObject["id"] = resourceNewId;
-        }
-        //set URL location of DR in response
-        entryTemplate.response.location = targetEndpoint + "DocumentReference/" + DocumentReferenceObject.id;
+        //if (!DocumentReferenceObject.id)
+        //{
+        //  console.log("setting the id...");
+        //  DocumentReferenceObject["id"] = resourceNewId;
+        //}
         //add  identifier
         //DocumentReferenceObject["identifier"] = [ {
         //  "use": "official",
@@ -262,8 +261,8 @@ async function processmhd4(event, requestJson, targetEndpoint)
         //  "value": "urn:uuid:" + DRUUID
         //} ];
         //set content URL
-        //https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/Binary/
-        //DocumentReferenceObject.content[0].attachment.url = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/Binary/"+DOCID;
+        //https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/Binary/
+        //DocumentReferenceObject.content[0].attachment.url = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/Binary/"+DOCID;
         //check if the DocumentReference replaces another one
         if (DocumentReferenceObject.relatesTo && DocumentReferenceObject.relatesTo.length > 0)
         {
@@ -310,36 +309,45 @@ async function processmhd4(event, requestJson, targetEndpoint)
             delete DocumentReferenceObject.relatesTo;
           }
         }
-        //save item to S3
-        let body = JSON.stringify(DocumentReferenceObject);
-        let key = "DocumentReference-urn:oid:"+DRID;
-        let s3response = await writeFile(body, S3BUCKET, key);
-        key = "DocumentReference-urn:uuid:"+DRUUID;
-        s3response = await writeFile(body, S3BUCKET, key);
-        key = "DocumentReference-"+resourceNewId;
-        s3response = await writeFile(body, S3BUCKET, key);
-        console.log(JSON.stringify(s3response));
         //add item to NRL
         let nrlDocRef = JSON.parse(JSON.stringify(DocumentReferenceObject));
         //following attributes needed for NRL
-        //id has been set above
-        nrlDocRef.subject.identifier = NRLParams.subject.identifier;
-        nrlDocRef.custodian = NRLParams.custodian;
+        if (!nrlDocRef.subject.identifier) nrlDocRef.subject.identifier = NRLParams.subject.identifier;
+        if (!nrlDocRef.custodian) nrlDocRef.custodian = NRLParams.custodian;
+        //if (!nrlDocRef.type) nrlDocRef.type = NRLParams.type;
         nrlDocRef.type = NRLParams.type;
         delete nrlDocRef.text;
         delete nrlDocRef.contained;
         //
 
-        responseTemplate.entry.push(JSON.parse(JSON.stringify(entryTemplate)));
-        console.log("delete doc first in case already exists");
-        try {
-          let nrldelete = await deleteDocRef(nrlDocRef);
-          console.log(JSON.stringify(nrldelete));
-        } catch (error) {
-          console.log(error.message);
-        }
+        //console.log("delete doc first in case already exists");
+        //try {
+        //  let nrldelete = await deleteDocRef(nrlDocRef);
+        //  console.log(JSON.stringify(nrldelete));
+        //} catch (error) {
+        //  console.log(error.message);
+        //}
         let nrlresponse = await sendDocRef(nrlDocRef);
         console.log(nrlresponse);
+        //set URL location of DR from NRL response
+        //the id of the DocumentReference is the end of the "location" header returned by NRL
+        let location = nrlresponse.headers.location;
+        let nrlId = location.substring(location.lastIndexOf("/")+1);
+        entryTemplate.response.location = targetEndpoint + "DocumentReference/" + nrlId;
+        responseTemplate.entry.push(JSON.parse(JSON.stringify(entryTemplate)));
+        //save file to S3 with the new id
+        //save item to S3
+        DocumentReferenceObject.id = nrlId;
+        let body = JSON.stringify(DocumentReferenceObject);
+        let key = "DocumentReference-urn:oid:"+DRMASTERID;
+        let s3response = await writeFile(body, S3BUCKET, key);
+        key = "DocumentReference-urn:uuid:"+DRUUID;
+        s3response = await writeFile(body, S3BUCKET, key);
+        console.log(JSON.stringify(s3response));
+        key = "DocumentReference-"+nrlId;
+        s3response = await writeFile(body, S3BUCKET, key);
+        console.log(JSON.stringify(s3response));
+
       }
       if (entry.resource.resourceType == "List") 
       {
@@ -356,7 +364,7 @@ async function processmhd4(event, requestJson, targetEndpoint)
         //add id
         ListObject["id"] = LISTUUID;
         //set content URL
-        ListObject.entry[0].item.reference = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/dummyfhirendpoint/DocumentReference/"+LISTDRID;
+        ListObject.entry[0].item.reference = "https://main-mhdpoc-mhdpocbe.nhsdta.com/extapi/FHIR/R4/DocumentReference/"+LISTDRID;
         //save item to S3
         let body = JSON.stringify(ListObject);
         let key = "List-urn:oid:"+LISTID;
@@ -390,13 +398,20 @@ export const handler = async (event) => {
   // take the presence of nhsd-correlation-id header (event.headers.nhsd-correlation-id) and nhsd-request-id as evidence of being processed
   // via NHS E API-M
     try {
+        //check if gzipped body first
+        if (event.headers["content-encoding"] == "gzip")
+        {
+          let unzippedBody = gunzipSync(Buffer.from(event.body, "base64")).toString("utf-8");
+          event.body = unzippedBody;
+          event.isBase64Encoded = false;
+        }
         let targetEndpoint = DIRECT_ENDPOINT;
         console.log(event.body);
         if (event.headers["nhsd-correlation-id"]){
           targetEndpoint = APIM_ENDPOINT;
         }
         console.log("targetEndpoint is " + targetEndpoint);
-        const plain = Buffer.from(event.body, 'base64').toString('utf8');
+        const plain = (event.isBase64Encoded) ? Buffer.from(event.body, 'base64').toString('utf8') : event.body;
         const requestJson = JSON.parse(plain);
         console.log(JSON.stringify(requestJson));
 

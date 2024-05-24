@@ -24,7 +24,7 @@ export const sendDocRef = async (docRef) =>
   let options = {
     host: "sandbox.api.service.nhs.uk",
     port: 443,
-    method: 'PUT',
+    method: 'POST',
     path: "/record-locator/producer/FHIR/R4/DocumentReference",
     rejectUnauthorized: false,
     headers: {
@@ -50,6 +50,7 @@ export const sendDocRef = async (docRef) =>
               console.log(result);
               let response = {
                 "status": res.statusCode,
+                "headers": res.headers,
                 "body": result
               }
               resolve(response);

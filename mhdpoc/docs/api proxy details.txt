@@ -14,17 +14,18 @@ manually run the "build" pipeline, then the "release" pipeline using the tag for
 
 
 Check back-end API
-curl -X GET https://internal-dev-sandbox-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentReference/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01 --cert tsassolarchdemoapi.crt --key tsassolarchdemoapi.key -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
-curl -X GET https://internal-dev-sandbox-mhdpoc-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentReference/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01  -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+curl -X GET https://internal-dev-sandbox-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DocumentReference/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01 --cert tsassolarchdemoapi.crt --key tsassolarchdemoapi.key -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+curl -X GET https://internal-dev-sandbox-mhdpoc-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DocumentReference/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01  -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
 
 Check API proxy
 secured
-curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentReference/Y05868-01bb9e20-44c7-4c17-95e2-37d93f08c0c6 -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01 -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
 open access
-curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentReference/Y05868-01bb9e20-44c7-4c17-95e2-37d93f08c0c6
+curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0
+curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0
 
-curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentReference/Y05868-9e0ae6b5-2d65-4e85-817f-635039835aad
 
+API specification borrows from https://github.com/NHSDigital/personal-demographics-service-api/blob/master/specification/personal-demographics.yaml
 
 
 

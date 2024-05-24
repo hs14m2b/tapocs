@@ -14,7 +14,6 @@ let newId = "00000000-make-unique-for-sandbox-requestdddef";//uuidv4(); //Y05868
 console.log(newId);
 let example = {
   "resourceType": "DocumentReference",
-  "id": "Y05868-" + newId,
   "status": "current",
   "docStatus": "final",
   "type": {
@@ -124,7 +123,7 @@ async function sendDocRef (docRef)
     let options = {
       host: "sandbox.api.service.nhs.uk",
       port: 443,
-      method: 'PUT',
+      method: 'POST',
       path: "/record-locator/producer/FHIR/R4/DocumentReference",
       rejectUnauthorized: false,
       headers: {
@@ -151,6 +150,7 @@ async function sendDocRef (docRef)
                 console.log(result);
                 let response = {
                   "status": res.statusCode,
+                  "headers": res.headers,
                   "body": result
                 }
                 resolve(response);

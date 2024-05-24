@@ -205,7 +205,7 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint",
+              "Path": "/mhdspoc/FHIR/R4",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -215,7 +215,7 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApiSecure" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint",
+              "Path": "/mhdspoc/FHIR/R4",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -253,7 +253,7 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentReference/{documentid+}",
+              "Path": "/mhdspoc/FHIR/R4/DocumentReference/{documentid+}",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -263,7 +263,7 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApiSecure" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentReference/{documentid+}",
+              "Path": "/mhdspoc/FHIR/R4/DocumentReference/{documentid+}",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -300,7 +300,7 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentReference",
+              "Path": "/mhdspoc/FHIR/R4/DocumentReference",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -310,7 +310,7 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApiSecure" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentReference",
+              "Path": "/mhdspoc/FHIR/R4/DocumentReference",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -347,7 +347,7 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentManifest/{dmid+}",
+              "Path": "/mhdspoc/FHIR/R4/DocumentManifest/{dmid+}",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -357,7 +357,7 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApiSecure" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentManifest/{dmid+}",
+              "Path": "/mhdspoc/FHIR/R4/DocumentManifest/{dmid+}",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -394,7 +394,7 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentManifest",
+              "Path": "/mhdspoc/FHIR/R4/DocumentManifest",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -404,7 +404,7 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApiSecure" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/DocumentManifest",
+              "Path": "/mhdspoc/FHIR/R4/DocumentManifest",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -441,7 +441,7 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/List/{listid+}",
+              "Path": "/mhdspoc/FHIR/R4/List/{listid+}",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -451,7 +451,7 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApiSecure" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/List/{listid+}",
+              "Path": "/mhdspoc/FHIR/R4/List/{listid+}",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -488,7 +488,7 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/List",
+              "Path": "/mhdspoc/FHIR/R4/List",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -498,7 +498,7 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApiSecure" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/dummyfhirendpoint/List",
+              "Path": "/mhdspoc/FHIR/R4/List",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
