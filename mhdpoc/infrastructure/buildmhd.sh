@@ -1,5 +1,7 @@
 #!/bin/sh
 
+APIENVIRONMENT="internal-dev-sandbox"
+#APIENVIRONMENT="internal-dev"
 ENVIRONMENT="mhdpocbe"
 S3CODEBUCKET="codepipeline-eu-west-2-467564981221"
 USS3CODEBUCKET="lambdacodemhdpocedge"
@@ -38,14 +40,7 @@ sed -i "s/mhdpocapilambdas\.zip/${TIMESTAMP}mhdpocapilambdas\.zip/g" mhdpoc-back
 
 #backend
 aws cloudformation package --use-json --template-file mhdpoc-backend.json --s3-bucket ${S3CODEBUCKET} --output-template-file ${TIMESTAMP}mhdpoc-backend.json --region "eu-west-2"
-aws cloudformation deploy --template-file ${TIMESTAMP}mhdpoc-backend.json --stack-name main-mabr8-mhdpocbestack --capabilities "CAPABILITY_NAMED_IAM" --region "eu-west-2"
-#lambda at edge
-#aws cloudformation package --use-json --template-file mhdpoc-edge.json --s3-bucket ${USS3CODEBUCKET} --output-template-file ${TIMESTAMP}mhdpoc-edge.json
-#aws cloudformation deploy --template-file ${TIMESTAMP}mhdpoc-edge.json --stack-name main-mabr8-mhdpocedgestack --capabilities "CAPABILITY_NAMED_IAM" --region "us-east-1"
-#frontend
-#aws cloudformation deploy --template-file ${TIMESTAMP}mhdpoc-frontend.json --stack-name main-mabr8-mhdpocfestack --capabilities "CAPABILITY_NAMED_IAM"
-
-##aws cloudformation create-stack --template-body file://${TIMESTAMP}nhsukpoc-backend.json --stack-name main-mabr8-mhdpocbestack --capabilities "CAPABILITY_NAMED_IAM" "CAPABILITY_AUTO_EXPAND"
+aws cloudformation deploy --template-file ${TIMESTAMP}mhdpoc-backend.json --stack-name ${APIENVIRONMENT}-mabr8-mhdpocbestack --capabilities "CAPABILITY_NAMED_IAM" --region "eu-west-2" --s3-bucket ${S3CODEBUCKET}  --parameter-overrides "APIENVIRONMENT=${APIENVIRONMENT}"
 
 cd ..
 rm -fR build

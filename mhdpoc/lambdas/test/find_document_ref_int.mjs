@@ -1,3 +1,6 @@
+import { createSignedJwtForAuth, getOAuth2AccessToken } from '../api_common_functions.mjs';
+import { readFileSync } from 'node:fs';
+const apiClientPrivateKey = readFileSync('../../certs/mhdconvint2.key', 'utf8');
 import { URLSearchParams } from 'url';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,20 +13,26 @@ try {
 } catch (err) {
   console.log('https support is disabled!');
 }
+let newId = uuidv4();
+let nhsNumber = "4409815415";
+let nhsNumberSystem = "https://fhir.nhs.uk/Id/nhs-number";
 
  
-export const getDocRef = async (id) => 
+async function findDocRef (nhsNumber, access_token) 
   {
     let XRequestID = uuidv4();
+    let queryParams = new URLSearchParams({
+      "subject:identifier": nhsNumberSystem + "|" + nhsNumber
+    }).toString();
     // request option
     let options = {
-      host: "sandbox.api.service.nhs.uk",
+      host: "int.api.service.nhs.uk",
       port: 443,
       method: 'GET',
-      path: "/record-locator/producer/FHIR/R4/DocumentReference/" + id,
+      path: "/record-locator/producer/FHIR/R4/DocumentReference?" + queryParams,
       rejectUnauthorized: false,
       headers: {
-        //'Authorization': 'Bearer '+ access_token,
+        'Authorization': 'Bearer '+ access_token,
         'accept': 'application/fhir+json;version=1',
         'X-Request-ID': XRequestID,
         'NHSD-End-User-Organisation-ODS': 'Y05868'
@@ -62,3 +71,21 @@ export const getDocRef = async (id) =>
         req.end();
     });
   }
+
+  async function getAccessToken(){
+    //console.log(apiClientPrivateKey);
+    //let secretOrPrivateKey = createPrivateKey(apiClientPrivateKey);
+    let blah = await createSignedJwtForAuth("kqU7ldmK4wVoDQA6c76bNsAFMzw8SmGQ", 
+    "mhdconvint2", apiClientPrivateKey,
+    "int.api.service.nhs.uk", "/oauth2/token");
+    //console.log(blah);
+    let blah2 = await getOAuth2AccessToken(blah, "int.api.service.nhs.uk", "/oauth2/token");
+    console.log(blah2);
+    //load into JSON object
+    let blah3 = JSON.parse(blah2);
+    return blah3.access_token;
+  }
+
+let access_token = await getAccessToken();
+let result = await findDocRef(nhsNumber, access_token);
+console.log(result);

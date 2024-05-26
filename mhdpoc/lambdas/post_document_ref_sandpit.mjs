@@ -50,6 +50,7 @@ export const sendDocRef = async (docRef) =>
               console.log(result);
               let response = {
                 "status": res.statusCode,
+                "headers": res.headers,
                 "body": result
               }
               resolve(response);

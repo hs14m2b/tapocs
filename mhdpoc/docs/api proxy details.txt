@@ -1,0 +1,58 @@
+Api Proxy is hosted on API-M and is called nhse-tsas-solarch-demo-api
+
+GitHub setup requires repository to be forked and needs separate author and reviewer. 
+To enable commits have used personal github account (matthewandkaren@hotmail.com) as fork
+Make local changes on branch. Publish branch to fork. Go into GitHub with personal account and create upstream pull request
+Log into GitHub with corporate account and review pull request and merge.
+
+Then go to Azure DevOps pipelines
+https://dev.azure.com/NHSD-APIM/API%20Platform/_build?view=folders
+
+https://dev.azure.com/NHSD-APIM/API%20Platform/_build?definitionScope=%5CNhse-Tsas-Solarch-Demo-Api
+
+manually run the "build" pipeline, then the "release" pipeline using the tag for the merge on the master branch
+
+
+Check back-end API
+curl -X GET https://internal-dev-sandbox-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DocumentReference/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01 --cert tsassolarchdemoapi.crt --key tsassolarchdemoapi.key -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+curl -X GET https://internal-dev-sandbox-mhdpoc-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DocumentReference/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01  -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+
+Check API proxy
+secured
+curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01 -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+open access
+curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0
+curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0
+
+
+API specification borrows from https://github.com/NHSDigital/personal-demographics-service-api/blob/master/specification/personal-demographics.yaml
+
+
+
+
+IGNORE BELOW - WAS TRYING TO SET UP NEW API USING PROXYGEN
+
+
+See https://nhsd-confluence.digital.nhs.uk/display/APM/Building+and+deploying+your+API+alpha+with+Proxy+Generator
+
+key id for accessing proxygen is mabr8-pxygencli-1
+
+API name is nhse-tsas-solarch-mhds-registry
+
+ - then send message on slack to get setup on proxygen for the API.
+
+ Install python3 and python3-pip
+ then pip install proxygen-cli
+
+ set proxygen api name
+ proxygen settings set api nhse-tsas-solarch-mhds-registry
+
+ set user details
+ proxygen credentials set private_key_path ~/VSCode/ta-pocs/tapocs/mhdpoc/certs/mabr8-pxygencli-1.pem key_id mabr8-pxygencli-1 client_id nhse-tsas-solarch-mhds-registry-client
+
+
+Copy API template repo from https://github.com/NHSDigital/hello-world-api
+
+Deploy API to sandbox
+proxygen instance deploy sandbox nhse-tsas-solarch-mhds-registry ~/VSCode/ta-pocs/tapocs/mhdpoc/nhse-tsas-solarch-mhds-registry/specification/nhse-tsas-solarch-mhds-registry.yaml
+

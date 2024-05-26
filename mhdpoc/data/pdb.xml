@@ -1,0 +1,151 @@
+<Bundle xmlns="http://hl7.org/fhir">
+
+    <id value="xds"/>
+
+    <meta>
+
+        <lastUpdated value="2013-07-01T13:11:33Z"/>
+
+        <!--@{BundleMetaMinimalProfileElement}-->
+
+    </meta>
+
+    <type value="transaction"/>
+
+    <entry>
+
+        <fullUrl value="urn:uuid:1e404af3-077f-4bee-b7a6-a9be97e1ce01"/>
+
+        <resource>
+
+            <DocumentReference>
+
+                <meta>
+
+                    <!--@{DocumentReferenceMetaMinimalProfileElement}-->
+
+                </meta>
+
+                <masterIdentifier>
+
+                    <system value="urn:ietf:rfc:3986"/>
+
+                    <value value="urn:oid:1.2.129.6.58.92.88336.4"/>
+
+                </masterIdentifier>
+
+                <subject>
+
+                    <identifier>
+
+                        <system value="https://fhir.nhs.uk/Id/nhs-number"/>
+
+                        <value value="${patientResourceIdValue}"/>
+
+                    </identifier>
+
+                </subject>
+
+                <category>
+
+                    <coding>
+
+                        <system value="http://snomed.info/sct" />
+
+                        <code value="721981007" />
+
+                        <display value="Diagnostic Studies Report"/>
+
+                    </coding>
+
+                </category>
+
+                <type>
+
+                    <coding>
+
+                        <system value="https://nicip.nhs.uk/" />
+
+                        <code value="MAULR" />
+
+                        <display value="MRA Upper limb Rt"/>
+
+                    </coding>
+
+                </type>
+
+                <custodian>
+
+                    <identifier>
+
+                        <system value="https://fhir.nhs.uk/Id/ods-organization-code"/>
+
+                        <value value="Y05868"/>
+
+                    </identifier>
+
+                </custodian>
+
+                <status value="current"/>
+
+                <date value="2015-02-07T13:28:17.239+02:00"/>
+
+                <content>
+
+                    <attachment>
+
+                        <contentType value="application/fhir+json"/>
+
+                        <url value="https://an-ris-system.org.nhs.uk/some-path/FHIR/R4/DiagnosticReport?id=c9d0e5e3-ac48-4285-8f9c-af9b30d235f1"/>
+
+                        <title value="Diagnostic Studies Report for patient X" />
+
+                        <creation value="2022-12-21T10:45:41+11:00" />
+
+                    </attachment>
+
+                    <format>
+
+                        <code value="apiplatform" />
+
+                        <display value="API Platform"/>
+
+                    </format>
+
+                </content>
+
+            </DocumentReference>
+
+        </resource>
+
+        <request>
+
+            <method value="POST"/>
+
+            <url value="DocumentReference"/>
+
+        </request>
+
+    </entry>
+
+    <entry>
+
+        <fullUrl value="urn:uuid:3fdc72f4-a11d-4a9d-9260-a9f745779e02"/>
+
+        <resource>
+
+        <!--@{SubmissionSetResourceElement}-->
+
+        </resource>
+
+        <request>
+
+            <method value="POST"/>
+
+             <!--@{SubmissionSetRequestUrlElement}-->
+
+        </request>
+
+    </entry>
+
+</Bundle>

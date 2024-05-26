@@ -1,0 +1,18 @@
+import { gzipSync, gunzipSync } from 'node:zlib';
+
+
+let nhsNumber = "4409815415";
+let nhsNumberSystem = "https://fhir.nhs.uk/Id/nhs-number";
+
+console.log("nhs number is " + nhsNumber);
+
+let nhsNumbergzip = gzipSync(Buffer.from(nhsNumber)).toString("base64");
+console.log("zipped nhsnumber is " + nhsNumbergzip);
+
+let recoveredNHSNumber = gunzipSync(Buffer.from(nhsNumbergzip, "base64")).toString("utf-8");
+console.log("recovered NHS Number is " + recoveredNHSNumber);
+
+let bodyb64 = "H4sIAAAAAAAAALVWa2/bNhT9K4I+bUhIkZRkWULbIVs2xECDBXYC7NGioEUqZqtX+YiTBfnvu5QtO17abBm2D4ZE8lL3nHPvPfB9qKXpnC7l5V0vwyL83rWiluFxqASsboWB10ZaHhb3Yc2NveoFt9KfMUJjRDJE6CWNC0qLOP4NgnvdVQq+UPwerqztTRFF2y2D1UriVtpodjmLzs9Oo4XVrrROy1NZqVZZ1bXR7OxHDGf4HDYaXuML3d0oIbe43j8ch3aD1GreGl76S5BWtlbfQdL7sHJ1faVriHC6LZxToqAyIQmvPNysQslSSrTM+ATxfCnzTNJSEgrfGKXwXP8iy2lXugZyzGUltWxL+UiW/5rx01yedQPiSz0TcKAqJbXPbO5gr9kyVdJWha7KIs6nE4B3w2snt2edFwEzTAkm/pFiRliC/QPTCY5zTCmeJnASQipjuXUGrpZOAwAbjprfh2UnVHs96LxLPpJuVal63K4Mdp8iuAOxPv/5ydXbOSyFMn3N7/zO/CS46nupg1o1y2BuwwfPsITGuu62VfxaIshj2q6RAqu26iJT2n2mjNF8SgnJDrKdKn7ddsaqMlhYJ5Q0wVz2nR6yvge2bvlRwmeAnfqyuiPBaqX0yG8mInhDrWuWEL1XO0kIYEgTmoYPwMkPy2ZWUkQY9J+fFTYtaIZZnB8RVhDiCThjgTBvX46iEwZ1+pq36g/u2wkNYuwB/UrS6WQ6gCm71vpyelG5tbxcNcPyfjzZNjvv+1qVw9eGbEcfzTBjbpiqEQdvkVYGbfBhgDCCMlAe1HO7in46m82jeRLtS7BR/jslXpe5IDKVMeJlMkUJm6ZoWuUl4lW+jIlgcVr5mbTK1vK5KgZVpwPIpgB/8IvXUssB+iA7Y4gyxMCiSJGkRUKPwKhAclAD7jV8y15saCtoGev3Dxro5GIWXIwHD0OravnZSTNcBhdYdd4PL35eXO5EejrDUIAvelNciTJjVYI4pQIlPBcoZxMC3lRlSZpluSTseW96q4z9H+1o4ZaNMgaOFtJuDFjeDtR3PgFr2foIMwh3A1uv4BHcNnVrXr8bB3e9XuN17FslonmeR7cr29TvwjeewDcHab4N1squgotNWV9F8LE3vma7REMPH/bji0hCDNqIOBPjsBx661P7jPEEU5zAj9F4AgNMSI4HV/VdcXwwtx6d8de7qgJb5DUkecatfW9s4p1xfxf8L62dhYPbPfX2ZtP+605/8pY72unzZv9VtX+Ay4sh2i9rKK1vU7N3abMrtJFb539kwXo3MDu/r7uS1yuY/SLPJiTiZgmj1xkP4fYuErLirrYfPmxfom3TRGn42H8ZRWSKWHzJWAEWTAgi6cZ79/8c1EDxEMPL/kP8Q3cYJtbH/gl8+A+pfwkAAA==";
+let recoveredbody = gunzipSync(Buffer.from(bodyb64, "base64")).toString("utf-8");
+
+console.log(recoveredbody);
