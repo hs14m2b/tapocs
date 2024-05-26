@@ -227,7 +227,7 @@
         "Handler": "dummyfhirendpoint.handler",
         "Layers": [{"Ref": "mhdServerFunctionLayer"}],
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -274,7 +274,7 @@
         },
         "Handler": "DocumentReference.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -321,7 +321,7 @@
         },
         "Handler": "DocumentReferenceSearch.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -368,7 +368,7 @@
         },
         "Handler": "DocumentManifest.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -415,7 +415,7 @@
         },
         "Handler": "DocumentManifestSearch.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -462,7 +462,7 @@
         },
         "Handler": "List.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -509,7 +509,101 @@
         },
         "Handler": "ListSearch.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["mhdpocbeLambdaRole"]
+    },
+    "DiagnosticReportFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "mhdpocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint for DiagnosticReport resources",
+        "Environment": {
+          "Variables" : {
+            "S3BUCKET" : {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
+              ]
+            }
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApi" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/DiagnosticReport/{diagnosticreportid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiSecure": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/DiagnosticReport/{diagnosticreportid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-DiagnosticReportFunction"]]
+        },
+        "Handler": "DiagnosticReport.handler",
+        "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs18.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["mhdpocbeLambdaRole"]
+    },
+    "DiagnosticReportProxyFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "mhdpocapilambdas.zip",
+        "Description": "The lambda function that acts as a proxy to retrieve DiagnosticReport resources",
+        "Environment": {
+          "Variables" : {
+            "S3BUCKET" : {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
+              ]
+            }
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApi" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/DiagnosticReportProxy",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiSecure": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/DiagnosticReportProxy",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-DiagnosticReportProxyFunction"]]
+        },
+        "Handler": "DiagnosticReportProxy.handler",
+        "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
