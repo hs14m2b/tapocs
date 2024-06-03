@@ -1,7 +1,7 @@
 #!/bin/sh
 
-APIENVIRONMENT="internal-dev-sandbox"
-#APIENVIRONMENT="internal-dev"
+#APIENVIRONMENT="internal-dev-sandbox"
+APIENVIRONMENT="internal-dev"
 ENVIRONMENT="mhdpocbe"
 S3CODEBUCKET="codepipeline-eu-west-2-467564981221"
 USS3CODEBUCKET="lambdacodemhdpocedge"

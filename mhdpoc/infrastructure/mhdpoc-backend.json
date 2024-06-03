@@ -108,6 +108,28 @@
           "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB"
         ],
         "Path": "/service-role/",
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "APIENVIRONMENT" },  "mhdpocbeLambdaRole-001", "ssmread"]
+              ]
+            },
+            "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Sid": "SSMRead",
+                        "Effect": "Allow",
+                        "Action": [
+                            "secretsmanager:GetSecretValue"
+                        ],
+                        "Resource": "*"
+                    }
+                ]
+            }
+        }        ],
         "RoleName": {
           "Fn::Join": [
             "",
@@ -573,6 +595,18 @@
                 "-",
                 [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
               ]
+            },
+            "SECRETSMGRCERT":  {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "clientcert"]
+              ]
+            },
+            "SECRETSMGRCERTKEY":  {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "clientcertkey"]
+              ]
             }
           }
         },
@@ -669,7 +703,7 @@
           "DomainName": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAMESECURE" }, { "Ref": "BEDOMAIN" }]]},{ "Ref": "ROOTDOMAIN" }]]},
           "EndpointConfiguration": "REGIONAL",
           "MutualTlsAuthentication": {
-            "TruststoreUri" :  { "Fn::Join": ["", ["s3://", { "Ref": "S3CertsBucket" }, "/certs/tsassolarchdemoapitruststore.pem"]]} 
+            "TruststoreUri" :  { "Fn::Join": ["", ["s3://", { "Ref": "S3CertsBucket" }, "/certs/202406031150tsassolarchdemoapitruststore.pem"]]} 
           },
           "Route53": {
             "HostedZoneId": {"Ref": "HOSTEDZONEID"}

@@ -19,6 +19,11 @@ curl -X GET https://internal-dev-sandbox-mhdpoc-mhdpocbe.nhsdta.com/mhdspoc/FHIR
 curl -X GET https://internal-dev-sandbox-mhdpoc-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01  -H "NHSE-NRL-Pointer-URL: sdlkdslkfj"
 curl -X GET https://internal-dev-sandbox-mhdpoc-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReportProxy  -H "NHSE-NRL-Pointer-URL: https://internal-dev-sandbox-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01"
 curl -X GET https://internal-dev-sandbox-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01 --cert tsassolarchdemoapi.crt --key tsassolarchdemoapi.key -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+curl -X GET https://internal-dev-mhdpoc-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DocumentReference/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01  -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+curl -X GET https://internal-dev-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01 --cert tsassolarchdemoapi.crt --key tsassolarchdemoapi.key -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+curl -X GET https://internal-dev-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01 --cert internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.crt --key internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.key -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+curl -X GET https://internal-dev-mhdpoc-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01 -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+curl -X GET https://internal-dev-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReportProxy  --cert tsassolarchdemoapi.crt --key tsassolarchdemoapi.key -H "NHSE-NRL-Pointer-URL: https://internal-dev-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01"
 
 
 Check API proxy
@@ -27,9 +32,12 @@ curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/m
 open access
 curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0
 curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0
-curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0 "NHSE-NRL-Pointer-URL: sdlkdslkfj"
-curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DiagnosticReportProxy -H "NHSE-NRL-Pointer-URL: sdlkdslkfj"
+curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0 -H "NHSE-NRL-Pointer-URL: https://internal-dev-sandbox-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01"
+curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DiagnosticReportProxy -H "NHSE-NRL-Pointer-URL: https://internal-dev-sandbox-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01"
+curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DiagnosticReportProxy -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J" -H "NHSE-NRL-Pointer-URL: https://internal-dev-sandbox-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01"
 
+
+Backend of API is protected by root cert that is located in /home/matthew/certs for issuing new client certs to be used by API proxy
 
 API specification borrows from https://github.com/NHSDigital/personal-demographics-service-api/blob/master/specification/personal-demographics.yaml
 

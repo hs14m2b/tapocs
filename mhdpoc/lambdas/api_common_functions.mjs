@@ -1,6 +1,11 @@
 import { URLSearchParams } from 'url';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  SecretsManagerClient,
+  GetSecretValueCommand,
+} from "@aws-sdk/client-secrets-manager";
+
 const { sign } = jwt;
 const HTTPS = "https://";
 
@@ -192,4 +197,32 @@ let options = {
       //send request
       req.end();
   });
+}
+
+export const getSecretValue = async (secretName) =>
+{
+    const secret_name = secretName;
+    console.log("looking for secret name " + secret_name);
+  
+    const client = new SecretsManagerClient({
+      region: "eu-west-2",
+    });
+    
+    let response;
+    
+    try {
+      response = await client.send(
+        new GetSecretValueCommand({
+          SecretId: secret_name,
+          VersionStage: "AWSCURRENT", // VersionStage defaults to AWSCURRENT if unspecified
+        })
+      );
+    } catch (error) {
+      // For a list of exceptions thrown, see
+      // https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+      throw error;
+    }
+    
+    const secret = response.SecretString;
+    return secret;
 }

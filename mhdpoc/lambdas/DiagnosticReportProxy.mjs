@@ -1,7 +1,15 @@
 import diagnosticreport001 from './data/diagnosticreport001.json' assert { type: 'json' };
 import { readFileSync } from 'node:fs';
+import { getSecretValue } from './api_common_functions.mjs';
 
 const HTTPS = "https://";
+const SECRETSMGRCERT = process.env["SECRETSMGRCERT"];
+const SECRETSMGRCERTKEY = process.env["SECRETSMGRCERTKEY"];
+
+
+var CLIENTCERTIFICATE;
+var CLIENTCERTIFICATEKEY;
+var certsLastRetrieved = 0;
 
 let https;
 try {
@@ -51,6 +59,15 @@ function getHeaderCaseInsensitive(event, header){
 
 async function getDiagnosticReport(pointerUrl)
     {
+      let currentTime = Date.now();
+      //get the client certificate and key if not present or last retrieved more than 5 minutes ago
+      if (!CLIENTCERTIFICATE || ((currentTime - certsLastRetrieved) > 300000)){
+        console.log("retrieving certificates from secrets manager");
+        CLIENTCERTIFICATE = await getSecretValue(SECRETSMGRCERT);
+        CLIENTCERTIFICATEKEY = await getSecretValue(SECRETSMGRCERTKEY);
+        //set certs last retrieve to now
+        certsLastRetrieved = currentTime;
+      }
       //extract the host
       let urlObject = new URL(pointerUrl);
       // request option
@@ -60,8 +77,8 @@ async function getDiagnosticReport(pointerUrl)
         method: 'GET',
         path: urlObject.pathname,
         rejectUnauthorized: false,
-        key: readFileSync('certs/tsassolarchdemoapi.key'),
-        cert: readFileSync('certs/tsassolarchdemoapi.crt'),  
+        key: CLIENTCERTIFICATEKEY, // readFileSync('certs/tsassolarchdemoapi.key'),
+        cert: CLIENTCERTIFICATE, // readFileSync('certs/tsassolarchdemoapi.crt'),  
         headers: {
           //'Authorization': 'Bearer '+ access_token,
           'accept': 'application/fhir+json;version=1'
