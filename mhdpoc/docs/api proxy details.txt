@@ -26,6 +26,7 @@ curl -X GET https://internal-dev-mhdpoc-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/Diag
 curl -X GET https://internal-dev-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReportProxy  --cert tsassolarchdemoapi.crt --key tsassolarchdemoapi.key -H "NHSE-NRL-Pointer-URL: https://internal-dev-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01"
 
 
+
 Check API proxy
 secured
 curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01 -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
