@@ -17,7 +17,7 @@
       ]
     }
   ],
-  "description" : "Returns DocumentReferences with a subject identifier with a NHS Number.",
+  "description" : "Creates a search parameter for resources with a patient or subject identifier with a NHS Number.",
   "jurisdiction" : [
     {
       "coding" : [
@@ -31,8 +31,9 @@
   ],
   "code" : "nhsnumber",
   "base" : [
+    "Immunization",
     "DocumentReference"
   ],
   "type" : "token",
-  "expression" : "DocumentReference.subject.identifier.where(system = 'https://fhir.nhs.uk/Id/nhs-number').value"
+  "expression" : "Immunization.patient.identifier.where(system = 'https://fhir.nhs.uk/Id/nhs-number').value | DocumentReference.subject.identifier.where(system = 'https://fhir.nhs.uk/Id/nhs-number').value"
 }
