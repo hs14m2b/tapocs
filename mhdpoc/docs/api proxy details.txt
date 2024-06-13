@@ -13,6 +13,52 @@ https://dev.azure.com/NHSD-APIM/API%20Platform/_build?definitionScope=%5CNhse-Ts
 manually run the "build" pipeline, then the "release" pipeline using the tag for the merge on the master branch
 
 
+Testing the API in the "internal" environments.
+The developer portal does not create clients that have access to the "internal" instances of APIs. To create a client app a login to apigee non-prod is needed.
+https://apigee.com/organizations/nhsd-nonprod/apps
+There doesn't appear to be any description on confluence as to how to do this.
+
+To enable private_key_jwt auth on the app the jwks-resource-url custom attribute needs to be set. 
+The simplest way to do this is to create a "dummy" app on the developer portal with the public key and copy the generated url for the jwks endpoint
+
+For this example the following has been created
+Apigee non-prod app - name = tsas-solarch-demo-internal-app
+Developer portal dummy app = test-solarch-demo
+
+Generate key pair using instructions at https://digital.nhs.uk/developer/guides-and-documentation/security-and-authorisation/application-restricted-restful-apis-signed-jwt-authentication#step-2-generate-a-key-pair
+KID=mhsdtest001
+openssl genrsa -out $KID.key 4096
+openssl rsa -in $KID.key -pubout -outform PEM -out $KID.key.pub
+//get modulus of the key
+
+MODULUS=$(
+    openssl rsa -pubin -in $KID.key.pub -noout -modulus `# Print modulus of public key` \
+    | cut -d '=' -f2                                    `# Extract modulus value from output` \
+    | xxd -r -p                                         `# Convert from string to bytes` \
+    | openssl base64 -A                                 `# Base64 encode without wrapping lines` \
+    | sed 's|+|-|g; s|/|_|g; s|=||g'                    `# URL encode as JWK standard requires`
+)
+
+//and create jwks file
+
+echo '{
+  "keys": [
+    {
+      "kty": "RSA",
+      "n": "'"$MODULUS"'",
+      "e": "AQAB",
+      "alg": "RS512",
+      "kid": "'"$KID"'",
+      "use": "sig"
+    }
+  ]
+}' > $KID.jwks.json
+
+//the resultant url is https://api.service.nhs.uk/mock-jwks/ewogICJrZXlzIjogWwogICAgewogICAgICAia3R5IjogIlJTQSIsCiAgICAgICJuIjogInM0OFAxMlYtTWpEa1dpYnlqMGs3NGNndk5rWlJtYTFzcmM3WmV6QUM4VTR6RjNINGd2dUNuNkFPcWFqQWFGTFVQakZyeGFnQjF1SGJKQjNfcDBPX0FaRThOTVdMY0NYeko3MzFGY0tBUVBxb1YxVGJuWklfV3BfNkMzT3NoNHZlOU9RdnJ2UTI3WEhSLWhETUVfc3FOS3kzX0g1bnU5QkhYTWZ0YS1MbGhiUmhEWXZKSC12TFBNajJJSGl1M2VReEdjWDVIdFQxWTRVRW9ISW9majlKUWU4VksxWEpBWG1TdkVCd0ZtZTVTdW03cGpfYklnWGI1WjNKUEdfX1ZVMDY0Yk9MRXVDSTJCbVdXcUJ5eTFiZHJjdkJuMVJaX3NtalliRW56bTdsSDBaY3RuSF81R2hCMXJkdWxabWdQSDFXQW5wdG5ZMG5feXBlejg5TFp1RVM3TFNtUVA0eGdwbm1WY3p5MzJBSGhJc0dJS00yOC1vUGYzOFUxbk0wYXpXbFRrRHEtUlNlblpLOWRLYm91RmJfRGd6SThNQUFEaTJCdXl2a2R1MlZzaUlrakp0UFU3Q0luNHE0Y0ZnLUJsR0RONWNHWC0zcDF6RGlzdnNWSEczNlZNMGJEdU0zTVE4UUZRLVpuUV91UnZpQUVlcWkyNjMxQU5pQnlpR3llVlpONEx5SXBmaWp2Q3EwY04wUmVHRlhNWVd2ZjFZdVQzMndLUUJRMkYyWjBLenpSUTdtOGpOWE9QakVoZG9rc3h0c0FmbmppczFQWDRxbkhqVno2bHk4eVNpQ0xmRmIzc2VIQ0xpNVVVQzM2UTI5M0dUZHhTeFB0QWZJTGVyT3pGX0R5Uzd1NDFSSTFsbFFRaHdXbENnM05ZZ3JrcE4zNWlOX3RQNFBmY0xmQzlNIiwKICAgICAgImUiOiAiQVFBQiIsCiAgICAgICJhbGciOiAiUlM1MTIiLAogICAgICAia2lkIjogIm1oZHRlc3QwMDEiLAogICAgICAidXNlIjogInNpZyIKICAgIH0KICBdCn0K
+
+
+
+
 Check back-end API
 curl -X GET https://internal-dev-sandbox-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DocumentReference/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01 --cert tsassolarchdemoapi.crt --key tsassolarchdemoapi.key -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
 curl -X GET https://internal-dev-sandbox-mhdpoc-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DocumentReference/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01  -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
@@ -29,7 +75,10 @@ curl -X GET https://internal-dev-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4
 
 Check API proxy
 secured
+#this is a generic api key for a shared app
 curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01 -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J"
+#this is the api key for the demo app created to access the tsas solarch API
+curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01 -H "apikey: lgA3WQ9NAVAySK3XQuQ4UCVn0z2SAAcx"
 open access
 curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0
 curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0
