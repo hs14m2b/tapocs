@@ -2,7 +2,7 @@
 
 . ./setHealthlakeEndpointAzure.sh
 
-curl -X DELETE "${HEALTHLAKEENDPOINT}DocumentReference/18bd6490-0689-4b69-a907-7db2f294c5fb" \
+curl -X DELETE "${HEALTHLAKEENDPOINT}DocumentReference/03a6a02c-2408-44f1-bf55-0bd15e916965" \
     -H "Authorization: Bearer ${token}"
 
 

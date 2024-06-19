@@ -1,5 +1,5 @@
 Searching
- - doesn't look like all parameter types of "reference" can actually be searched with the qualifier "identifier" - e.g. Immunizations - patient:identifier
+ - doesn't look like all parameter types of "reference" can actually be searched with the qualifier "identifier" - e.g. Immunizations - patient:identifier - now fixed by AWS
 
 creating a healthlake with SMART_ON_FHIR_V1
  - create role for healthlake user to assume.
@@ -12,6 +12,9 @@ creating a healthlake with SMART_ON_FHIR_V1
 - metadata doc in datastore config needs more data elements than are described in the documentation
 - could potentially point the datastore config at API-M...?
 
+ - conditional access - seeing if conditional update would work to prevent orgs updating each other's data.
+   https://docs.aws.amazon.com/healthlake/latest/devguide/update-example.html#conditional-update
+   yes - this works when the query does not return a single resource and the resource already exists. This is actually FHIR R5 API behaviour (https://hl7.org/fhir/R5/http.html#update)..."No matches, id provided and already exist: The server rejects the update with a 409 Conflict error"
 
 https://catalog.us-east-1.prod.workshops.aws/workshops/498fdbc5-46e1-4cb0-97a0-f4ec3a30f26a/en-US/introduction/getting-started
 

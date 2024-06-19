@@ -5,5 +5,5 @@
 curl -X POST ${HEALTHLAKEENDPOINT}SearchParameter \
     -H "Content-Type: application/fhir+json" \
     --header "Authorization: Bearer ${token}" \
-    --data "@searchParamNHSNumber.json" --verbose
+    --data "@searchParamNHSODSCode.json" --verbose
 
