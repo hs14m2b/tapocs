@@ -22,13 +22,15 @@ export const handler = async (event) => {
         let currentTimeS = Math.floor(currentTimeMs/1000);
         let expiresInS = parseInt(event.headers["enhanced-introspect-expires-in"]);
         introspectionResponse["active"] = (event.headers["enhanced-introspect-status"] == "approved") ? true : false;
-        introspectionResponse["scope"] = event.headers["enhanced-introspect-scope"];
-        introspectionResponse["client_id"] = event.headers["enhanced-introspect-client-id"];
-        introspectionResponse["token_type"] = "bearer";
-        introspectionResponse["exp"] = currentTimeS + expiresInS;
-        introspectionResponse["iat"] = currentTimeS + expiresInS - 600;
-        introspectionResponse["nbf"] = currentTimeS + expiresInS - 600;
-        introspectionResponse["sub"] = event.headers["enhanced-introspect-client-id"];
+        if (introspectionResponse["active"]){
+          introspectionResponse["scope"] = event.headers["enhanced-introspect-scope"];
+          introspectionResponse["client_id"] = event.headers["enhanced-introspect-client-id"];
+          introspectionResponse["token_type"] = "Bearer";
+          introspectionResponse["exp"] = currentTimeS + expiresInS;
+          introspectionResponse["iat"] = currentTimeS + expiresInS - 600;
+          introspectionResponse["nbf"] = currentTimeS + expiresInS - 600;
+          introspectionResponse["sub"] = event.headers["enhanced-introspect-client-id"];
+        }
 
         let response = {
             statusCode: 200,

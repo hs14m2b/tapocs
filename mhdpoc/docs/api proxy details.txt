@@ -11,6 +11,8 @@ https://dev.azure.com/NHSD-APIM/API%20Platform/_build?view=folders
 https://dev.azure.com/NHSD-APIM/API%20Platform/_build?definitionScope=%5CNhse-Tsas-Solarch-Demo-Api
 
 manually run the "build" pipeline, then the "release" pipeline using the tag for the merge on the master branch
+extracting access token info uses apigee GetOAuthV2Info built-in routine - https://docs.apigee.com/api-platform/reference/policies/get-oauth-v2-info-policy#flowvariables-accesstokenvariables
+
 
 
 Testing the API in the "internal" environments.
@@ -84,6 +86,9 @@ node get_mhds_document_ref_int_dev.mjs
 
 # token introspection Testing
 node post_token_introspect_int_dev.mjs
+#also can use apikey to introspect
+curl -X POST https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/oauth2/introspect -H "apikey: lgA3WQ9NAVAySK3XQuQ4UCVn0z2SAAcx" -d "token=N6yjVJHIS8mCOiRs2DonAAAWoUp6"
+curl -X POST https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/oauth2/introspect -H "Authorization: Bearer N6yjVJHIS8mCOiRs2DonAAAWoUp6" -d "token=N6yjVJHIS8mCOiRs2DonAAAWoUp6"
 
 open access
 curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0
