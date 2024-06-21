@@ -81,6 +81,10 @@ curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/m
 curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01 -H "apikey: lgA3WQ9NAVAySK3XQuQ4UCVn0z2SAAcx"
 #this uses private_key_jwt auth and is located in the "test" folder. The demo app is configured to use the same jwks endpoint as is set up on the dummy app via developer portal
 node get_mhds_document_ref_int_dev.mjs
+
+# token introspection Testing
+node post_token_introspect_int_dev.mjs
+
 open access
 curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0
 curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0

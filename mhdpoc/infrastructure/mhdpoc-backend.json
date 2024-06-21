@@ -642,6 +642,43 @@
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
     },
+    "IntrospectFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "mhdpocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy Oauth2 introspect endpoint",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApi" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/oauth2/introspect",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiSecure": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/oauth2/introspect",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-introspectFunction"]]
+        },
+        "Handler": "introspect.handler",
+        "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs18.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["mhdpocbeLambdaRole"]
+    },
     "mhdHttpApi": {
       "Type": "AWS::Serverless::HttpApi",
       "Properties": {
