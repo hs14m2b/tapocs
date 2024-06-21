@@ -108,6 +108,28 @@
           "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB"
         ],
         "Path": "/service-role/",
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "APIENVIRONMENT" },  "mhdpocbeLambdaRole-001", "ssmread"]
+              ]
+            },
+            "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Sid": "SSMRead",
+                        "Effect": "Allow",
+                        "Action": [
+                            "secretsmanager:GetSecretValue"
+                        ],
+                        "Resource": "*"
+                    }
+                ]
+            }
+        }        ],
         "RoleName": {
           "Fn::Join": [
             "",
@@ -227,7 +249,7 @@
         "Handler": "dummyfhirendpoint.handler",
         "Layers": [{"Ref": "mhdServerFunctionLayer"}],
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -274,7 +296,7 @@
         },
         "Handler": "DocumentReference.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -321,7 +343,7 @@
         },
         "Handler": "DocumentReferenceSearch.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -368,7 +390,7 @@
         },
         "Handler": "DocumentManifest.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -415,7 +437,7 @@
         },
         "Handler": "DocumentManifestSearch.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -462,7 +484,7 @@
         },
         "Handler": "List.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -509,7 +531,150 @@
         },
         "Handler": "ListSearch.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["mhdpocbeLambdaRole"]
+    },
+    "DiagnosticReportFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "mhdpocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint for DiagnosticReport resources",
+        "Environment": {
+          "Variables" : {
+            "S3BUCKET" : {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
+              ]
+            }
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApi" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/DiagnosticReport/{diagnosticreportid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiSecure": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/DiagnosticReport/{diagnosticreportid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-DiagnosticReportFunction"]]
+        },
+        "Handler": "DiagnosticReport.handler",
+        "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs18.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["mhdpocbeLambdaRole"]
+    },
+    "DiagnosticReportProxyFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "mhdpocapilambdas.zip",
+        "Description": "The lambda function that acts as a proxy to retrieve DiagnosticReport resources",
+        "Environment": {
+          "Variables" : {
+            "S3BUCKET" : {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
+              ]
+            },
+            "SECRETSMGRCERT":  {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "clientcert"]
+              ]
+            },
+            "SECRETSMGRCERTKEY":  {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "clientcertkey"]
+              ]
+            }
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApi" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/DiagnosticReportProxy",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiSecure": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/DiagnosticReportProxy",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-DiagnosticReportProxyFunction"]]
+        },
+        "Handler": "DiagnosticReportProxy.handler",
+        "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs18.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["mhdpocbeLambdaRole"]
+    },
+    "IntrospectFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "mhdpocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy Oauth2 introspect endpoint",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApi" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/oauth2/introspect",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiSecure": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/oauth2/introspect",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-introspectFunction"]]
+        },
+        "Handler": "introspect.handler",
+        "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -575,7 +740,7 @@
           "DomainName": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAMESECURE" }, { "Ref": "BEDOMAIN" }]]},{ "Ref": "ROOTDOMAIN" }]]},
           "EndpointConfiguration": "REGIONAL",
           "MutualTlsAuthentication": {
-            "TruststoreUri" :  { "Fn::Join": ["", ["s3://", { "Ref": "S3CertsBucket" }, "/certs/tsassolarchdemoapitruststore.pem"]]} 
+            "TruststoreUri" :  { "Fn::Join": ["", ["s3://", { "Ref": "S3CertsBucket" }, "/certs/202406031150tsassolarchdemoapitruststore.pem"]]} 
           },
           "Route53": {
             "HostedZoneId": {"Ref": "HOSTEDZONEID"}

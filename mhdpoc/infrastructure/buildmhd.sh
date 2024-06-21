@@ -1,7 +1,7 @@
 #!/bin/sh
 
-APIENVIRONMENT="internal-dev-sandbox"
-#APIENVIRONMENT="internal-dev"
+#APIENVIRONMENT="internal-dev-sandbox"
+APIENVIRONMENT="internal-dev"
 ENVIRONMENT="mhdpocbe"
 S3CODEBUCKET="codepipeline-eu-west-2-467564981221"
 USS3CODEBUCKET="lambdacodemhdpocedge"
@@ -21,6 +21,8 @@ cd ..
 #zip -qr ${TIMESTAMP}stack000lambdas.zip ./*
 zip -qr ${TIMESTAMP}dependenciesLayer.zip nodejs
 rm -fR nodejs
+mkdir certs
+cp ../certs/tsassolarchdemoapi.* certs
 # need to include node modules due to bug in Lambda that doesn't enable the AWS SDK v2 to be loaded via Layer
 npm install
 zip -qr ${TIMESTAMP}mhdpocapilambdas.zip *
@@ -28,6 +30,7 @@ cp ${TIMESTAMP}dependenciesLayer.zip ../build/${TIMESTAMP}dependenciesLayer.zip
 cp ${TIMESTAMP}mhdpocapilambdas.zip ../build/${TIMESTAMP}mhdpocapilambdas.zip
 rm -f ${TIMESTAMP}dependenciesLayer.zip
 rm -f ${TIMESTAMP}mhdpocapilambdas.zip
+rm -fR certs
 cd ../build
 # update cloudformation templates
 cp ../infrastructure/mhdpoc-backend.json mhdpoc-backend.json
