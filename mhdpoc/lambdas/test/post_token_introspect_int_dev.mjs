@@ -21,6 +21,8 @@ let drId = "Y05868-" + "1e404af3-077f-4bee-b7a6-a9be97e1ce01";//"1e404af3-077f-4
 async function sendToken (drId, access_token) 
   {
     let XRequestID = uuidv4();
+    // hard coded old token - sOR8enEMiedHrPkHrVuVFQNdgarw
+    //let postData = "token=WBVbn6gold7HXJV3DObUe6iOv3NC";//+access_token;
     let postData = "token="+access_token;
     let datalength = postData.length
     // request option
