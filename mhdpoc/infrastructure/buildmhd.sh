@@ -1,7 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 
 #APIENVIRONMENT="internal-dev-sandbox"
-APIENVIRONMENT="internal-dev"
+#APIENVIRONMENT="internal-dev"
+APIENVIRONMENT=$1
+echo $APIENVIRONMENT
 ENVIRONMENT="mhdpocbe"
 S3CODEBUCKET="codepipeline-eu-west-2-467564981221"
 USS3CODEBUCKET="lambdacodemhdpocedge"
@@ -47,5 +49,6 @@ aws cloudformation deploy --template-file ${TIMESTAMP}mhdpoc-backend.json --stac
 
 cd ..
 rm -fR build
+cd infrastructure
 
 echo "built and deployed application"

@@ -1,7 +1,13 @@
 #!/bin/sh
 
 #APIENVIRONMENT="internal-dev-sandbox"
-APIENVIRONMENT="internal-dev"
+#APIENVIRONMENT="internal-dev"
+#APIENVIRONMENT="internal-qa"
+#APIENVIRONMENT="internal-qa-sandbox"
+#APIENVIRONMENT="sandbox"
+#APIENVIRONMENT="dev"
+#APIENVIRONMENT="int"
+APIENVIRONMENT="ref"
 ENVIRONMENT="mhdpocbe"
 TIMESTAMP=$(date +%s)
 echo $TIMESTAMP

@@ -740,7 +740,15 @@
           "DomainName": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAMESECURE" }, { "Ref": "BEDOMAIN" }]]},{ "Ref": "ROOTDOMAIN" }]]},
           "EndpointConfiguration": "REGIONAL",
           "MutualTlsAuthentication": {
-            "TruststoreUri" :  { "Fn::Join": ["", ["s3://", { "Ref": "S3CertsBucket" }, "/certs/202406031150tsassolarchdemoapitruststore.pem"]]} 
+            "TruststoreUri" :  { "Fn::Join": ["", [
+              "s3://", 
+              {
+                "Fn::Join": [
+                  "-",
+                  [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "certs","bucket"]
+                ]
+              },
+              "/certs/202406031150tsassolarchdemoapitruststore.pem"]]} 
           },
           "Route53": {
             "HostedZoneId": {"Ref": "HOSTEDZONEID"}
