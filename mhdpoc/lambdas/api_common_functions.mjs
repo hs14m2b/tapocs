@@ -226,3 +226,15 @@ export const getSecretValue = async (secretName) =>
     const secret = response.SecretString;
     return secret;
 }
+
+export const environmentNeedsAuth = (apienvironment) =>
+{
+  if (apienvironment == "dev" || apienvironment == "int") return true;
+  return false;
+}
+
+export const nrlEnvironmentMapping = (apienvironment) =>
+{
+  if (apienvironment == "int") return "int";
+  return "sandbox";
+}

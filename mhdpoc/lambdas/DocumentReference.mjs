@@ -24,6 +24,8 @@ async function getS3Object(params) {
 }
 
 const S3BUCKET = process.env['S3BUCKET'];
+const APIMKEYSECRET = process.env['APIMKEYSECRET'];
+const APIENVIRONMENT = process.env['APIENVIRONMENT'];
 
 export const handler = async (event) => {
   console.log(JSON.stringify(event));

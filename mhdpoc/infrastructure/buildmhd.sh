@@ -1,7 +1,12 @@
-#!/bin/sh
+#!/bin/bash
 
 #APIENVIRONMENT="internal-dev-sandbox"
-APIENVIRONMENT="internal-dev"
+#APIENVIRONMENT="internal-dev"
+APIENVIRONMENT=$1
+echo $APIENVIRONMENT
+#read parameter overrides into variable
+PARAMETERS=$(<parameters-${APIENVIRONMENT}.txt)
+echo $PARAMETERS
 ENVIRONMENT="mhdpocbe"
 S3CODEBUCKET="codepipeline-eu-west-2-467564981221"
 USS3CODEBUCKET="lambdacodemhdpocedge"
@@ -43,9 +48,10 @@ sed -i "s/mhdpocapilambdas\.zip/${TIMESTAMP}mhdpocapilambdas\.zip/g" mhdpoc-back
 
 #backend
 aws cloudformation package --use-json --template-file mhdpoc-backend.json --s3-bucket ${S3CODEBUCKET} --output-template-file ${TIMESTAMP}mhdpoc-backend.json --region "eu-west-2"
-aws cloudformation deploy --template-file ${TIMESTAMP}mhdpoc-backend.json --stack-name ${APIENVIRONMENT}-mabr8-mhdpocbestack --capabilities "CAPABILITY_NAMED_IAM" --region "eu-west-2" --s3-bucket ${S3CODEBUCKET}  --parameter-overrides "APIENVIRONMENT=${APIENVIRONMENT}"
+aws cloudformation deploy --template-file ${TIMESTAMP}mhdpoc-backend.json --stack-name ${APIENVIRONMENT}-mabr8-mhdpocbestack --capabilities "CAPABILITY_NAMED_IAM" --region "eu-west-2" --s3-bucket ${S3CODEBUCKET}  --parameter-overrides APIENVIRONMENT=${APIENVIRONMENT} ${PARAMETERS}
 
 cd ..
 rm -fR build
+cd infrastructure
 
 echo "built and deployed application"

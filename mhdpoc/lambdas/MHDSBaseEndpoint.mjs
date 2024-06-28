@@ -1,7 +1,7 @@
 import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
-import { deleteDocRef } from './delete_document_ref_sandpit.mjs';
-import { sendDocRef } from './post_document_ref_sandpit.mjs';
+import { deleteDocRef } from './delete_document_ref.mjs';
+import { sendDocRef } from './post_document_ref.mjs';
 import { v4 as uuidv4 } from 'uuid';
 import { gunzipSync } from 'zlib';
 
@@ -13,6 +13,8 @@ const s3Client = new S3Client({
 
 const S3BUCKET = process.env['S3BUCKET'];
 const APIENVIRONMENT = process.env['APIENVIRONMENT'];
+const APIKEYSECRET = process.env['APIKEYSECRET'];
+const APIKEY = process.env['APIKEY'];
 const MHD_3_MINIMAL_PROFILE = "ihe.net/fhir/StructureDefinition/IHE_MHD_Provide_Minimal_DocumentBundle";
 const MHD_3_COMPREHENSIVE_PROFILE = "ihe.net/fhir/StructureDefinition/IHE_MHD_Provide_Comprehensive_DocumentBundle";
 const MHD_4_MINIMAL_PROFILE = "profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Minimal.ProvideBundle";
@@ -236,6 +238,17 @@ async function processmhd4(event, requestJson, targetEndpoint)
               }
             ]
           },
+          "category": [
+              {
+                "coding": [
+                  {
+                    "system": "http://snomed.info/sct",
+                    "code": "734163000",
+                    "display": "Care plan"
+                  }
+                ]
+              }
+          ],
           "custodian": {
             "identifier": {
               "system": "https://fhir.nhs.uk/Id/ods-organization-code",
@@ -315,19 +328,20 @@ async function processmhd4(event, requestJson, targetEndpoint)
         if (!nrlDocRef.subject.identifier) nrlDocRef.subject.identifier = NRLParams.subject.identifier;
         if (!nrlDocRef.custodian) nrlDocRef.custodian = NRLParams.custodian;
         //if (!nrlDocRef.type) nrlDocRef.type = NRLParams.type;
-        nrlDocRef.type = NRLParams.type;
+        //nrlDocRef.type = NRLParams.type;
+        //nrlDocRef.category = NRLParams.category;
         delete nrlDocRef.text;
         delete nrlDocRef.contained;
         //
 
         //console.log("delete doc first in case already exists");
         //try {
-        //  let nrldelete = await deleteDocRef(nrlDocRef);
+        //  let nrldelete = await deleteDocRef(nrlDocRef, APIENVIRONMENT, APIKEYSECRET, APIKEY);
         //  console.log(JSON.stringify(nrldelete));
         //} catch (error) {
         //  console.log(error.message);
         //}
-        let nrlresponse = await sendDocRef(nrlDocRef);
+        let nrlresponse = await sendDocRef(nrlDocRef, APIENVIRONMENT, APIKEYSECRET, APIKEY);
         console.log(nrlresponse);
         //set URL location of DR from NRL response
         //the id of the DocumentReference is the end of the "location" header returned by NRL
