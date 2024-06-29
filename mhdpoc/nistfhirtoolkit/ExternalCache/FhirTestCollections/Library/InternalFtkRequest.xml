@@ -1,0 +1,74 @@
+<TestScript  xmlns="http://hl7.org/fhir">
+    <modifierExtension url="urn:module">
+        <extension url="urn:variable-in">
+            <valueString value="internalFtkRequestCode"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="queryStringParams"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="expectedBundleEntryCount"/>
+        </extension>
+        <extension url="urn:fixture-out">
+            <valueString value="returns-bundle"/>
+        </extension>
+    </modifierExtension>
+
+    <url value=""/>
+    <name value="InternalFtkRequest"/>
+    <status value="active"/>
+    <description value="Internal request."/>
+
+    <test>
+        <modifierExtension url="urn:noErrors"/>
+        <description value="Make an internal call to get a bundle that contain test fixture(s) or other test building resources."/>
+        <action>
+            <operation>
+                <description value="TestScript operation."/>
+                <type>
+                    <system value="https://github.com/usnistgov/asbestos/wiki/Testscript-Operation-Codes"/>
+                    <code value="internalFtkRequest"/>
+                </type>
+                <contentType value="json"/>
+                <url value="${queryStringParams}"/>
+                <requestHeader>
+                   <field value="x-internalFtkRequestCode"/>
+                   <value value="${internalFtkRequestCode}"/>
+                </requestHeader>
+                <responseId value="returns-bundle"/>
+            </operation>
+        </action>
+        <action>
+            <assert>
+                <description value="Status is 200."/>
+                <sourceId value="returns-bundle"/>
+                <response value="okay"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+        <action>
+            <assert>
+                <description value="returns Bundle."/>
+                <resource value="Bundle"/>
+                <sourceId value="returns-bundle"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+        <action>
+            <assert>
+                <description value="Bundle count is 1."/>
+                <compareToSourceId value="returns-bundle"/>
+                <compareToSourceExpression value="Bundle.count() = 1"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+        <action>
+            <assert>
+                <description value="Bundle entry count matches expected number."/>
+                <compareToSourceId value="returns-bundle"/>
+                <compareToSourceExpression value="Bundle.entry.count() = ${expectedBundleEntryCount}"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+    </test>
+</TestScript>

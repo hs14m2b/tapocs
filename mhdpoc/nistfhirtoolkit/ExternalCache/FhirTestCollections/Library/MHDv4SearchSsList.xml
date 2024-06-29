@@ -1,0 +1,103 @@
+<TestScript xmlns="http://hl7.org/fhir">
+    <modifierExtension url="urn:module">
+        <extension url="urn:fixture-in">
+            <valueString  value="dummy"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString  value="ssListUsualIdentifier"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="ssListStatus"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="patientIdentifierSearchParamValue"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="docRespBaseAddress"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="expectSsListTotal"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="docRespBaseAddressIsAbsolute"/>
+        </extension>
+    </modifierExtension>
+
+    <url value=""/>
+    <name value="MHDv4SearchSsList"/>
+    <status value="active"/>
+    <description value="Search operation."/>
+
+    <test>
+        <description value="Based on absolute base address."/>
+        <action>
+            <modifierExtension url="https://github.com/usnistgov/asbestos/wiki/TestScript-Conditional"/>
+            <assert>
+                <description value="Document Responder uses an absolute location."/>
+                <expression value="${docRespBaseAddressIsAbsolute}"/>
+                <operator value="equals"/>
+                <value value="true" />
+                <sourceId value="dummy"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+        <action>
+            <operation>
+                <description value="for List (SubmissionSet) type."/>
+                <type>
+                    <code value="search"/>
+                </type>
+                <contentType value="json"/>
+                <url value="${docRespBaseAddress}/List?code=submissionset&amp;identifier=${ssListUsualIdentifier}&amp;status=${ssListStatus}&amp;patient.identifier=${patientIdentifierSearchParamValue}"/>
+                <responseId value="ssList-search"/>
+            </operation>
+        </action>
+    </test>
+
+    <test>
+        <description value="Based on relative base address."/>
+        <action>
+            <modifierExtension url="https://github.com/usnistgov/asbestos/wiki/TestScript-Conditional"/>
+            <assert>
+                <description value="Document Responder uses an relative location."/>
+                <expression value="${docRespBaseAddressIsAbsolute}"/>
+                <operator value="equals"/>
+                <value value="false" />
+                <sourceId value="dummy"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+        <action>
+            <operation>
+                <description value="search for DocumentReference."/>
+                <type>
+                    <code value="search"/>
+                </type>
+                <resource value="List"> </resource>
+                <contentType value="json"> </contentType>
+                <params value="?code=submissionset&amp;identifier=${ssListUsualIdentifier}&amp;status=${ssListStatus}&amp;patient.identifier=${patientIdentifierSearchParamValue}"> </params>
+                <responseId value="ssList-search"/>
+            </operation>
+        </action>
+    </test>
+
+    <test>
+      <description value="Test persistence to Document Responder."/>
+        <action>
+        <assert>
+          <description value="Returns 200."/>
+          <sourceId value="ssList-search"/>
+          <response value="okay"/>
+          <warningOnly value="false"/>
+        </assert>
+      </action>
+      <action>
+        <assert>
+          <description value="Total ssList returned matches expected total."/>
+          <compareToSourceId value="ssList-search"/>
+          <compareToSourceExpression value="Bundle.total = ${expectSsListTotal}"/>
+          <warningOnly value="false"/>
+        </assert>
+      </action>
+    </test>
+</TestScript>

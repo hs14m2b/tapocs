@@ -1,0 +1,54 @@
+<TestScript xmlns="http://hl7.org/fhir">
+    <modifierExtension url="urn:module">
+        <extension url="urn:variable-in">
+            <valueString  value="manifestMasterIdentifier"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="pdbManifestStatus"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="patientIdentifierSearchParamValue"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="docRespBaseAddress"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="expectedTotal"/>
+        </extension>
+    </modifierExtension>
+
+    <url value=""/>
+    <name value="SearchDocumentManifest"/>
+    <status value="active"/>
+
+    <test>
+      <description value="Test assumes absolute resource location in PDB response. Test persistence to server."/>
+      <action>
+            <operation>
+                <description value="for DocumentManifest."/>
+                <type>
+                    <code value="search"/>
+                </type>
+                <contentType value="json"/>
+                <url value="${docRespBaseAddress}/DocumentManifest?identifier=${manifestMasterIdentifier}&amp;status=${pdbManifestStatus}&amp;patient.identifier=${patientIdentifierSearchParamValue}"/>
+                <responseId value="manifest-search"/>
+            </operation>
+        </action>
+        <action>
+        <assert>
+          <description value="Returns 200."/>
+          <sourceId value="manifest-search"/>
+          <response value="okay"/>
+          <warningOnly value="false"/>
+        </assert>
+      </action>
+      <action>
+        <assert>
+          <description value="DocumentManifest returned matches expected total"/>
+          <compareToSourceId value="manifest-search"/>
+          <compareToSourceExpression value="Bundle.total = ${expectedTotal}"/>
+          <warningOnly value="false"/>
+        </assert>
+      </action>
+    </test>
+</TestScript>

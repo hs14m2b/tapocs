@@ -1,0 +1,97 @@
+<TestScript xmlns="http://hl7.org/fhir">
+    <modifierExtension url="urn:module">
+        <extension url="urn:fixture-in">
+            <valueString value="request"/>
+        </extension>
+        <extension url="urn:fixture-in">
+            <valueString value="response"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="isComprehensiveMetadataExpected"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="isComprehensive"/>
+        </extension>
+    </modifierExtension>
+
+    <id value="CMPMETA"/>
+    <name value="comprehensiveMetadataOnly"/>
+    <description value="Comprehensive Metadata only."/>
+
+    <variable>
+        <name value="scriptMHDv3.x"/>
+        <defaultValue value="CMPMETA3_Assertions.xml"/>
+    </variable>
+    <variable>
+        <name value="scriptMHDv4"/>
+        <defaultValue value="CMPMETA4_Assertions.xml"/>
+    </variable>
+    <variable>
+        <name value="scriptMHDv410"/>
+        <defaultValue value="CMPMETA410_Assertions.xml"/>
+    </variable>
+
+    <test>
+        <description value="Comprehensive Metadata only"/>
+        <action>
+            <modifierExtension url="https://github.com/usnistgov/asbestos/wiki/TestScript-Conditional"/>
+            <assert id="CMPMETA_1">
+                <description value="Is Comprehensive Metadata expected or transaction is labeled as Comprehensive Metadata?"/>
+                <expression value="${isComprehensiveMetadataExpected} or ${isComprehensive}"/>
+                <operator value="equals"/>
+                <value value="true"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+        <action>
+            <operation>
+                <description value="Comprehensive metadata assertions only."/>
+                <modifierExtension url="https://github.com/usnistgov/asbestos/wiki/TestScript-Import">
+                    <extension url="component">
+                        <valueString value="#{script:TestCollection.properties:FhirIgName}"/>
+                    </extension>
+                    <extension url="urn:fixture-in">
+                        <valueString value="request"/>
+                    </extension>
+                    <extension url="urn:fixture-in">
+                        <valueString value="response"/>
+                    </extension>
+                </modifierExtension>
+            </operation>
+        </action>
+        <action>
+            <operation>
+                <description value="Check Subject."/>
+                <modifierExtension url="https://github.com/usnistgov/asbestos/wiki/TestScript-Import">
+                    <extension url="component">
+                        <valueString value="../../Library/AggregateModule/Subject.xml"/>
+                    </extension>
+                    <extension url="urn:fixture-in">
+                        <valueString value="request"/>
+                    </extension>
+                    <extension url="urn:fixture-in">
+                        <valueString value="response"/>
+                    </extension>
+                </modifierExtension>
+            </operation>
+        </action>
+        <action>
+            <assert id="CMPMETA_3">
+                <description value="Transaction must be labeled Comprehensive Metadata."/>
+                <expression value="${isComprehensive}"/>
+                <operator value="equals"/>
+                <value value="true"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+        <action>
+            <assert id="CMPMETA_4">
+                <description value="DocumentReference: securityLabel is required for Comprehensive Metadata."/>
+                <compareToSourceId value="request"/>
+                <compareToSourceExpression
+                        value="Bundle.entry.resource.where(is(FHIR.DocumentReference)).securityLabel.exists()"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+    </test>
+</TestScript>

@@ -1,0 +1,106 @@
+<Bundle xmlns="http://hl7.org/fhir">
+    <id value="xds"/>
+    <meta>
+        <lastUpdated value="2013-07-01T13:11:33Z"/>
+        <!--@{BundleMetaMinimalProfileElement}-->
+    </meta>
+    <type value="transaction"/>
+    <entry>
+        <fullUrl value="urn:uuid:0000000a-000b-000c-000d-000000000001"/>
+        <resource>
+            <DocumentReference>
+                <meta>
+                    <!--@{DocumentReferenceMetaMinimalProfileElement}-->
+                </meta>
+                <masterIdentifier>
+                    <system value="urn:ietf:rfc:3986"/>
+                    <value value="urn:oid:1.2.129.6.58.92.88336.4"/>
+                </masterIdentifier>
+                <status value="current"/>
+                <subject>
+                    <reference value="${patientResourceId}"/>
+                </subject>
+                <content>
+                    <attachment>
+                        <contentType value="text/plain"/>
+                        <url value="urn:uuid:0000000a-000b-000c-000d-000000000002"/>
+                    </attachment>
+                </content>
+            </DocumentReference>
+        </resource>
+        <request>
+            <method value="POST"/>
+            <url value="urn:uuid:0000000a-000b-000c-000d-000000000001"/>
+        </request>
+    </entry>
+    <entry>
+        <fullUrl value="urn:uuid:0000000a-000b-000c-000d-000000000003"/>
+        <resource>
+            <DocumentReference>
+                <meta>
+                    <!--@{DocumentReferenceMetaMinimalProfileElement}-->
+                </meta>
+                <masterIdentifier>
+                    <system value="urn:ietf:rfc:3986"/>
+                    <value value="urn:oid:1.2.129.6.58.92.88336.4"/>
+                </masterIdentifier>
+                <status value="current"/>
+                <subject>
+                    <reference value="${patientResourceId}"/>
+                </subject>
+                <content>
+                    <attachment>
+                        <contentType value="text/plain"/>
+                        <url value="urn:uuid:0000000a-000b-000c-000d-000000000004"/>
+                    </attachment>
+                </content>
+            </DocumentReference>
+        </resource>
+        <request>
+            <method value="POST"/>
+            <url value="urn:uuid:0000000a-000b-000c-000d-000000000003"/>
+        </request>
+    </entry>
+    <entry>
+        <fullUrl value="urn:uuid:0000000a-000b-000c-000d-000000000005"/>
+        <resource>
+            <!--@{SubmissionSetResourceElement}-->
+        </resource>
+        <request>
+            <method value="POST"/>
+            <url value="urn:uuid:0000000a-000b-000c-000d-000000000005"/>
+        </request>
+    </entry>
+    <entry>
+        <fullUrl value="urn:uuid:0000000a-000b-000c-000d-000000000002"/>
+        <resource>
+            <Binary>
+                <meta>
+                    <lastUpdated value="2013-07-01T13:11:33Z"/>
+                </meta>
+                <contentType value="text/plain"/>
+                <data value="Zm9vYmFy"/>
+            </Binary>
+        </resource>
+        <request>
+            <method value="POST"/>
+            <url value="urn:uuid:0000000a-000b-000c-000d-000000000002"/>
+        </request>
+    </entry>
+    <entry>
+        <fullUrl value="urn:uuid:0000000a-000b-000c-000d-000000000004"/>
+        <resource>
+            <Binary>
+                <meta>
+                    <lastUpdated value="2013-07-01T13:11:33Z"/>
+                </meta>
+                <contentType value="text/plain"/>
+                <data value="Zm9vYmFy"/>
+            </Binary>
+        </resource>
+        <request>
+            <method value="POST"/>
+            <url value="urn:uuid:0000000a-000b-000c-000d-000000000004"/>
+        </request>
+    </entry>
+</Bundle>

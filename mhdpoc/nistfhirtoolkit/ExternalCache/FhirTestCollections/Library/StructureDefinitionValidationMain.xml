@@ -1,0 +1,138 @@
+<TestScript xmlns="http://hl7.org/fhir">
+    <modifierExtension url="urn:module">
+        <extension url="urn:fixture-in">
+            <valueString value="theResource"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="validationServerBase"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="resourceType"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="pdbBundleProfile"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString value="igName"/>
+        </extension>
+        <extension url="urn:fixture-out">
+            <valueString value="validationResponse"/>
+        </extension>
+    </modifierExtension>
+
+    <id value="StructureDefinitionValidationMain"/>
+    <name value="StructureDefinitionValidationMain"/>
+    <description value="This TestScript has the following parameters: The Validation server base parameter is the FHIR base. The resourceType parameter is the resource type to validate. pdbBundleProfile is the canonical URL obtained from the IHE FHIR-based IG Message Semantics page. The igName parameter is the TestCollection.properties igName property value. If igName is an empty FHIR String, the proxy base of the FhirValidationChannelId TestCollection property or the global property is used. The main TestScript declares the igName variable value. When this script is imported as a module, the variables with defaultValues are overridden with the input parameter extensions."/>
+
+    <variable>
+        <name value="validationServerBase"/>
+        <defaultValue value="@inspectorModeTsModuleCallValuePlaceholder"/>
+    </variable>
+    <variable>
+        <name value="resourceType"/>
+        <defaultValue value="@inspectorModeTsModuleCallValuePlaceholder"/>
+    </variable>
+    <variable>
+        <name value="pdbBundleProfile"/>
+        <defaultValue value="@inspectorModeTsModuleCallValuePlaceholder"/>
+    </variable>
+    <variable>
+        <name value="igName"/>
+        <defaultValue value="@inspectorModeTsModuleCallValuePlaceholder"/>
+    </variable>
+
+
+    <test>
+    <description value="StructureDefinition based resource validation - specific IG Version."/>
+    <action>
+        <modifierExtension url="https://github.com/usnistgov/asbestos/wiki/TestScript-Conditional"/>
+        <assert>
+            <description value="Use specific profile version?"/>
+            <expression value="'${igName}'.length() > 0"/>
+            <operator value="equals"/>
+            <value value="true"/>
+            <warningOnly value="false"/>
+        </assert>
+    </action>
+        <action>
+            <operation>
+                <description value="Validation call."/>
+                <label value="validate"/>
+                <type>
+                    <system value="https://github.com/usnistgov/asbestos/wiki/Testscript-Operation-Codes"/>
+                    <code value="ftkValidate"/>
+                </type>
+                <requestHeader>
+                    <field value="x-ftk-Url"/>
+                    <value value="${validationServerBase}/${resourceType}/$validate?profile=${pdbBundleProfile}&amp;igName=${igName}&amp;logEvent=true"/>
+                </requestHeader>
+                <method value="post"/>
+                <sourceId value="theResource"/>
+                <responseId value="validationResponse"/>
+            </operation>
+        </action>
+        <action>
+            <assert>
+                <description value="Returns OperationOutcome."/>
+                <compareToSourceId value="validationResponse"/>
+                <compareToSourceExpression value="OperationOutcome.count() = 1"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+        <action>
+            <assert>
+                <description value="HTTP status code is 200."/>
+                <response value="okay"/>
+                <sourceId value="validationResponse"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+    </test>
+
+    <test>
+    <description value="StructureDefinition based resource validation - server default IG profile."/>
+    <action>
+        <modifierExtension url="https://github.com/usnistgov/asbestos/wiki/TestScript-Conditional"/>
+        <assert>
+            <description value="Use server default profile version?"/>
+            <expression value="'${igName}'.length() = 0"/>
+            <operator value="equals"/>
+            <value value="true"/>
+            <warningOnly value="false"/>
+        </assert>
+    </action>
+        <action>
+            <operation>
+                <description value="Validation call."/>
+                <label value="validate"/>
+                <type>
+                    <system value="https://github.com/usnistgov/asbestos/wiki/Testscript-Operation-Codes"/>
+                    <code value="ftkValidate"/>
+                </type>
+                <requestHeader>
+                    <field value="x-ftk-Url"/>
+                    <value value="${validationServerBase}/${resourceType}/$validate?profile=${pdbBundleProfile}"/>
+                </requestHeader>
+                <method value="post"/>
+                <sourceId value="theResource"/>
+                <responseId value="validationResponse"/>
+            </operation>
+        </action>
+        <action>
+            <assert>
+                <description value="Returns OperationOutcome."/>
+                <compareToSourceId value="validationResponse"/>
+                <compareToSourceExpression value="OperationOutcome.count() = 1"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+        <action>
+            <assert>
+                <description value="HTTP status code is 200."/>
+                <response value="okay"/>
+                <sourceId value="validationResponse"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+    </test>
+</TestScript>
