@@ -1,0 +1,46 @@
+<TestScript xmlns="http://hl7.org/fhir">
+    <modifierExtension url="urn:module">
+        <extension url="urn:fixture-in">
+            <valueString value="request"/>
+        </extension>
+        <extension url="urn:fixture-in">
+            <valueString value="response"/>
+        </extension>
+    </modifierExtension>
+
+    <id value="CheckSubject4"/>
+    <name value="subjectModule"/>
+    <description value="Check Subject."/>
+
+
+    <test>
+        <description value="Check Subject."/>
+
+        <action>
+            <assert id="SUBJ4_1">
+                <description value="{DocumentReference, List}.subject.reference is an absolute external reference or UUID."/>
+                <compareToSourceId value="request"/>
+                <compareToSourceExpression value="Bundle.entry.resource.all($this is DocumentReference or ($this is List and code.coding.code='submissionset') implies (subject.reference.startsWith('http') or subject.reference.startsWith('urn:uuid:')))"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+
+        <action>
+            <assert id="SUBJ4_2">
+                <description value="PDB: subject must reference a Patient."/>
+                <compareToSourceId value="request"/>
+                <compareToSourceExpression value="Bundle.entry.resource.where($this is DocumentReference or ($this is List and code.coding.code='submissionset')).subject.reference.select(contains('/Patient/')).allTrue()"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+        <action>
+            <assert id="SUBJ4_3">
+                <description value="PDB: {DocumentReference, List}.subject.reference must reference same Patient"/>
+                <compareToSourceId value="request"/>
+                <compareToSourceExpression value="Bundle.entry.resource.where($this is DocumentReference or ($this is List and code.coding.code='submissionset')).select(subject.reference).distinct().count() = 1"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+
+    </test>
+</TestScript>

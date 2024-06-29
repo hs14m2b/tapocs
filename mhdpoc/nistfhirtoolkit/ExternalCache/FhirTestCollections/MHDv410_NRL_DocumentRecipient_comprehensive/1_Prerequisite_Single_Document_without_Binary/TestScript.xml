@@ -1,0 +1,74 @@
+<TestScript xmlns="http://hl7.org/fhir">
+    <name value="TestScript"/>
+    <description value="TestScript with NIST FHIR Toolkit Extensions. Submit Provide Document Bundle to MHDS Document Recipient without Binary."/>
+
+    <variable>
+        <name value ="isComprehensiveMetadataExpected"/>
+        <defaultValue value="true"/>
+    </variable>
+    <variable>
+        <name value="getFixtureRequestQueryParams"/>
+        <defaultValue value="?fixtureId=pdb"/>
+    </variable>
+    <variable>
+        <name value="expectedFixtureResponseBundleEntryCount"/>
+        <defaultValue value="2"/>
+    </variable>
+    <variable>
+        <name value="expectedFixtureResponseSsResourceCount"/>
+        <defaultValue value="1"/>
+    </variable>
+    <variable>
+        <name value="expectedFixtureResponseDocRefCount"/>
+        <defaultValue value="1"/>
+    </variable>
+    <variable>
+        <name value="internalPackageSpecificIgValidation"/>
+        <!-- FhirIgName uses the IG package validation -->
+        <expression value="'#{TestCollection.properties:FhirIgName}'"/>
+        <sourceId value="anonymous"/>
+    </variable>
+    <variable>
+        <name value="channelBasedIgValidation"/>
+        <!-- An empty string uses the TestCollection.properties configured channel for external or FTK HAPI FHIR server validation -->
+        <expression value="''"/>
+        <sourceId value="anonymous"/>
+    </variable>
+    <variable>
+        <!-- need to work out how to dynamically set DR_5 and DR_6 to fail as no binary in a dynamic document-->
+        <name value="expectedFailAssertionIdList"/>
+        <defaultValue value="('DR_5'|'TR_1')"/>
+    </variable>
+
+    <test>
+        <description value="Submit Provide Document Bundle to MHD Document Recipient."/>
+        <action>
+            <operation>
+                <description value="Module usage description"/>
+                <modifierExtension url="https://github.com/usnistgov/asbestos/wiki/TestScript-Import">
+                    <extension url="component">
+                        <valueString value="../../Library/AggregateModule/MHD_NRL_PDBSuccess.xml"/>
+                    </extension>
+                    <extension url="urn:variable-in">
+                        <valueString value="isComprehensiveMetadataExpected"/>
+                    </extension>
+                    <extension url="urn:variable-in">
+                        <valueString value="getFixtureRequestQueryParams"/>
+                    </extension>
+                    <extension url="urn:variable-in">
+                        <valueString value="expectedFixtureResponseBundleEntryCount"/>
+                    </extension>
+                    <extension url="urn:variable-in">
+                        <valueString value="expectedFixtureResponseSsResourceCount"/>
+                    </extension>
+                    <extension url="urn:variable-in">
+                        <valueString value="expectedFixtureResponseDocRefCount"/>
+                    </extension>
+                    <extension url="urn:variable-in">
+                        <valueString value="internalPackageSpecificIgValidation"/>
+                    </extension>
+                </modifierExtension>
+            </operation>
+        </action>
+    </test>
+</TestScript>

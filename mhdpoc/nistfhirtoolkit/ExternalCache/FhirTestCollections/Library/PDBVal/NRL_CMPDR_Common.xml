@@ -1,0 +1,76 @@
+<TestScript  xmlns="http://hl7.org/fhir">
+    <modifierExtension url="urn:module">
+        <extension url="urn:fixture-in">
+            <valueString value="request"/>
+        </extension>
+        <extension url="urn:fixture-in">
+            <valueString value="response"/>
+        </extension>
+    </modifierExtension>
+
+    <url value=""/>
+    <name value="NRL_CMPDR_Common"/>
+    <status value="active"/>
+    <description value="NRL DocumentReference comprehensive only."/>
+
+
+    <test>
+        <description value="NRL Comprehensive Metadata only"/>
+        <action>
+            <assert id="CMPDR_1">
+                <description value="DocumentReference.content.format is required."/>
+                <compareToSourceId value="request"/>
+                <compareToSourceExpression value="Bundle.entry.resource.where($this is DocumentReference).all(content.format.exists())"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+        <action>
+            <assert id="CMPDR_2">
+                <description value="DocumentReference.content.attachment.language is required."/>
+                <compareToSourceId value="request"/>
+                <compareToSourceExpression value="Bundle.entry.resource.where($this is DocumentReference).all(content.attachment.language.exists())"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+        <action>
+            <assert id="CMPDR_3_1">
+                <description value="DocumentReference.content.attachment.creation is required."/>
+                <compareToSourceId value="request"/>
+                <compareToSourceExpression value="Bundle.entry.resource.where($this is DocumentReference).all(content.attachment.creation.exists())"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+        <action>
+            <assert id="CMPDR_3">
+                <description value="DocumentReference.content.attachment.contentType is required."/>
+                <compareToSourceId value="request"/>
+                <compareToSourceExpression value="Bundle.entry.resource.where($this is DocumentReference).all(content.attachment.contentType.exists())"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+        <action>
+            <assert id="CMPDR_4">
+                <description value="DocumentReference.context.facilityType is required."/>
+                <compareToSourceId value="request"/>
+                <compareToSourceExpression value="Bundle.entry.resource.where($this is DocumentReference).all(context.facilityType.exists())"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+        <action>
+            <assert id="CMPDR_5">
+                <description value="DocumentReference.context.practiceSetting is required."/>
+                <compareToSourceId value="request"/>
+                <compareToSourceExpression value="Bundle.entry.resource.where($this is DocumentReference).all(context.practiceSetting.exists())"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+        <action>
+            <assert id="CMPDR_6">
+                <description value="DocumentReference.context.sourcePatientInfo is required."/>
+                <compareToSourceId value="request"/>
+                <compareToSourceExpression value="Bundle.entry.select(resource as DocumentReference).select(context.exists() and context.sourcePatientInfo.exists() and context.sourcePatientInfo.reference in contained.where(is(Patient)).id ).allTrue()"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+    </test>
+</TestScript>

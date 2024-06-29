@@ -1,0 +1,100 @@
+<TestScript xmlns="http://hl7.org/fhir">
+    <id value="singleDoc"/>
+    <name value="singleDoc"/>
+    <description value="Send valid Provide Document Bundle transaction containing a single DocumentReference. Minimal metadata is required. (Irrelevant channel message events, such as GET requests or some internal requests, will be skipped for evaluation and the test status will be undefined.)"/>
+
+    <!-- PDB Validations should cover all the assertions, assert using minimumId as commented below should not be needed. -->
+<!--    <fixture id="referenceDocumentReference">-->
+<!--        <autocreate value="false"/>-->
+<!--        <autodelete value="false"/>-->
+<!--        <resource>-->
+<!--            <reference value="Internal/Minimal/DocumentReference/reference"/>-->
+<!--        </resource>-->
+<!--    </fixture>-->
+<!--    <fixture id="referenceDocumentManifest">-->
+<!--        <autocreate value="false"/>-->
+<!--        <autodelete value="false"/>-->
+<!--        <resource>-->
+<!--            <reference value="Internal/Minimal/DocumentManifest/reference"/>-->
+<!--        </resource>-->
+<!--    </fixture>-->
+<!--    <fixture id="documentManifest">-->
+<!--        <autocreate value="false"/>-->
+<!--        <autodelete value="false"/>-->
+<!--        <extension url="urn:subFixture">-->
+<!--          <extension url="urn:fhirPath">-->
+<!--            <valueString value="Bundle.entry.where(resource.is(FHIR.DocumentManifest))"/>-->
+<!--          </extension>-->
+<!--          <extension url="urn:sourceId">-->
+<!--            <valueString value="request"/>-->
+<!--          </extension>-->
+<!--      </extension>-->
+<!--    </fixture>-->
+<!--    <fixture id="documentReference">-->
+<!--        <autocreate value="false"/>-->
+<!--        <autodelete value="false"/>-->
+<!--        <extension url="urn:subFixture">-->
+<!--          <extension url="urn:fhirPath">-->
+<!--            <valueString value="Bundle.entry.where(resource.is(FHIR.DocumentReference))"/>-->
+<!--          </extension>-->
+<!--          <extension url="urn:sourceId">-->
+<!--            <valueString value="request"/>-->
+<!--          </extension>-->
+<!--      </extension>-->
+<!--    </fixture>-->
+    <variable>
+        <name value="isComprehensiveMetadataExpected"/>
+        <defaultValue value="false"/>
+    </variable>
+
+    <test>
+        <description value="PDB Validations."/>
+        <action>
+            <operation>
+                <description value="Module usage description"/>
+                <modifierExtension url="https://github.com/usnistgov/asbestos/wiki/TestScript-Import">
+                    <extension url="component">
+                        <valueString value="../../Library/AggregateModule/MHDBundleEvalAggregateResult.xml"/>
+                    </extension>
+                    <extension url="urn:fixture-in">
+                        <valueString value="request"/>
+                    </extension>
+                    <extension url="urn:fixture-in">
+                        <valueString value="response"/>
+                    </extension>
+                    <extension url="urn:variable-in">
+                        <valueString value="isComprehensiveMetadataExpected"/>
+                    </extension>
+                </modifierExtension>
+            </operation>
+        </action>
+    </test>
+    <test>
+        <name value="Evaluations"/>
+        <description value="Test specific."/>
+        <action>
+            <assert>
+                <description value="Request includes one DocumentReference."/>
+                <compareToSourceId value="request"/>
+                <compareToSourceExpression value="Bundle.entry.where(resource.is(FHIR.DocumentReference)).count() = 1"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+<!--        <action>-->
+<!--            <assert>-->
+<!--                <description value="DocumentManifest qualifies as Minimal Metadata."/>-->
+<!--                <sourceId value="documentManifest"/>-->
+<!--                <minimumId value="referenceDocumentManifest"/>-->
+<!--                <warningOnly value="false"/>-->
+<!--            </assert>-->
+<!--        </action>-->
+<!--        <action>-->
+<!--            <assert>-->
+<!--                <description value="DocumentReference qualifies as Minimal Metadata."/>-->
+<!--                <sourceId value="documentReference"/>-->
+<!--                <minimumId value="referenceDocumentReference"/>-->
+<!--                <warningOnly value="false"/>-->
+<!--            </assert>-->
+<!--        </action>-->
+    </test>
+</TestScript>

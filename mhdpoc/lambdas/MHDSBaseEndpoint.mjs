@@ -19,6 +19,7 @@ const MHD_3_MINIMAL_PROFILE = "ihe.net/fhir/StructureDefinition/IHE_MHD_Provide_
 const MHD_3_COMPREHENSIVE_PROFILE = "ihe.net/fhir/StructureDefinition/IHE_MHD_Provide_Comprehensive_DocumentBundle";
 const MHD_4_MINIMAL_PROFILE = "profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Minimal.ProvideBundle";
 const MHD_4_COMPREHENSIVE_PROFILE = "profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Comprehensive.ProvideBundle";
+const MHD_4_COMPREHENSIVE_UNCONTAINED_PROFILE = "profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.UnContained.Comprehensive.ProvideBundle";
 
 //hard coded endpoint values
 const DIRECT_ENDPOINT = "https://" + APIENVIRONMENT + "-mhdpoc-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/";
@@ -345,23 +346,37 @@ async function processmhd4(event, requestJson, targetEndpoint)
         console.log(nrlresponse);
         //set URL location of DR from NRL response
         //the id of the DocumentReference is the end of the "location" header returned by NRL
-        let location = nrlresponse.headers.location;
-        let nrlId = location.substring(location.lastIndexOf("/")+1);
-        entryTemplate.response.location = targetEndpoint + "DocumentReference/" + nrlId;
-        responseTemplate.entry.push(JSON.parse(JSON.stringify(entryTemplate)));
-        //save file to S3 with the new id
-        //save item to S3
-        DocumentReferenceObject.id = nrlId;
-        let body = JSON.stringify(DocumentReferenceObject);
-        let key = "DocumentReference-urn:oid:"+DRMASTERID;
-        let s3response = await writeFile(body, S3BUCKET, key);
-        key = "DocumentReference-urn:uuid:"+DRUUID;
-        s3response = await writeFile(body, S3BUCKET, key);
-        console.log(JSON.stringify(s3response));
-        key = "DocumentReference-"+nrlId;
-        s3response = await writeFile(body, S3BUCKET, key);
-        console.log(JSON.stringify(s3response));
-
+        //check status code
+        if (nrlresponse.status > 299)
+        {
+            //error scenario
+            let actualResponseEntry = JSON.parse(JSON.stringify(entryTemplate));
+            delete actualResponseEntry.response.location;
+            actualResponseEntry.response.status = ""+nrlresponse.status;
+            if (entry.fullUrl) actualResponseEntry['fullUrl'] = entry.fullUrl;
+            let outcome = JSON.parse(nrlresponse.body);
+            actualResponseEntry.response['outcome'] = outcome;
+            responseTemplate.entry.push(JSON.parse(JSON.stringify(actualResponseEntry)));
+          }
+        else
+        {
+          let location = nrlresponse.headers.location;
+          let nrlId = location.substring(location.lastIndexOf("/")+1);
+          entryTemplate.response.location = targetEndpoint + "DocumentReference/" + nrlId;
+          responseTemplate.entry.push(JSON.parse(JSON.stringify(entryTemplate)));
+          //save file to S3 with the new id
+          //save item to S3
+          DocumentReferenceObject.id = nrlId;
+          let body = JSON.stringify(DocumentReferenceObject);
+          let key = "DocumentReference-urn:oid:"+DRMASTERID;
+          let s3response = await writeFile(body, S3BUCKET, key);
+          key = "DocumentReference-urn:uuid:"+DRUUID;
+          s3response = await writeFile(body, S3BUCKET, key);
+          console.log(JSON.stringify(s3response));
+          key = "DocumentReference-"+nrlId;
+          s3response = await writeFile(body, S3BUCKET, key);
+          console.log(JSON.stringify(s3response));
+        }
       }
       if (entry.resource.resourceType == "List") 
       {
@@ -436,6 +451,8 @@ export const handler = async (event) => {
         if (bundleprofile.endsWith(MHD_3_COMPREHENSIVE_PROFILE)) return await processmhd3(event, requestJson, targetEndpoint);
         if (bundleprofile.endsWith(MHD_4_MINIMAL_PROFILE)) return await processmhd4(event, requestJson, targetEndpoint);
         if (bundleprofile.endsWith(MHD_4_COMPREHENSIVE_PROFILE)) return await processmhd4(event, requestJson, targetEndpoint);
+        // Requirements of MHDS state that comprehensive uncontained is required
+        if (bundleprofile.endsWith(MHD_4_COMPREHENSIVE_UNCONTAINED_PROFILE)) return await processmhd4(event, requestJson, targetEndpoint);
         return returnError("Unknown Bundle meta profile");
     } catch (error) {
         console.log("caught error " + error.message);

@@ -1,0 +1,74 @@
+<TestScript xmlns="http://hl7.org/fhir">
+    <modifierExtension url="urn:module">
+        <extension url="urn:fixture-in">
+            <valueString value="request"/>
+        </extension>
+        <extension url="urn:fixture-in">
+            <valueString value="response"/>
+        </extension>
+    </modifierExtension>
+
+    <id value="RM_RequestMessage"/>
+    <name value="requestMessage"/>
+    <description value="Evaluate PDB-request Bundle"/>
+
+    <test>
+    <name value="Request message"/>
+    <description value="ITI-65 PDB Request Message."/>
+    <action>
+        <assert id="RM_1">
+            <description value="HTTP POST request method"/>
+            <requestMethod value="post"/>
+            <warningOnly value="false"/>
+        </assert>
+    </action>
+    <action>
+        <assert id="RM_2">
+            <description value="PDB: Request contains one DocumentManifest|MHDPDBOneDocumentManifest"/>
+            <compareToSourceId value="request"/>
+            <compareToSourceExpression value="Bundle.entry.resource.where(is(FHIR.DocumentManifest)).count() = 1"/>
+            <warningOnly value="false"/>
+        </assert>
+    </action>
+    <action>
+        <assert id="RM_3">
+            <description value="PDB: Request contains one or more DocumentReference|MHDPDBOneDocumentManifest"/>
+            <compareToSourceId value="request"/>
+            <compareToSourceExpression value="Bundle.entry.resource.where(is(FHIR.DocumentReference)).count() >= 1"/>
+            <warningOnly value="false"/>
+        </assert>
+    </action>
+    <action>
+        <assert id="RM_4">
+            <description value="PDB: Comprehensive or Minimal metadata identified in profile|MHDPDBMetadataType"/>
+            <compareToSourceId value="request"/>
+            <compareToSourceExpression value="Bundle.meta.profile = 'http://ihe.net/fhir/StructureDefinition/IHE_MHD_Provide_Comprehensive_DocumentBundle' or Bundle.meta.profile='http://ihe.net/fhir/StructureDefinition/IHE_MHD_Provide_Minimal_DocumentBundle'"/>
+            <warningOnly value="false"/>
+        </assert>
+    </action>
+    <action>
+        <assert id="RM_5">
+            <description value="PDB: All DocumentReferences in Bundle are linked to DocumentManifest"/>
+            <compareToSourceId value="request"/>
+            <compareToSourceExpression value="Bundle.entry.all(resource.is(FHIR.DocumentReference).fullUrl) in Bundle.entry.resource.where(is(FHIR.DocumentManifest).content.reference).exists()"/>
+            <warningOnly value="false"/>
+        </assert>
+    </action>
+    <action>
+        <assert id="RM_6">
+            <description value="PDB: DocumentManifest links to only DocumentReferences that are in Bundle"/>
+            <compareToSourceId value="request"/>
+            <compareToSourceExpression value="Bundle.entry.resource.all(is(FHIR.DocumentManifest) implies content.reference = Bundle.entry.where(resource.is(FHIR.DocumentReference)).fullUrl).exists()"/>
+            <warningOnly value="false"/>
+        </assert>
+    </action>
+    <action>
+        <assert id="RM_7">
+            <description value="PDB: {DocumentReference, DocumentManifest}.subject.reference is absolute external reference or UUID.|MHDPDBPatientReference"/>
+            <compareToSourceId value="request"/>
+            <compareToSourceExpression value="Bundle.entry.resource.all($this is(FHIR.DocumentReference) or $this is(FHIR.DocumentManifest) implies ($this.subject.reference.startsWith('http') or $this.subject.reference.startsWith('urn:uuid:')   ))"/>
+            <warningOnly value="false"/>
+        </assert>
+    </action>
+</test>
+</TestScript>

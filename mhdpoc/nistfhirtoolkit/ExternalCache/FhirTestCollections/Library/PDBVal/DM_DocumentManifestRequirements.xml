@@ -1,0 +1,42 @@
+<TestScript xmlns="http://hl7.org/fhir">
+    <modifierExtension url="urn:module">
+        <extension url="urn:fixture-in">
+            <valueString value="request"/>
+        </extension>
+        <extension url="urn:fixture-in">
+            <valueString value="response"/>
+        </extension>
+    </modifierExtension>
+
+    <id value="DM_DocumentManifestRequirements"/>
+    <name value="documentManifestValidations"/>
+    <description value="DocumentManifest requirements."/>
+
+    <test>
+    <description value="DocumentManifest requirements."/>
+    <action>
+        <assert id="DM_1">
+            <description value="DocumentManifest: masterIdentifier is required.|MHDSendingActorMetadataAttributeOptionality"/>
+            <compareToSourceId value="request"/>
+            <compareToSourceExpression value="Bundle.entry.resource.where(is(FHIR.DocumentManifest)).masterIdentifier.exists()"/>
+            <warningOnly value="false"/>
+        </assert>
+    </action>
+    <action>
+        <assert id="DM_2">
+            <description value="DocumentManifest: source is required.|MHDSendingActorMetadataAttributeOptionality"/>
+            <compareToSourceId value="request"/>
+            <compareToSourceExpression value="Bundle.entry.resource.where(is(FHIR.DocumentManifest)).source.exists()"/>
+            <warningOnly value="false"/>
+        </assert>
+    </action>
+        <action>
+            <assert id="DM_3">
+                <description value="DocumentManifest: created is required.|MHDSendingActorMetadataAttributeOptionality"/>
+                <compareToSourceId value="request"/>
+                <compareToSourceExpression value="Bundle.entry.resource.where(is(FHIR.DocumentManifest)).created.exists()"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+    </test>
+</TestScript>

@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 const { sign } = jwt;
 const HTTPS = "https://";
-import { getSecretValue, environmentNeedsAuth, nrlEnvironmentMapping, createSignedJwtForAuth } from './api_common_functions.mjs';
+import { getSecretValue, environmentNeedsAuth, nrlEnvironmentMapping, createSignedJwtForAuth, getOAuth2AccessToken } from './api_common_functions.mjs';
 
 let https;
 try {

@@ -1,0 +1,130 @@
+<Bundle xmlns="http://hl7.org/fhir">
+    <id value="xds"/>
+    <meta>
+        <lastUpdated value="2013-07-01T13:11:33Z"/>
+        <!--@{BundleMetaMinimalProfileElement}-->
+    </meta>
+    <type value="transaction"/>
+    <entry>
+        <fullUrl value="urn:uuid:2e404af3-077f-4bee-b7a6-a9be97e1ce01"/>
+        <resource>
+            <DocumentReference>
+                <meta>
+                    <!--@{DocumentReferenceMetaMinimalProfileElement}-->
+                </meta>
+                <id value="Y05868-2e404af3-077f-4bee-b7a6-a9be97e1ce01"/>
+                <text>
+                    <div xmlns="http://www.w3.org/1999/xhtml">Comment</div>
+                    <status value="empty"/>
+                </text>
+                <masterIdentifier>
+                    <system value="urn:ietf:rfc:3986"/>
+                    <value value="urn:oid:1.2.129.6.58.92.88336.4"/>
+                </masterIdentifier>
+                <subject>
+                    <identifier>
+                        <system value="https://fhir.nhs.uk/Id/nhs-number"/>
+                        <value value="${patientResourceIdValue}"/>
+                    </identifier>
+                </subject>
+                <type>
+                    <coding>
+                        <system value="http://snomed.info/sct" />
+                        <code value="736253002" />
+                        <display value="Mental Health Crisis Plan"/>
+                    </coding>
+                </type>
+                <custodian>
+                    <identifier>
+                        <system value="https://fhir.nhs.uk/Id/ods-organization-code"/>
+                        <value value="Y05868"/>
+                    </identifier>
+                </custodian>
+                <status value="current"/>
+                <date value="2015-02-07T13:28:17.239+02:00"/>
+                <content>
+                    <attachment>
+                        <contentType value="text/plain"/>
+                        <url value="urn:uuid:3fdc72f4-a11d-4a9d-9260-a9f745779e03"/>
+                        <language value="en-us"/>
+                    </attachment>
+                </content>
+                <relatesTo>
+                    <code value="replaces"/>
+                    <target>
+                        <type value="DocumentReference"/>
+                        <identifier>
+                            <value value="${originalId}"/>
+                        </identifier>
+                        <reference value="${original}"/>
+                    </target>
+                </relatesTo>
+            </DocumentReference>
+        </resource>
+        <request>
+            <method value="POST"/>
+            <url value="DocumentReference"/>
+        </request>
+    </entry>
+    <entry>
+        <fullUrl value="urn:uuid:3fdc72f4-a11d-4a9d-9260-a9f745779e02"/>
+        <resource>
+            <List>
+                <meta>
+                    <profile value="https://profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Comprehensive.SubmissionSet"/>
+                </meta>
+                <text>
+                    <status value="extensions"/>
+                    <div xmlns="http://www.w3.org/1999/xhtml">List(SubmissionSet) with Patient</div>
+                </text>
+                <extension
+                        url="https://profiles.ihe.net/ITI/MHD/StructureDefinition/ihe-designationType">
+                    <valueCodeableConcept>
+                        <coding>
+                            <system value="http://snomed.info/sct"/>
+                            <code value="225728007"/>
+                            <display value="Accident and Emergency department"/>
+                        </coding>
+                    </valueCodeableConcept>
+                </extension>
+                <extension
+                        url="https://profiles.ihe.net/ITI/MHD/StructureDefinition/ihe-sourceId">
+                    <valueIdentifier>
+                        <value value="urn:oid:1.3.6.1.4.1.21367.2009.1.2.1"/>
+                    </valueIdentifier>
+                </extension>
+                <identifier>
+                    <use value="official"/>
+                    <system value="urn:ietf:rfc:3986"/>
+                </identifier>
+                <identifier>
+                    <use value="usual"/>
+                    <system value="urn:ietf:rfc:3986"/>
+                    <value value="urn:oid:1.2.129.6.58.92.88337.4"/>
+                </identifier>
+                <status value="current"/>
+                <mode value="working"/>
+                <code>
+                    <coding>
+                        <system
+                                value="https://profiles.ihe.net/ITI/MHD/CodeSystem/MHDlistTypes"/>
+                        <code value="submissionset"/>
+                    </coding>
+                </code>
+                <subject>
+                    <reference value="${patientResourceId}"/>
+                </subject>
+                <date value="2021-08-23T22:13:00-05:00"/>
+                <entry>
+                    <item>
+                        <reference value="urn:uuid:2e404af3-077f-4bee-b7a6-a9be97e1ce01"/>
+                    </item>
+                </entry>
+            </List>
+        </resource>
+        <request>
+            <method value="POST"/>
+            <url value="List"/>
+        </request>
+    </entry>
+</Bundle>

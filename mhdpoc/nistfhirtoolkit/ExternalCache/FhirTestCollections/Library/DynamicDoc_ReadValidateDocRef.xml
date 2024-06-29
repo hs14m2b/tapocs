@@ -1,0 +1,48 @@
+<TestScript  xmlns="http://hl7.org/fhir">
+    <modifierExtension url="urn:module">
+        <extension url="urn:variable-in">
+            <valueString  value="DocRefUrl"/>
+        </extension>
+        <extension url="urn:variable-in">
+            <valueString  value="patientResourceId"/>
+        </extension>
+        <extension url="urn:fixture-in">
+            <valueString value="submittedDocRef"/>
+        </extension>
+    </modifierExtension>
+
+    <url value=""/>
+    <name value="ReadValidateDocRef"/>
+    <status value="active"/>
+    <description value="Read DocumentReference and validate against what was sent."/>
+
+    <test>
+        <description value="Read back the DocumentReference and validate."/>
+        <action>
+            <operation>
+                <description value="Call module to read back the DocumentReference."/>
+                <modifierExtension url="https://github.com/usnistgov/asbestos/wiki/TestScript-Import">
+                    <extension url="component">
+                        <valueString value="DynamicDoc_ReadDocRef.xml"/>
+                    </extension>
+                    <extension url="urn:variable-in">
+                        <valueString  value="DocRefUrl"/>
+                    </extension>
+                    <extension url="urn:variable-in">
+                        <valueString value="patientResourceId"/>
+                    </extension>
+                    <extension url="urn:fixture-out">
+                        <valueString value="readBackResponse"/>
+                    </extension>
+                </modifierExtension>
+            </operation>
+        </action>
+        <action>
+            <assert>
+                <description value="... check server copy against submitted copy. Any attributes missing?"/>
+                <minimumId value="submittedDocRef"/>
+                <warningOnly value="false"/>
+            </assert>
+        </action>
+    </test>
+</TestScript>
