@@ -1,0 +1,226 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+    "Description" : "Cloudformation template to create a Kafka cluster within the TA PoC account",
+    "Parameters": {
+        "BRANCHNAME": {
+          "Type": "String",
+          "Default": "main",
+          "Description": "The branchname to derive fqdn"
+        },
+        "ENVIRONMENT": {
+            "Type": "String",
+            "Description": "The environment the deployment supports - values are internal-dev, internal-dev-sandbox, internal-qa, internal-qa-sandbox, ref (all previous are non-prod), sandbox, dev, int, prod",
+            "Default": "dev"
+        },
+        "PROJECTNAME": {
+          "Type": "String",
+          "Default": "kafkapoc",
+          "Description": "Project name"
+        },
+        "CERTIFICATEARN": {
+          "Type": "String",
+          "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/c4bf4fbf-7440-4345-8720-eff73b19bcce",
+          "Description": "The certificate ARN for the nhsdta.com domain"
+        },
+        "ROOTDOMAIN": {
+          "Type": "String",
+          "Default": "nhsdta.com",
+          "Description": "The root domain name"
+        },
+        "SHORTCODE": {
+          "Type": "String",
+          "Default": "mabr8",
+          "Description": "The shortcode for tags"
+        }
+      },
+    "Resources": {
+        "KafkaPoCCluster": 
+        {
+            "Type" : "AWS::MSK::Cluster",
+            "Properties" : {
+                "BrokerNodeGroupInfo" : {
+                    "BrokerAZDistribution" : "DEFAULT",
+                    "ClientSubnets" : [
+                        "subnet-3630745f", "subnet-a837e0e4", "subnet-6ae26210"
+                    ],
+                    "InstanceType" : "kafka.t3.small",
+                    "SecurityGroups" : [ "sg-c40c86a5", "sg-095952e98908a322b" ]
+                },
+                "ClientAuthentication" : {
+                    "Sasl" : {
+                        "Iam" : {
+                            "Enabled" : false
+                        },
+                        "Scram" : {
+                            "Enabled" : true
+                        }
+                    },
+                    "Unauthenticated" : {
+                        "Enabled" : true
+                    }
+                },
+                "ClusterName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kafkacluster"]]},
+                "EncryptionInfo" : {
+                    "EncryptionAtRest" : {
+                        "DataVolumeKMSKeyId" : ""
+                    },
+                    "EncryptionInTransit" : {
+                        "ClientBroker" : "TLS",
+                        "InCluster" : true
+                    }
+                },
+                "KafkaVersion" : "3.5.1",
+                "NumberOfBrokerNodes" : 3,
+                "Tags" : {"shortcode": { "Ref": "SHORTCODE" }}
+            }
+        },
+        "KafkaClientSecretKMSKey" : {
+            "Type" : "AWS::KMS::Key",
+            "Properties" : {
+                "Description" : "KMS key used to encrypt Kafka client ",
+                "Enabled" : true,
+                "EnableKeyRotation" : true,
+                "KeyPolicy" : {
+                    "Version": "2012-10-17",
+                    "Id": "key-default-1",
+                    "Statement": [
+                        {
+                            "Sid": "Enable IAM User Permissions",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": { "Fn::Join" : [ "", [ "arn:aws:iam::",{ "Ref" : "AWS::AccountId" },":root"] ] }
+                            },
+                            "Action": "kms:*",
+                            "Resource": "*"
+                        }
+                    ]
+                },
+                "KeySpec" : "SYMMETRIC_DEFAULT",
+                "KeyUsage" : "ENCRYPT_DECRYPT",
+                "MultiRegion" : false,
+                "PendingWindowInDays" : 30,
+                "Tags" : [ {"Key": "shortcode", "Value": { "Ref" : "SHORTCODE" }} ]
+            }
+        },
+        "KafkaClientSecret001": {
+            "Type" : "AWS::SecretsManager::Secret",
+            "Properties" : {
+                "Description" : "Secret to hold client password for connecting to Kafka",
+                "KmsKeyId": {"Ref": "KafkaClientSecretKMSKey"},
+                "Name" : {"Fn::Join": ["",["AmazonMSK_",{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kafkaclusterclient", "001"]]},
+                "Tags" : [ {
+                    "Key" : "shortcode",
+                    "Value" : { "Ref": "SHORTCODE" }
+                  }
+                ]
+            }
+        },
+        "KafkaRole": {
+            "Type" : "AWS::IAM::Role",
+            "Properties" : {
+                "AssumeRolePolicyDocument" :  {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Action": "sts:AssumeRole",
+                        "Effect": "Allow",
+                        "Principal": {
+                          "Service": ["ec2.amazonaws.com","lambda.amazonaws.com"]
+                        }
+                      }
+                    ]
+                },
+                "Description" : "IAM role for interacting with Kafka cluster",
+                "RoleName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kafkaclusterrole"]]},
+                "Tags" : [ {
+                    "Key" : "shortcode",
+                    "Value" : { "Ref": "SHORTCODE" }
+                  }
+                ]
+            }
+        },
+        "KafkaPolicy": {
+            "Type" : "AWS::IAM::Policy",
+            "Properties" : {
+                "PolicyDocument" : {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "kafka-cluster:Connect",
+                                "kafka-cluster:AlterCluster",
+                                "kafka-cluster:DescribeCluster"
+                            ],
+                            "Resource": [
+                                {"Fn::Join":["", ["arn:aws:kafka:",{"Ref": "AWS::Region"},":", {"Ref": "AWS::AccountId"}, ":cluster/", {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kafkacluster"]]}, "/*"]]} 
+                            ]
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "kafka-cluster:*Topic*",
+                                "kafka-cluster:WriteData",
+                                "kafka-cluster:ReadData"
+                            ],
+                            "Resource": [
+                                {"Fn::Join":["", ["arn:aws:kafka:",{"Ref": "AWS::Region"},":", {"Ref": "AWS::AccountId"}, ":topic/", {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kafkacluster"]]}, "/*"]]} 
+                            ]
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "kafka-cluster:AlterGroup",
+                                "kafka-cluster:DescribeGroup"
+                            ],
+                            "Resource": [
+                                {"Fn::Join":["", ["arn:aws:kafka:",{"Ref": "AWS::Region"},":", {"Ref": "AWS::AccountId"}, ":group/", {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kafkacluster"]]}, "/*"]]} 
+                            ]
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "kafka:*"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                },
+                "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kafkaclusterpolicy"]]},
+                "Roles" : [ { "Ref": "KafkaRole" } ]
+            }
+        },
+        "KafkaEC2ClientInstanceProfile": {
+            "Type" : "AWS::IAM::InstanceProfile",
+            "Properties" : {
+                "InstanceProfileName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kafkaec2clientinstanceprofile"]]},
+                "Roles" : [ { "Ref": "KafkaRole" } ]
+            }
+        },
+        "KafkaEC2Client": {
+            "Type" : "AWS::EC2::Instance",
+            "Properties" : {
+                "AvailabilityZone" : "eu-west-2a",
+                "DisableApiTermination" : false,
+                "IamInstanceProfile" : { "Ref": "KafkaEC2ClientInstanceProfile" },
+                "ImageId": "ami-0c29bf45d019db4c2",
+                "InstanceInitiatedShutdownBehavior" : "stop",
+                "InstanceType" : "t2.micro",
+                "KeyName" : "mabr8-kafkapoc",
+                "SecurityGroupIds" : [ "sg-c40c86a5", "sg-095952e98908a322b" ],
+                "SourceDestCheck" : false,
+                "SubnetId" : "subnet-6ae26210",
+                "Tags" : [ {
+                    "Key" : "shortcode",
+                    "Value" : { "Ref": "SHORTCODE" }
+                  },
+                  {
+                    "Key" : "Name",
+                    "Value" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kafkaec2client"]]}
+                  }
+                ]
+            }
+        }
+                    
+    }
+}

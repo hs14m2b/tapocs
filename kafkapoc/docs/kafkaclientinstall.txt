@@ -1,0 +1,55 @@
+sudo yum -y install java-11
+wget https://archive.apache.org/dist/kafka/3.5.1/kafka_2.13-3.5.1.tgz
+tar -xzf kafka_2.13-3.5.1.tgz
+cd kafka_2.13-3.5.1/libs
+wget https://github.com/aws/aws-msk-iam-auth/releases/download/v1.1.1/aws-msk-iam-auth-1.1.1-all.jar
+cd ../bin
+touch client.properties
+echo "security.protocol=SASL_SSL" >> client.properties
+echo "sasl.mechanism=AWS_MSK_IAM" >> client.properties
+echo "sasl.jaas.config=software.amazon.msk.auth.iam.IAMLoginModule required;" >> client.properties
+echo "sasl.client.callback.handler.class=software.amazon.msk.auth.iam.IAMClientCallbackHandler" >> client.properties
+
+Unauthenticated - just using SSL
+
+echo "security.protocol=SSL" > client.properties
+
+connecting to the cluster
+export BS=b-2.sandboxkafkapocmabr8ka.15nn1v.c2.kafka.eu-west-2.amazonaws.com:9094
+./kafka-topics.sh --create --bootstrap-server $BS --command-config client.properties --replication-factor 3 --partitions 1 --topic solarchkafkapoctopic
+
+./kafka-console-producer.sh --broker-list $BS --producer.config client.properties --topic solarchkafkapoctopic
+
+./kafka-console-consumer.sh --bootstrap-server $BS --consumer.config client.properties --topic solarchkafkapoctopic --from-beginning
+
+
+Authenticated - using SSL_SCRAM
+
+add the following to the secrets manager secret
+{
+  "username": "alice",
+  "password": "alice-secret"
+}
+
+create file users_jaas.conf in $HOME
+KafkaClient {
+   org.apache.kafka.common.security.scram.ScramLoginModule required
+   username="alice"
+   password="alice-secret";
+};
+
+export KAFKA_OPTS=-Djava.security.auth.login.config=/home/ec2-user/users_jaas.conf
+touch /tmp/kafka.client.truststore.jks
+copy cacerts (from a JDK or JRE bin/security folder) /tmp/kafka.client.truststore.jks
+create client_sasl.properties file in the kafka bin directory
+echo "security.protocol=SASL_SSL" > client_sasl.properties 
+echo "sasl.mechanism=SCRAM-SHA-512" >> client_sasl.properties
+echo "ssl.truststore.location=/tmp/kafka.client.truststore.jks" >> client_sasl.properties
+
+get bootstrap brokers name for sasl auth
+aws kafka get-bootstrap-brokers --region eu-west-2 --cluster-arn arn:aws:kafka:eu-west-2:865198111306:cluster/sandbox-kafkapoc-mabr8-kafkacluster/04cd946f-46ef-4177-9e1b-d465d639bed4-2
+
+export BSSASL=b-1.sandboxkafkapocmabr8ka.15nn1v.c2.kafka.eu-west-2.amazonaws.com:9096
+
+./kafka-console-producer.sh --broker-list $BSSASL --topic solarchkafkapoctopic --producer.config client_sasl.properties
+./kafka-console-consumer.sh --bootstrap-server $BSSASL --topic solarchkafkapoctopic --from-beginning --consumer.config client_sasl.properties

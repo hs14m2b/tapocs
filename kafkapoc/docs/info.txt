@@ -1,0 +1,12 @@
+Notes for Kafka cluster
+- the VPC needs to have DNS hostnames enabled for Kafka
+- in the TA account the vpc_sandbox VPC has DNS hostnames enabled
+- need to have a security group that allows inbound port 9098 and 9094 to cluster
+
+follow these instructions to set up client on ec2 instance (for serverless cluster)
+https://docs.aws.amazon.com/msk/latest/developerguide/create-serverless-cluster-client.html
+
+(for normal cluster)
+https://docs.aws.amazon.com/msk/latest/developerguide/create-topic.html
+
+
