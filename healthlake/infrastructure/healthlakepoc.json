@@ -178,7 +178,7 @@
       "Type" : "AWS::KMS::Key",
       "Properties" : {
           "BypassPolicyLockoutSafetyCheck" : false,
-          "Description" : "Key for managing encryption in AWS Healthlake datastore",
+          "Description" : "Key for managing encryption in AWS Healthlake datastore and S3 bucket",
           "Enabled" : true,
           "EnableKeyRotation" : true,
           "KeyPolicy" : {
@@ -240,6 +240,111 @@
             "SourceAccount": {"Ref": "AWS::AccountId"},
             "SourceArn": { "Fn::Join": ["", ["arn:aws:healthlake:", {"Ref": "AWS::Region"},":", {"Ref": "AWS::AccountId"},":datastore/fhir/*" ]] }
         }
+    },
+    "inputBucketForHealthlake": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "BucketKeyEnabled": true,
+              "ServerSideEncryptionByDefault": {
+                "KMSMasterKeyID": {"Ref" : "healthlakeKey"},
+                "SSEAlgorithm": "aws:kms"
+              }
+            }
+          ]
+        },
+        "BucketName": {"Fn::Join": ["-", [{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "healthlakeinputbucket"]]},
+        "ObjectLockEnabled": false,
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }]
+      },
+      "DependsOn": ["healthlakeKey"]
+    },
+    "outputBucketForHealthlake": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "BucketKeyEnabled": true,
+              "ServerSideEncryptionByDefault": {
+                "KMSMasterKeyID": {"Ref" : "healthlakeKey"},
+                "SSEAlgorithm": "aws:kms"
+              }
+            }
+          ]
+        },
+        "BucketName": {"Fn::Join": ["-", [{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "healthlakeoutputbucket"]]},
+        "ObjectLockEnabled": false,
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }]
+      },
+      "DependsOn": ["healthlakeKey"]
+    },
+    "healthlakeInputUserPolicy":{
+      "Type" : "AWS::IAM::Policy",
+      "Properties" : {
+          "PolicyDocument" : {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Action": [
+                        "s3:ListBucket",
+                        "s3:GetBucketPublicAccessBlock",
+                        "s3:GetEncryptionConfiguration"
+                    ],
+                    "Resource": [
+                        {"Fn::GetAtt": ["inputBucketForHealthlake", "Arn"]},
+                        {"Fn::GetAtt": ["outputBucketForHealthlake", "Arn"]}
+                    ],
+                    "Effect": "Allow"
+                },
+                {
+                    "Action": [
+                        "s3:GetObject"
+                    ],
+                    "Resource": [
+                        {"Fn::Join": ["", [{"Fn::GetAtt": ["inputBucketForHealthlake", "Arn"]}, "/*"]]}
+                    ],
+                    "Effect": "Allow"
+                },
+                {
+                    "Action": [
+                        "s3:PutObject"
+                    ],
+                    "Resource": [
+                      {"Fn::Join": ["", [{"Fn::GetAtt": ["outputBucketForHealthlake", "Arn"]}, "/*"]]}
+                    ],
+                    "Effect": "Allow"
+                },
+                {
+                    "Action": [
+                        "kms:DescribeKey",
+                        "kms:GenerateDataKey*"
+                    ],
+                    "Resource": [
+                        {"Fn::GetAtt": ["healthlakeKey", "Arn"]}
+                    ],
+                    "Effect": "Allow"
+                }
+            ]
+          },
+          "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "healthlakeinputpolicy"]]},
+          "Roles": [{"Ref": "healthlakeServiceRole"}]
+        },
+        "DependsOn": ["healthlakeServiceRole"]
     }
   }
 }
