@@ -1,0 +1,39 @@
+{
+  "resourceType" : "SearchParameter",
+  "id" : "uk-core-odscode",
+  "url" : "http://hl7.org/fhir/R4/SearchParameter/uk-core-odscode",
+  "version" : "0.0.1",
+  "name" : "UKCoreNHSODSCode",
+  "status" : "active",
+  "date" : "2024-05-08",
+  "publisher" : "NHS England TSAS",
+  "contact" : [
+    {
+      "telecom" : [
+        {
+          "system" : "other",
+          "value" : "https://https://www.england.nhs.uk//"
+        }
+      ]
+    }
+  ],
+  "description" : "Creates a search parameter for resources with a meta tag representing an ODS Code.",
+  "jurisdiction" : [
+    {
+      "coding" : [
+        {
+          "system" : "urn:iso:std:iso:3166",
+          "code" : "UK",
+          "display" : "United Kingdom"
+        }
+      ]
+    }
+  ],
+  "code" : "odscode",
+  "base" : [
+    "Immunization",
+    "DocumentReference"
+  ],
+  "type" : "token",
+  "expression" : "Immunization.meta.tag.where(system = 'https://fhir.nhs.uk/Id/ods-organization-code').code | DocumentReference.custodian.identifier.where(system = 'https://fhir.nhs.uk/Id/ods-organization-code').value"
+}

@@ -1,0 +1,22 @@
+{
+    "resourceType": "Bundle",
+    "id": "xds",
+    "meta": {
+      "lastUpdated": "2013-07-01T13:11:33Z",
+      "profile": [
+        "https://profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Comprehensive.ProvideBundle"
+      ]
+    },
+    "type": "transaction",
+    "entry": [
+      {
+        "fullUrl": "urn:uuid:1e404af3-077f-4bee-b7a6-a9be97e1ce01",
+        "resource": {
+        },
+        "request": {
+          "method": "POST",
+          "url": "Immunization"
+        }
+      }
+    ]
+  }

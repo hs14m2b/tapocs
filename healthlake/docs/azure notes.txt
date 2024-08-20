@@ -22,6 +22,8 @@ Then need to elevate access to "owner" to enable the "Add Role Assignment" optio
 Limitations
  - need to have a Patient resource created in order to search by Patient attribute on other resources. 
  - Also Azure HDS doesn't support search by ":identifier" modifier, just the plain reference to the "id" of the target resource.
+ - no simple way to prevent updating resources by other organisations. Attempted to use conditional update (see https://hl7.org/fhir/R4/http.html#update), however this does not work as FHIR conditional update 
+   indicates that no match results in a "Update as Create" and simply overwrites the resource...looks like a proxy would need to manually check.
 
 
 

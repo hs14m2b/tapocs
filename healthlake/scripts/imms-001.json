@@ -1,6 +1,12 @@
 {
         "id" : "90640007.747583-127",
         "resourceType" : "Immunization",
+        "meta": {
+          "tag" : [{
+            "system" : "https://fhir.nhs.uk/Id/ods-organization-code",
+            "code" : "RX809"
+          }]
+        },
         "extension" : [ {
           "url" : "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
           "valueCodeableConcept" : {

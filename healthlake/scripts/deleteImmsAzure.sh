@@ -2,7 +2,7 @@
 
 . ./setHealthlakeEndpointAzure.sh
 
-curl -X DELETE "${HEALTHLAKEENDPOINT}Immunization/be239d03-a658-4614-a727-213c211cf020" \
+curl -X DELETE "${HEALTHLAKEENDPOINT}Immunization/70abd0ac-29db-483e-809e-606e69f57aee" \
     -H "Authorization: Bearer ${token}"
 
 
