@@ -10,3 +10,15 @@ https://docs.aws.amazon.com/msk/latest/developerguide/create-serverless-cluster-
 https://docs.aws.amazon.com/msk/latest/developerguide/create-topic.html
 
 
+
+Connecting to FDP
+S3
+Need to create an OIDC provider in AWS based on information from FDP. This is due to NHS E restriction on creating IAM users in accounts. 
+In FDP need to create egress policy to connect to S3 - these appear to need someone in palantir to approve the policy.
+
+Kafka
+Need to set up authentication for FDP to be client connecting to Kafka cluster
+Need the bootstrap servers details for connection
+Need to create an egress policy (similar to S3) to enable FDP to connect  - this appears to need someone in palantir to approve
+Unable to create an Agent - not allowed/permissions on my user not correct
+

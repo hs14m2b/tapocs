@@ -220,7 +220,139 @@
                   }
                 ]
             }
+        },
+        "EC2ShutdownRole": {
+            "Type" : "AWS::IAM::Role",
+            "Properties" : {
+                "AssumeRolePolicyDocument" :  {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Action": "sts:AssumeRole",
+                        "Effect": "Allow",
+                        "Principal": {
+                          "Service": ["events.amazonaws.com","ec2.amazonaws.com","lambda.amazonaws.com"]
+                        }
+                      }
+                    ]
+                },
+                "Description" : "IAM role for shutting down EC2 instance from aws events",
+                "RoleName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "ec2shutdownrole"]]},
+                "Tags" : [ {
+                    "Key" : "shortcode",
+                    "Value" : { "Ref": "SHORTCODE" }
+                  }
+                ]
+            }
+        },
+        "EC2ShutdownRolePolicy": {
+            "Type" : "AWS::IAM::Policy",
+            "Properties" : {
+                "PolicyDocument" : {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "ec2:RebootInstances",
+                                "ec2:StopInstances",
+                                "ec2:TerminateInstances"
+                            ],
+                            "Resource": [ {"Fn::Join":["", ["arn:aws:ec2:",{"Ref": "AWS::Region"},":", {"Ref": "AWS::AccountId"}, ":instance/", { "Ref": "KafkaEC2Client" } ]]} ]
+                        }
+                    ]
+                },
+                "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "ec2shutdownpolicy"]]},
+                "Roles" : [ { "Ref": "EC2ShutdownRole" } ]
+            }
+        },
+        "EC2ShutdownRule": {
+            "Type" : "AWS::Events::Rule",
+            "Properties" : {
+                "Description" : "Cloudwatch rule to shut down Kafkaclient ec2 instance on a daily basis",
+                "Name" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "ec2shutdownrule"]]},
+                "RoleArn" : { "Fn::GetAtt" : [ "EC2ShutdownRole", "Arn" ] },
+                "ScheduleExpression" :  "cron(01 17 * * ? *)",
+                "State" : "ENABLED",
+                "EventBusName": "default",
+                "Targets": [{
+                    "Id": "Ideac0c9ba-7827-4eaf-805b-3ab19ff9287d",
+                    "Arn": {
+                        "Fn::Sub": "arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:target/stop-instance"
+                    },
+                    "RoleArn": { "Fn::GetAtt" : [ "EC2ShutdownRole", "Arn" ] },
+                    "Input": {"Fn::Join": ["",["\"",{ "Ref": "KafkaEC2Client" },"\""]]}
+                }]
+            }
+        },
+        "FDPIAMGroup" : {
+            "Type" : "AWS::IAM::Group",
+            "Properties" : {
+                "GroupName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fdpusergroup"]]},
+                "ManagedPolicyArns" : [ "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess" ],
+                "Policies" : [ {
+                    "PolicyDocument" : {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "kms:*"
+                                ],
+                                "Resource": "*"
+                            }
+                        ]
+                    },
+                    "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fdpusergrouppolicy"]]}
+                    }
+                ]
+            }
+        },
+        "FDPIAMOIDCProvider": {
+            "Type" : "AWS::IAM::OIDCProvider",
+            "Properties" : {
+                "ClientIdList" : [ "sts.amazonaws.com" ],
+                "Tags" : [ {
+                    "Key" : "shortcode",
+                    "Value" : { "Ref": "SHORTCODE" }
+                } ],
+                "Url" : "https://pltroidcpublica468f50b.s3.eu-west-2.amazonaws.com/foundry"
+            }
+        },
+        "FDPIAMOIDCProviderRole": {
+            "Type" : "AWS::IAM::Role",
+            "Properties" : {
+                "AssumeRolePolicyDocument" : {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "sts:AssumeRoleWithWebIdentity",
+                            "Principal": {
+                                "Federated": {"Ref": "FDPIAMOIDCProvider"}
+                            },
+                            "Condition": {
+                                "StringEquals": {
+                                    "pltroidcpublica468f50b.s3.eu-west-2.amazonaws.com/foundry:sub": [
+                                        "ri.magritte..source.3373d8c5-490a-43b4-a19a-2cbf91a3f939"
+                                    ],
+                                    "pltroidcpublica468f50b.s3.eu-west-2.amazonaws.com/foundry:aud": [
+                                        "sts.amazonaws.com"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "Description" : "Role to associate with FDP OIDC Identities",
+                "ManagedPolicyArns" : [ "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess" ],
+                "RoleName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fdpoidcproviderrole"]]},
+                "Tags" : [ {
+                    "Key" : "shortcode",
+                    "Value" : { "Ref": "SHORTCODE" }
+                } ]
+              }
         }
-                    
+          
     }
 }

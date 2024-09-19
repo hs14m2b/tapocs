@@ -2,6 +2,7 @@
 
 # private keys
 *.key
+*.pem
 
 # signing requests
 *.csr
