@@ -272,6 +272,7 @@
                     },
                     "CompressionFormat" : "UNCOMPRESSED",
                     "ErrorOutputPrefix" : "KinesisErrorLogs/",
+                    "FileExtension": ".ndjson",
                     "Prefix" : "messages/",
                     "ProcessingConfiguration": {
                         "Enabled" : true,
@@ -312,6 +313,7 @@
                     },
                     "CompressionFormat" : "UNCOMPRESSED",
                     "ErrorOutputPrefix" : "KinesisErrorLogs/",
+                    "FileExtension": ".ndjson",
                     "Prefix" : "messages/!{timestamp:yyyyMMddhhmmss}",
                     "ProcessingConfiguration": {
                         "Enabled" : true,
