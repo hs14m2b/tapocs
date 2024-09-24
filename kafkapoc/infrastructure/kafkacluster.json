@@ -43,13 +43,13 @@
                     "ClientSubnets" : [
                         "subnet-3630745f", "subnet-a837e0e4", "subnet-6ae26210"
                     ],
-                    "InstanceType" : "kafka.t3.small",
+                    "InstanceType" : "kafka.m5.xlarge",
                     "SecurityGroups" : [ "sg-c40c86a5", "sg-095952e98908a322b" ]
                 },
                 "ClientAuthentication" : {
                     "Sasl" : {
                         "Iam" : {
-                            "Enabled" : false
+                            "Enabled" : true
                         },
                         "Scram" : {
                             "Enabled" : true
@@ -351,8 +351,37 @@
                     "Key" : "shortcode",
                     "Value" : { "Ref": "SHORTCODE" }
                 } ]
-              }
+            }
+        },
+        "s3MSKDeliveryBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "BucketKeyEnabled": true,
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              },
+              "BucketName": {
+                "Fn::Join": [
+                  "-",
+                  [{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kafka-dest-bucket"]
+                ]
+              },
+              "ObjectLockEnabled": false,
+              "PublicAccessBlockConfiguration": {
+                "BlockPublicAcls": true,
+                "BlockPublicPolicy": true,
+                "IgnorePublicAcls": true,
+                "RestrictPublicBuckets": true
+              },
+              "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }]
+            },
+            "DependsOn": []
         }
-          
     }
 }

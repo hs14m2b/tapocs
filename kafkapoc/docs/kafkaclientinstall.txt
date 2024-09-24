@@ -22,6 +22,8 @@ Unauthenticated - just using SSL
 echo "security.protocol=SSL" > client_ssl.properties
 
 ./kafka-topics.sh --create --bootstrap-server $BS --command-config client_ssl.properties --replication-factor 3 --partitions 1 --topic solarchkafkapoctopic
+./kafka-topics.sh --list --bootstrap-server $BS --command-config client_ssl.properties 
+./kafka-topics.sh --list --bootstrap-server $BSSASL --command-config client_sasl.properties 
 
 ./kafka-console-producer.sh --broker-list $BS --producer.config client_ssl.properties --topic solarchkafkapoctopic
 
@@ -61,4 +63,4 @@ export BSSASL=b-2.devkafkapocmabr8kafkac.4gd7zo.c2.kafka.eu-west-2.amazonaws.com
 ./kafka-console-producer.sh --broker-list $BSSASL --topic solarchkafkapoctopic --producer.config client_sasl.properties
 ./kafka-console-consumer.sh --bootstrap-server $BSSASL --topic solarchkafkapoctopic --from-beginning --consumer.config client_sasl.properties
 
-{ "blah": "value", "blah1": "value1", "blah2": "value2"}
+{ "blah": "value", "blah1": "value1", "blah2": "value9"}

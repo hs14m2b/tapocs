@@ -1,0 +1,330 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+    "Description" : "Cloudformation template to create a Kafka cluster within the TA PoC account",
+    "Parameters": {
+        "BRANCHNAME": {
+          "Type": "String",
+          "Default": "main",
+          "Description": "The branchname to derive fqdn"
+        },
+        "ENVIRONMENT": {
+            "Type": "String",
+            "Description": "The environment the deployment supports - values are internal-dev, internal-dev-sandbox, internal-qa, internal-qa-sandbox, ref (all previous are non-prod), sandbox, dev, int, prod",
+            "Default": "dev"
+        },
+        "PROJECTNAME": {
+          "Type": "String",
+          "Default": "kafkapoc",
+          "Description": "Project name"
+        },
+        "CERTIFICATEARN": {
+          "Type": "String",
+          "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/c4bf4fbf-7440-4345-8720-eff73b19bcce",
+          "Description": "The certificate ARN for the nhsdta.com domain"
+        },
+        "ROOTDOMAIN": {
+          "Type": "String",
+          "Default": "nhsdta.com",
+          "Description": "The root domain name"
+        },
+        "SHORTCODE": {
+          "Type": "String",
+          "Default": "mabr8",
+          "Description": "The shortcode for tags"
+        }
+      },
+    "Resources": {
+        "KinesisStreamRole": {
+            "Type" : "AWS::IAM::Role",
+            "Properties" : {
+                "AssumeRolePolicyDocument" :  {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Principal": {
+                          "Service": "firehose.amazonaws.com"
+                        },
+                        "Action": "sts:AssumeRole"
+                      }
+                    ]
+                },
+                "Description" : "IAM role for Kinesis Firehose Stream to S3",
+                "RoleName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kinesisfirehoserole"]]},
+                "Tags" : [ {
+                    "Key" : "shortcode",
+                    "Value" : { "Ref": "SHORTCODE" }
+                  }
+                ]
+            }
+        },
+        "KinesisStreamPolicy": {
+            "Type" : "AWS::IAM::Policy",
+            "Properties" : {
+                "PolicyDocument" : {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Action": [
+                                "glue:GetTable",
+                                "glue:GetTableVersion",
+                                "glue:GetTableVersions"
+                            ],
+                            "Resource": [
+                                {"Fn::Sub": "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:catalog"},
+                                "arn:aws:glue:eu-west-2:865198111306:database/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%",
+                                "arn:aws:glue:eu-west-2:865198111306:table/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%"
+                            ]
+                        },
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Action": [
+                                "kafka:GetBootstrapBrokers",
+                                "kafka:DescribeCluster",
+                                "kafka:DescribeClusterV2",
+                                "kafka-cluster:Connect"
+                            ],
+                            "Resource": "arn:aws:kafka:eu-west-2:865198111306:cluster/dev-kafkapoc-mabr8-kafkacluster/c2963b6e-467f-402d-a289-ad617604d7e9-2"
+                        },
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Action": [
+                                "kafka-cluster:DescribeTopic",
+                                "kafka-cluster:DescribeTopicDynamicConfiguration",
+                                "kafka-cluster:ReadData"
+                            ],
+                            "Resource": "arn:aws:kafka:eu-west-2:865198111306:topic/dev-kafkapoc-mabr8-kafkacluster/c2963b6e-467f-402d-a289-ad617604d7e9-2/solarchkafkapoctopic"
+                        },
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Action": [
+                                "kafka-cluster:DescribeGroup"
+                            ],
+                            "Resource": "arn:aws:kafka:eu-west-2:865198111306:group/dev-kafkapoc-mabr8-kafkacluster/c2963b6e-467f-402d-a289-ad617604d7e9-2/*"
+                        },
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:AbortMultipartUpload",
+                                "s3:GetBucketLocation",
+                                "s3:GetObject",
+                                "s3:ListBucket",
+                                "s3:ListBucketMultipartUploads",
+                                "s3:PutObject"
+                            ],
+                            "Resource": [
+                                "arn:aws:s3:::dev-kafkapoc-mabr8-kinesis-firehose-dest-bucket",
+                                "arn:aws:s3:::dev-kafkapoc-mabr8-kinesis-firehose-dest-bucket/*",
+                                "arn:aws:s3:::sandbox-mhdpoc-mabr8-fhirresources",
+                                "arn:aws:s3:::sandbox-mhdpoc-mabr8-fhirresources/*"
+                            ]
+                        },
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Action": [
+                                "lambda:InvokeFunction",
+                                "lambda:GetFunctionConfiguration"
+                            ],
+                            "Resource": "arn:aws:lambda:eu-west-2:865198111306:function:%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%"
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "kms:GenerateDataKey",
+                                "kms:Decrypt"
+                            ],
+                            "Resource": [
+                                "arn:aws:kms:eu-west-2:865198111306:key/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%"
+                            ],
+                            "Condition": {
+                                "StringEquals": {
+                                    "kms:ViaService": "s3.eu-west-2.amazonaws.com"
+                                },
+                                "StringLike": {
+                                    "kms:EncryptionContext:aws:s3:arn": [
+                                        "arn:aws:s3:::%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%/*",
+                                        "arn:aws:s3:::%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Action": [
+                                "logs:PutLogEvents"
+                            ],
+                            "Resource": [
+                                "arn:aws:logs:eu-west-2:865198111306:log-group:/aws/kinesisfirehose/dev-kafkapoc-mabr8-kinesisfirehosesteam:log-stream:*",
+                                "arn:aws:logs:eu-west-2:865198111306:log-group:%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%:log-stream:*"
+                            ]
+                        },
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Action": [
+                                "kinesis:DescribeStream",
+                                "kinesis:GetShardIterator",
+                                "kinesis:GetRecords",
+                                "kinesis:ListShards"
+                            ],
+                            "Resource": "arn:aws:kinesis:eu-west-2:865198111306:stream/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%"
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "kms:Decrypt"
+                            ],
+                            "Resource": [
+                                "arn:aws:kms:eu-west-2:865198111306:key/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%"
+                            ],
+                            "Condition": {
+                                "StringEquals": {
+                                    "kms:ViaService": "kinesis.eu-west-2.amazonaws.com"
+                                },
+                                "StringLike": {
+                                    "kms:EncryptionContext:aws:kinesis:arn": "arn:aws:kinesis:eu-west-2:865198111306:stream/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kinesisfirehosepolicy"]]},
+                "Roles" : [ { "Ref": "KinesisStreamRole" } ]
+            }
+        },
+        "firehoseS3DeliveryBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "BucketKeyEnabled": true,
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              },
+              "BucketName": {
+                "Fn::Join": [
+                  "-",
+                  [{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kinesis-firehose-dest-bucket"]
+                ]
+              },
+              "ObjectLockEnabled": false,
+              "PublicAccessBlockConfiguration": {
+                "BlockPublicAcls": true,
+                "BlockPublicPolicy": true,
+                "IgnorePublicAcls": true,
+                "RestrictPublicBuckets": true
+              },
+              "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }]
+            },
+            "DependsOn": []
+        },
+        "firehoseloggroup": {
+            "Type" : "AWS::Logs::LogGroup",
+            "Properties" : {
+                "LogGroupClass" : "STANDARD",
+                "LogGroupName" : {"Fn::Join": ["",["/aws/kinesisfirehose/", {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kinesisfirehosesteam"]]}]]},
+                "RetentionInDays" : 1,
+                "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }]
+            }
+        },
+        "firehoselogstream": {
+            "Type" : "AWS::Logs::LogStream",
+            "Properties" : {
+                "LogGroupName" : {"Ref": "firehoseloggroup"},
+                "LogStreamName" : "DestinationDelivery"
+              }
+        },
+        "firehosemkstos3": {
+            "Type" : "AWS::KinesisFirehose::DeliveryStream",
+            "Properties" : {
+                "DeliveryStreamName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kinesisfirehosesteam"]]},
+                "DeliveryStreamType" : "MSKAsSource",
+                "MSKSourceConfiguration" : {
+                    "AuthenticationConfiguration" : {
+                        "Connectivity" : "PRIVATE",
+                        "RoleARN" : { "Fn::GetAtt" : [ "KinesisStreamRole", "Arn" ] }
+                    },
+                    "MSKClusterARN" : "arn:aws:kafka:eu-west-2:865198111306:cluster/dev-kafkapoc-mabr8-kafkacluster/c2963b6e-467f-402d-a289-ad617604d7e9-2",
+                    "TopicName" : "solarchkafkapoctopic"
+                },
+                "ExtendedS3DestinationConfiguration" : {
+                    "BucketARN" : { "Fn::GetAtt" : [ "firehoseS3DeliveryBucket", "Arn" ] },
+                    "BufferingHints" : {
+                        "IntervalInSeconds" : 5,
+                        "SizeInMBs" : 1
+                    },
+                    "CloudWatchLoggingOptions" : {
+                        "Enabled" : true,
+                        "LogGroupName" : {"Fn::Join": ["",["/aws/kinesisfirehose/", {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kinesisfirehosesteam"]]}]]},
+                        "LogStreamName" : "DestinationDelivery"
+                    },
+                    "CompressionFormat" : "UNCOMPRESSED",
+                    "ErrorOutputPrefix" : "KinesisErrorLogs/",
+                    "Prefix" : "messages/",
+                    "ProcessingConfiguration": {
+                        "Enabled" : true,
+                        "Processors" : [ { "Type": "AppendDelimiterToRecord", "Parameters": [ { "ParameterName": "Delimiter", "ParameterValue": "\\n" } ]} ]
+                    },
+                    "RoleARN" : { "Fn::GetAtt" : [ "KinesisStreamRole", "Arn" ] }
+                },
+                "Tags" : [ {
+                    "Key" : "shortcode",
+                    "Value" : { "Ref": "SHORTCODE" }
+                } ]
+            },
+            "DependsOn": ["KinesisStreamPolicy", "firehoseloggroup", "firehoselogstream"]
+        },
+        "firehosemkstos3003": {
+            "Type" : "AWS::KinesisFirehose::DeliveryStream",
+            "Properties" : {
+                "DeliveryStreamName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kinesisfirehosesteam003"]]},
+                "DeliveryStreamType" : "MSKAsSource",
+                "MSKSourceConfiguration" : {
+                    "AuthenticationConfiguration" : {
+                        "Connectivity" : "PRIVATE",
+                        "RoleARN" : { "Fn::GetAtt" : [ "KinesisStreamRole", "Arn" ] }
+                    },
+                    "MSKClusterARN" : "arn:aws:kafka:eu-west-2:865198111306:cluster/dev-kafkapoc-mabr8-kafkacluster/c2963b6e-467f-402d-a289-ad617604d7e9-2",
+                    "TopicName" : "solarchkafkapoctopic"
+                },
+                "ExtendedS3DestinationConfiguration" : {
+                    "BucketARN" : "arn:aws:s3:::sandbox-mhdpoc-mabr8-fhirresources",
+                    "BufferingHints" : {
+                        "IntervalInSeconds" : 5,
+                        "SizeInMBs" : 1
+                    },
+                    "CloudWatchLoggingOptions" : {
+                        "Enabled" : true,
+                        "LogGroupName" : {"Fn::Join": ["",["/aws/kinesisfirehose/", {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kinesisfirehosesteam"]]}]]},
+                        "LogStreamName" : "DestinationDelivery"
+                    },
+                    "CompressionFormat" : "UNCOMPRESSED",
+                    "ErrorOutputPrefix" : "KinesisErrorLogs/",
+                    "Prefix" : "messages/!{timestamp:yyyyMMddhhmmss}",
+                    "ProcessingConfiguration": {
+                        "Enabled" : true,
+                        "Processors" : [ { "Type": "AppendDelimiterToRecord", "Parameters": [ { "ParameterName": "Delimiter", "ParameterValue": "\\n" } ]} ]
+                    },
+                    "RoleARN" : { "Fn::GetAtt" : [ "KinesisStreamRole", "Arn" ] }
+                },
+                "Tags" : [ {
+                    "Key" : "shortcode",
+                    "Value" : { "Ref": "SHORTCODE" }
+                } ]
+            },
+            "DependsOn": ["KinesisStreamPolicy", "firehoseloggroup", "firehoselogstream"]
+        }
+    }
+}
