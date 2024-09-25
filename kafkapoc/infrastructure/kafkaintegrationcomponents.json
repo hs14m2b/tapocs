@@ -1,6 +1,7 @@
 {
     "AWSTemplateFormatVersion" : "2010-09-09",
     "Description" : "Cloudformation template to create a Kafka cluster within the TA PoC account",
+    "Transform": "AWS::Serverless-2016-10-31",
     "Parameters": {
         "BRANCHNAME": {
           "Type": "String",
@@ -132,7 +133,8 @@
                                 "lambda:InvokeFunction",
                                 "lambda:GetFunctionConfiguration"
                             ],
-                            "Resource": "arn:aws:lambda:eu-west-2:865198111306:function:%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%"
+                            "Resource": [{"Fn::GetAtt": ["firehoseTransformFunction", "Arn"]},
+                                         {"Fn::Join": ["", [{"Fn::GetAtt": ["firehoseTransformFunction", "Arn"]}, ":*"]]}]
                         },
                         {
                             "Effect": "Allow",
@@ -276,7 +278,8 @@
                     "Prefix" : "messages/",
                     "ProcessingConfiguration": {
                         "Enabled" : true,
-                        "Processors" : [ { "Type": "AppendDelimiterToRecord", "Parameters": [ { "ParameterName": "Delimiter", "ParameterValue": "\\n" } ]} ]
+                        "Processors" : [ { "Type": "AppendDelimiterToRecord", "Parameters": [ { "ParameterName": "Delimiter", "ParameterValue": "\\n" } ]},
+                        { "Type": "Lambda", "Parameters": [ { "ParameterName": "LambdaArn", "ParameterValue": { "Fn::GetAtt" : [ "firehoseTransformFunction", "Arn" ] } } ]} ]
                     },
                     "RoleARN" : { "Fn::GetAtt" : [ "KinesisStreamRole", "Arn" ] }
                 },
@@ -327,6 +330,63 @@
                 } ]
             },
             "DependsOn": ["KinesisStreamPolicy", "firehoseloggroup", "firehoselogstream"]
+        },
+        "firehosetransformLambdaRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Action": "sts:AssumeRole",
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": "lambda.amazonaws.com"
+                    }
+                  }
+                ]
+              },
+              "ManagedPolicyArns": [
+                "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+                "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+                "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess",
+                "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+                "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+                "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB"
+              ],
+              "Path": "/service-role/",
+              "RoleName": {
+                "Fn::Join": [
+                  "-",
+                  [{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "firehosetransformLambdaRole"]
+                ]
+              }
+            }
+        },
+        "firehoseTransformFunction": {
+            "Type": "AWS::Serverless::Function",
+            "Properties": {
+              "CodeUri": "firehosetransformlambdas.zip",
+              "Description": "The lambda function that evaluates the bearer token and authorizes the FHIR request to the Healthlake datastore",
+              "FunctionName": {
+                "Fn::Join": ["-", [{ "Ref": "ENVIRONMENT" },{ "Ref": "PROJECTNAME" },{ "Ref": "SHORTCODE" }, "firehosetransform"]]
+              },
+              "Handler": "sendDataToFDP.handler",
+              "Role": { "Fn::GetAtt": ["firehosetransformLambdaRole", "Arn"] },
+              "Runtime": "nodejs18.x",
+              "Timeout": 300
+            },
+            "DependsOn": ["firehosetransformLambdaRole"]
+        },
+        "firehoseTransformFunctionPermission": {
+            "Type" : "AWS::Lambda::Permission",
+            "Properties" : {
+                "Action" : "lambda:InvokeFunction",
+                "FunctionName" : {"Ref": "firehoseTransformFunction"},
+                "Principal" : "firehose.amazonaws.com",
+                "SourceArn" : { "Fn::GetAtt" : [ "firehosemkstos3", "Arn" ] }
+            },
+            "DependsOn": ["firehoseTransformFunction"]
         }
     }
 }

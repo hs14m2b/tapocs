@@ -63,4 +63,4 @@ export BSSASL=b-2.devkafkapocmabr8kafkac.4gd7zo.c2.kafka.eu-west-2.amazonaws.com
 ./kafka-console-producer.sh --broker-list $BSSASL --topic solarchkafkapoctopic --producer.config client_sasl.properties
 ./kafka-console-consumer.sh --bootstrap-server $BSSASL --topic solarchkafkapoctopic --from-beginning --consumer.config client_sasl.properties
 
-{ "blah": "value", "blah1": "value1", "blah2": "value9"}
+{ "blah": "value99", "blah1": "value2", "blah2": "value9"}
