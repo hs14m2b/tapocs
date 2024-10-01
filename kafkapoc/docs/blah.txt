@@ -1,0 +1,48 @@
+,
+        "FDPIAMOIDCProviderRole": {
+            "Type" : "AWS::IAM::Role",
+            "Properties" : {
+                "AssumeRolePolicyDocument" : {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "sts:AssumeRoleWithWebIdentity",
+                            "Principal": {
+                                "Federated": "arn:aws:iam::865198111306:oidc-provider/pltroidcpublica468f50b.s3.eu-west-2.amazonaws.com/foundry"
+                            },
+                            "Condition": {
+                                "StringEquals": {
+                                    "pltroidcpublica468f50b.s3.eu-west-2.amazonaws.com/foundry:sub": [
+                                        "ri.magritte..source.3373d8c5-490a-43b4-a19a-2cbf91a3f939"
+                                    ],
+                                    "pltroidcpublica468f50b.s3.eu-west-2.amazonaws.com/foundry:aud": [
+                                        "sts.amazonaws.com"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "Description" : "Role to associate with FDP OIDC Identities",
+                "ManagedPolicyArns" : [ "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess" ],
+                "Path" : String,
+                "PermissionsBoundary" : String,
+                "Policies" : [ Policy, ... ],
+                "RoleName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fdpoidcproviderrole"]]},
+                "Tags" : [ {
+                    "Key" : "shortcode",
+                    "Value" : { "Ref": "SHORTCODE" }
+                } ]
+              }
+        }
+
+
+
+
+        "Condition": {
+    "StringEquals": {
+        "pltroidcpublica468f50b.s3.eu-west-2.amazonaws.com/foundry:aud": "sts.amazonaws.com",
+        "pltroidcpublica468f50b.s3.eu-west-2.amazonaws.com/foundry:sub": "ri.magritte..source.3373d8c5-490a-43b4-a19a-2cbf91a3f939"
+    }
+}

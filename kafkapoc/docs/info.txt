@@ -1,0 +1,198 @@
+Notes for Kafka cluster
+- the VPC needs to have DNS hostnames enabled for Kafka
+- in the TA account the vpc_sandbox VPC has DNS hostnames enabled
+- need to have a security group that allows inbound port 9098 and 9094 to cluster
+
+follow these instructions to set up client on ec2 instance (for serverless cluster)
+https://docs.aws.amazon.com/msk/latest/developerguide/create-serverless-cluster-client.html
+
+(for normal cluster)
+https://docs.aws.amazon.com/msk/latest/developerguide/create-topic.html
+
+
+
+Connecting to FDP
+S3
+Need to create an OIDC provider in AWS based on information from FDP. This is due to NHS E restriction on creating IAM users in accounts. 
+In FDP need to create egress policy to connect to S3 - these appear to need someone in palantir to approve the policy.
+
+Kafka
+Need to set up authentication for FDP to be client connecting to Kafka cluster
+Need the bootstrap servers details for connection
+Need to create an egress policy (similar to S3) to enable FDP to connect  - this appears to need someone in palantir to approve
+Unable to create an Agent - not allowed/permissions on my user not correct
+Need to set up public access....seems convoluted!
+
+S3 sink as alternative
+https://docs.aws.amazon.com/msk/latest/developerguide/mkc-tutorial-setup.html
+
+connector.class=io.confluent.connect.s3.S3SinkConnector
+s3.region=eu-west-2
+format.class=io.confluent.connect.s3.format.json.JsonFormat
+flush.size=1
+schema.compatibility=NONE
+tasks.max=2
+topics=solarchkafkapoctopic
+partitioner.class=io.confluent.connect.storage.partitioner.DefaultPartitioner
+storage.class=io.confluent.connect.s3.storage.S3Storage
+s3.bucket.name=dev-kafkapoc-mabr8-kafka-dest-bucket 
+topics.dir=tutorial
+
+cloudformation snippets to support the above
+        "KafkaSinkRole": {
+            "Type" : "AWS::IAM::Role",
+            "Properties" : {
+                "AssumeRolePolicyDocument" :  {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Principal": {
+                          "Service": "kafkaconnect.amazonaws.com"
+                        },
+                        "Action": "sts:AssumeRole"
+                      }
+                    ]
+                },
+                "Description" : "IAM role for Kafka Sink Connector to S3",
+                "RoleName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kafkasinkrole"]]},
+                "Tags" : [ {
+                    "Key" : "shortcode",
+                    "Value" : { "Ref": "SHORTCODE" }
+                  }
+                ]
+            }
+        },
+        "KafkaSinkPolicy": {
+            "Type" : "AWS::IAM::Policy",
+            "Properties" : {
+                "PolicyDocument" : {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "s3:ListAllMyBuckets"
+                        ],
+                        "Resource": "arn:aws:s3:::*"
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "s3:ListBucket",
+                          "s3:GetBucketLocation",
+                          "s3:DeleteObject"
+                        ],
+                        "Resource": {"Fn::Join": ["",["arn:aws:s3:::", { "Ref": "s3MSKDeliveryBucket" }]]}
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "s3:PutObject",
+                          "s3:GetObject",
+                          "s3:AbortMultipartUpload",
+                          "s3:ListMultipartUploadParts",
+                          "s3:ListBucketMultipartUploads"
+                        ],
+                        "Resource": "*"
+                      }
+                    ]
+                },
+                "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kafkasinkpolicy"]]},
+                "Roles" : [ { "Ref": "KafkaSinkRole" } ]
+            }
+        },
+        "S3VPCEndpoint": {
+            "Type" : "AWS::EC2::VPCEndpoint",
+            "Properties" : {
+                "ServiceName" : "com.amazonaws.eu-west-2.s3",
+                "VpcEndpointType" : "Gateway",
+                "VpcId" : "vpc-08057760"
+              }
+        },
+
+
+
+
+
+//couldn't get that working - will try again at some AssumeRolePolicyDocument
+
+Kinesis firehose to S3
+Needs broker type NOT small - e.g. kafka.m5.xlarge
+Turn on IAM authentication
+Turn on multi-VPC connectivity
+
+
+
+
+
+
+
+
+S3 connectivity for foundry
+
+- create Identity Provider as per FDP instructions
+- create egress policy pointing to the bucket
+- create bucket policy in FDP to allow access to the bucket
+
+Bucket policy
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "Statement1",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:*",
+            "Resource": [
+                "arn:aws:s3:::sandbox-mhdpoc-mabr8-fhirresources",
+                "arn:aws:s3:::sandbox-mhdpoc-mabr8-fhirresources/*"
+            ],
+            "Condition": {
+                "ForAnyValue:StringEquals": {
+                    "aws:SourceVpce": [
+                        "vpce-082e8cf766b7a5dae",
+                        "vpce-08b1ecbef81b21ba1"
+                    ]
+                }
+            }
+        }
+    ]
+}
+
+
+
+firehose - cluster policy to allow firehose to connect
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": [
+                    ""
+                ]
+            },
+            "Action": [
+                "kafka:CreateVpcConnection",
+                "kafka:GetBootstrapBrokers",
+                "kafka:DescribeCluster",
+                "kafka:DescribeClusterV2"
+            ],
+            "Resource": "arn:aws:kafka:eu-west-2:865198111306:cluster/dev-kafkapoc-mabr8-kafkacluster/c2963b6e-467f-402d-a289-ad617604d7e9-2"
+        },
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "firehose.amazonaws.com"
+            },
+            "Action": [
+                "kafka:CreateVpcConnection",
+                "kafka:GetBootstrapBrokers",
+                "kafka:DescribeCluster",
+                "kafka:DescribeClusterV2"
+            ],
+            "Resource": "arn:aws:kafka:eu-west-2:865198111306:cluster/dev-kafkapoc-mabr8-kafkacluster/c2963b6e-467f-402d-a289-ad617604d7e9-2"
+        }
+    ]
+}
