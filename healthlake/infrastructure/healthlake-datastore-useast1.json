@@ -1,11 +1,11 @@
 {
-    "DatastoreName": "healthlakepoc-main-mabr8-202410011756",
+    "DatastoreName": "healthlakepoc-main-mabr8-202410021141",
     "DatastoreTypeVersion": "R4",
     "IdentityProviderConfiguration": {
         "AuthorizationStrategy": "SMART_ON_FHIR_V1",
         "FineGrainedAuthorizationEnabled": false,
         "Metadata": "{\"authorization_endpoint\":\"https://endpoint/authorization\",\"grant_types_supported\":[\"authorization_code\",\"client_credentials\"],\"token_endpoint\":\"https://endpoint/token\",\"code_challenge_methods_supported\":[\"S256\"],\"capabilities\":[\"launch-standalone\",\"client-confidential-symmetric\",\"sso-openid-connect\"],\"issuer\":\"https://endpoint\",\"jwks_uri\":\"https://endpoint/.well-known/jwks.json\"}",
-        "IdpLambdaArn": "arn:aws:lambda:eu-west-2:865198111306:function:healthlakepoc-main-smartonfhirauth-001"
+        "IdpLambdaArn": "arn:aws:lambda:us-east-1:865198111306:function:healthlakepoc-main-smartonfhirauth-002"
     },
     "Tags": [
         {

@@ -1,4 +1,4 @@
 #!/bin/sh
 
-export HEALTHLAKEENDPOINT="https://healthlake.us-east-1.amazonaws.com/datastore/bbeafea565992204fdbdd324cb458824/r4/"
+export HEALTHLAKEENDPOINT="https://healthlake.eu-west-2.amazonaws.com/datastore/8843f629b43390e9c1d633ffb88f04a5/r4/"
 echo $HEALTHLAKEENDPOINT

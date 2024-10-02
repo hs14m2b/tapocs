@@ -1,11 +1,17 @@
 {
-    "DatastoreName": "healthlakepoc-main-mabr8-202410011756",
+    "DatastoreName": "healthlakepoc-main-mabr8-202403120932",
     "DatastoreTypeVersion": "R4",
+    "SseConfiguration": {
+        "KmsEncryptionConfig": {
+            "CmkType": "CUSTOMER_MANAGED_KMS_KEY",
+            "KmsKeyId": "e9b9a592-c2fc-4fbd-aa25-d846a98ce472"
+        }
+    },
     "IdentityProviderConfiguration": {
         "AuthorizationStrategy": "SMART_ON_FHIR_V1",
         "FineGrainedAuthorizationEnabled": false,
         "Metadata": "{\"authorization_endpoint\":\"https://endpoint/authorization\",\"grant_types_supported\":[\"authorization_code\",\"client_credentials\"],\"token_endpoint\":\"https://endpoint/token\",\"code_challenge_methods_supported\":[\"S256\"],\"capabilities\":[\"launch-standalone\",\"client-confidential-symmetric\",\"sso-openid-connect\"],\"issuer\":\"https://endpoint\",\"jwks_uri\":\"https://endpoint/.well-known/jwks.json\"}",
-        "IdpLambdaArn": "arn:aws:lambda:eu-west-2:865198111306:function:healthlakepoc-main-smartonfhirauth-001"
+        "IdpLambdaArn": "arn:aws:lambda:eu-west-2:865198111306:function:healthlakepoc-main-smartonfhirauth"
     },
     "Tags": [
         {

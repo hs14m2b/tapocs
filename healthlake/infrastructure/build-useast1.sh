@@ -1,12 +1,12 @@
 #!/bin/sh
 
 ENVIRONMENT="healthlakepoc"
-S3CODEBUCKET="codepipeline-eu-west-2-467564981221"
+S3CODEBUCKET="codebucket-us-east-1-865198111306"
 #OPENSSL_CONF=/dev/null
 TIMESTAMP=$(date +%s)
 echo $TIMESTAMP
-#REGION="us-east-1"
-REGION="eu-west-2"
+REGION="us-east-1"
+#REGION="eu-west-2"
 
 # build lambda code
 cd ..
@@ -19,7 +19,7 @@ cd build
 cp ../lambdas/${TIMESTAMP}healthlakepoclambdas.zip ${TIMESTAMP}healthlakepoclambdas.zip
 rm ../lambdas/${TIMESTAMP}healthlakepoclambdas.zip
 # update cloudformation templates
-cp ../infrastructure/healthlakepoc.json healthlakepoc.json
+cp ../infrastructure/healthlakepoc-useast1.json healthlakepoc.json
 sed -i "s/healthlakepoclambdas\.zip/${TIMESTAMP}healthlakepoclambdas\.zip/g" healthlakepoc.json
 
 #backend

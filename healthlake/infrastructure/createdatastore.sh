@@ -1,6 +1,6 @@
 #!/bin/sh
 
-aws healthlake create-fhir-datastore  --region us-east-1 --cli-input-json file://healthlake-datastore.json
+aws healthlake create-fhir-datastore  --region eu-west-2 --cli-input-json file://healthlake-datastore.json
 
 
 
