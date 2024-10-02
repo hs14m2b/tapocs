@@ -4,7 +4,7 @@
   "Parameters": {
     "AWSREGIONNAME": {
       "Type": "String",
-      "Default": "us-east-1",
+      "Default": "eu-west-2",
       "Description": "The AWS region name"
     },
     "BRANCHNAME": {
@@ -31,6 +31,11 @@
       "Type": "String",
       "Default": "mabr8",
       "Description": "The shortcode for tags"
+    },
+    "STACKVERSION": {
+      "Type": "String",
+      "Default": "001",
+      "Description": "parameter to change resource names and prevent unintended collisions"
     }
   },
   "Globals": {
@@ -73,8 +78,8 @@
         "Path": "/service-role/",
         "RoleName": {
           "Fn::Join": [
-            "",
-            [{ "Ref": "BRANCHNAME" }, "-", "healthlakepocLambdaRole-001"]
+            "-",
+            [{ "Ref": "BRANCHNAME" }, "healthlakepocLambdaRole", {"Ref": "STACKVERSION"}]
           ]
         }
       }
@@ -99,7 +104,7 @@
         ],
         "Path": "/service-role/",
         "RoleName": {
-          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-", "healthlakepocCWRole"]]
+          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-", "healthlakepocCWRole", {"Ref": "STACKVERSION"}]]
         }
       }
     },
@@ -125,11 +130,10 @@
         },
         "ManagedPolicyArns": [
           "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
-          "arn:aws:iam::aws:policy/AmazonS3FullAccess",
-          "arn:aws:iam::aws:policy/service-role/AWSLambdaRole"
+          "arn:aws:iam::aws:policy/AmazonS3FullAccess"
         ],
         "Path": "/service-role/",
-        "RoleName": {"Fn::Join": ["-",[{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "servicerole"]]}
+        "RoleName": {"Fn::Join": ["-",[{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "servicerole", {"Ref": "STACKVERSION"}]]}
       }
     },
     "healthlakeFhirUserPolicy":{
@@ -146,10 +150,19 @@
                 ],
                 "Effect": "Allow",
                 "Resource": "*"
+              },
+              {
+                "Sid": "StmtInvokeLambda",
+                "Action": [
+                  "lambda:InvokeFunction"
+                ],
+                "Effect": "Allow",
+                "Resource": "arn:aws:lambda:eu-west-2:865198111306:function:healthlakepoc-main-smartonfhirauth"
               }
+
             ]
           },
-          "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "fhiruserpolicy"]]},
+          "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "fhiruserpolicy", {"Ref": "STACKVERSION"}]]},
           "Roles": [{"Ref": "healthlakeServiceRole"}]
         },
         "DependsOn": ["healthlakeServiceRole"]
@@ -165,7 +178,7 @@
           }
         },
         "FunctionName": {
-          "Fn::Join": ["-", [{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "smartonfhirauth"]]
+          "Fn::Join": ["-", [{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "smartonfhirauth", {"Ref": "STACKVERSION"}]]
         },
         "Handler": "smartonfhirauthFunction.handler",
         "Role": { "Fn::GetAtt": ["healthlakepocLambdaRole", "Arn"] },
@@ -236,9 +249,7 @@
         "Properties": {
             "Action": "lambda:InvokeFunction",
             "FunctionName": {"Ref": "smartonfhirauthFunction"},
-            "Principal": "healthlake.amazonaws.com",
-            "SourceAccount": {"Ref": "AWS::AccountId"},
-            "SourceArn": { "Fn::Join": ["", ["arn:aws:healthlake:", {"Ref": "AWS::Region"},":", {"Ref": "AWS::AccountId"},":datastore/fhir/*" ]] }
+            "Principal": "healthlake.amazonaws.com"
         }
     },
     "inputBucketForHealthlake": {
@@ -255,7 +266,7 @@
             }
           ]
         },
-        "BucketName": {"Fn::Join": ["-", [{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "healthlakeinputbucket"]]},
+        "BucketName": {"Fn::Join": ["-", [{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "healthlakeinputbucket", {"Ref": "STACKVERSION"}]]},
         "ObjectLockEnabled": false,
         "PublicAccessBlockConfiguration": {
           "BlockPublicAcls": true,
@@ -281,7 +292,7 @@
             }
           ]
         },
-        "BucketName": {"Fn::Join": ["-", [{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "healthlakeoutputbucket"]]},
+        "BucketName": {"Fn::Join": ["-", [{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "healthlakeoutputbucket", {"Ref": "STACKVERSION"}]]},
         "ObjectLockEnabled": false,
         "PublicAccessBlockConfiguration": {
           "BlockPublicAcls": true,
@@ -341,7 +352,7 @@
                 }
             ]
           },
-          "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "healthlakeinputpolicy"]]},
+          "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "healthlakeinputpolicy", {"Ref": "STACKVERSION"}]]},
           "Roles": [{"Ref": "healthlakeServiceRole"}]
         },
         "DependsOn": ["healthlakeServiceRole"]
