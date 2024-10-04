@@ -1,0 +1,52 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Parameters": {
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "The branchname to derive fqdn"
+    },
+    "ENVIRONMENT": {
+        "Type": "String",
+        "Description": "The environment the deployment supports - values are internal-dev, internal-dev-sandbox, internal-qa, internal-qa-sandbox, ref (all previous are non-prod), sandbox, dev, int, prod",
+        "Default": "dev"
+    },
+    "PROJECTNAME": {
+      "Type": "String",
+      "Default": "kafkapoc",
+      "Description": "Project name"
+    },
+    "CERTIFICATEARN": {
+      "Type": "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/c4bf4fbf-7440-4345-8720-eff73b19bcce",
+      "Description": "The certificate ARN for the nhsdta.com domain"
+    },
+    "ROOTDOMAIN": {
+      "Type": "String",
+      "Default": "nhsdta.com",
+      "Description": "The root domain name"
+    },
+    "SHORTCODE": {
+      "Type": "String",
+      "Default": "mabr8",
+      "Description": "The shortcode for tags"
+    },
+    "STACKVERSION": {
+        "Type": "String",
+        "Default": "001",
+        "Description": "Version of the stack for resource naming"
+      }
+    },
+"Resources": {
+    "httpAccessKeySecret": {
+      "Type" : "AWS::SecretsManager::Secret",
+      "Properties" : {
+          "Description" : "Access Key for sending data into FDP via HTTP REST",
+          "Name" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "firehosefdphttpaccesskey", { "Ref": "STACKVERSION" }]]},
+          "Tags" : [ { "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } } ]
+        }
+    }
+    
+  }
+}

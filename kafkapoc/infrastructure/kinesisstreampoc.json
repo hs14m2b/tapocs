@@ -1,0 +1,320 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+    "Description" : "Cloudformation template to create a Kafka cluster within the TA PoC account",
+    "Transform": "AWS::Serverless-2016-10-31",
+    "Parameters": {
+        "BRANCHNAME": {
+          "Type": "String",
+          "Default": "main",
+          "Description": "The branchname to derive fqdn"
+        },
+        "ENVIRONMENT": {
+            "Type": "String",
+            "Description": "The environment the deployment supports - values are internal-dev, internal-dev-sandbox, internal-qa, internal-qa-sandbox, ref (all previous are non-prod), sandbox, dev, int, prod",
+            "Default": "dev"
+        },
+        "PROJECTNAME": {
+          "Type": "String",
+          "Default": "kafkapoc",
+          "Description": "Project name"
+        },
+        "CERTIFICATEARN": {
+          "Type": "String",
+          "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/c4bf4fbf-7440-4345-8720-eff73b19bcce",
+          "Description": "The certificate ARN for the nhsdta.com domain"
+        },
+        "ROOTDOMAIN": {
+          "Type": "String",
+          "Default": "nhsdta.com",
+          "Description": "The root domain name"
+        },
+        "SHORTCODE": {
+          "Type": "String",
+          "Default": "mabr8",
+          "Description": "The shortcode for tags"
+        },
+        "STACKVERSION": {
+            "Type": "String",
+            "Default": "001",
+            "Description": "Version of the stack for resource naming"
+          }
+        },
+    "Resources": {
+        "KinesisSteam001": {
+            "Type" : "AWS::Kinesis::Stream",
+            "Properties" : {
+                "Name" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kinesiscwsteam", { "Ref": "STACKVERSION" }]]},
+                "RetentionPeriodHours" : 48,
+                "StreamEncryption" : {
+                    "EncryptionType" : "KMS",
+                    "KeyId" : "alias/aws/kinesis"
+                },
+                "StreamModeDetails" : {
+                    "StreamMode" : "ON_DEMAND"
+                },
+                "Tags" : [ {
+                    "Key" : "shortcode",
+                    "Value" : { "Ref": "SHORTCODE" }
+                  }
+                ]
+            }
+        },
+        "KinesisStreamCWRole": {
+            "Type" : "AWS::IAM::Role",
+            "Properties" : {
+                "AssumeRolePolicyDocument" :  {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Principal": {
+                          "Service": "logs.amazonaws.com"
+                        },
+                        "Action": "sts:AssumeRole"
+                      }
+                    ]
+                },
+                "Description" : "IAM role for Cloudwatch to publish to Kinesis",
+                "RoleName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "cwkinesisrole", { "Ref": "STACKVERSION" }]]},
+                "Tags" : [ {
+                    "Key" : "shortcode",
+                    "Value" : { "Ref": "SHORTCODE" }
+                  }
+                ]
+            }
+        },
+        "KinesisStreamCWPolicy": {
+            "Type" : "AWS::IAM::Policy",
+            "Properties" : {
+                "PolicyDocument" : {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "kinesis:PutRecord",
+                            "Resource": { "Fn::GetAtt" : [ "KinesisSteam001", "Arn" ] }
+                        }
+                    ]
+                },
+                "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "cwkinesispolicy", { "Ref": "STACKVERSION" }]]},
+                "Roles" : [ { "Ref": "KinesisStreamCWRole" } ]
+            }
+        },
+        "CWSubscriptionFilter": {
+            "Type" : "AWS::Logs::SubscriptionFilter",
+            "Properties" : {
+                "DestinationArn" : { "Fn::GetAtt" : [ "KinesisSteam001", "Arn" ] },
+                "Distribution" : "ByLogStream",
+                "FilterName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "cwkinesissubscription", { "Ref": "STACKVERSION" }]]},
+                "FilterPattern" : "",
+                "LogGroupName" : "/aws/lambda/healthlakepoc-main-smartonfhirauth-001",
+                "RoleArn" : { "Fn::GetAtt" : [ "KinesisStreamCWRole", "Arn" ] }
+            },
+            "DependsOn": ["KinesisStreamCWPolicy"]
+        },
+        "firehosetransformLambdaRole": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": "sts:AssumeRole",
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": "lambda.amazonaws.com"
+                  }
+                }
+              ]
+            },
+            "ManagedPolicyArns": [
+              "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+              "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess",
+              "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+              "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+              "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB"
+            ],
+            "Path": "/service-role/",
+            "RoleName": {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "firehosetransformLambdaRole", { "Ref": "STACKVERSION" }]
+              ]
+            }
+          }
+        },
+        "firehoseTransformFunction": {
+            "Type": "AWS::Serverless::Function",
+            "Properties": {
+              "CodeUri": "firehosetransformlambdas.zip",
+              "Description": "The lambda function that evaluates the bearer token and authorizes the FHIR request to the Healthlake datastore",
+              "FunctionName": {
+                "Fn::Join": ["-", [{ "Ref": "ENVIRONMENT" },{ "Ref": "PROJECTNAME" },{ "Ref": "SHORTCODE" }, "firehosetransform", { "Ref": "STACKVERSION" }]]
+              },
+              "Handler": "sendDataToFDP.handler",
+              "Role": { "Fn::GetAtt": ["firehosetransformLambdaRole", "Arn"] },
+              "Runtime": "nodejs18.x",
+              "Timeout": 300
+            },
+            "DependsOn": ["firehosetransformLambdaRole"]
+        },
+        "firehoseTransformFunctionPermission": {
+            "Type" : "AWS::Lambda::Permission",
+            "Properties" : {
+                "Action" : "lambda:InvokeFunction",
+                "FunctionName" : {"Ref": "firehoseTransformFunction"},
+                "Principal" : "firehose.amazonaws.com",
+                "SourceArn" : { "Fn::GetAtt" : [ "firehoseKinesisToHTTP", "Arn" ] }
+            },
+            "DependsOn": ["firehoseTransformFunction"]
+        },
+        "FirehoseKinesisRole": {
+          "Type" : "AWS::IAM::Role",
+          "Properties" : {
+              "AssumeRolePolicyDocument" :  {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Principal": {
+                        "Service": "firehose.amazonaws.com"
+                      },
+                      "Action": "sts:AssumeRole"
+                    }
+                  ]
+              },
+              "Description" : "IAM role for Kinesis to subscribe to Kinesis",
+              "RoleName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "firehosekinesisrole", { "Ref": "STACKVERSION" }]]},
+              "Tags" : [ {
+                  "Key" : "shortcode",
+                  "Value" : { "Ref": "SHORTCODE" }
+                }
+              ]
+          }
+        },
+        "FirehoseKinesisRolePolicy": {
+            "Type" : "AWS::IAM::Policy",
+            "Properties" : {
+                "PolicyDocument" : {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "kinesis:*",
+                            "Resource": { "Fn::GetAtt" : [ "KinesisSteam001", "Arn" ] }
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "s3:*",
+                            "kms:*",
+                            "logs:*",
+                            "lambda:*"
+                          ],
+                          "Resource": "*"
+                        }
+                    ]
+                },
+                "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "firehosekinesispolicy", { "Ref": "STACKVERSION" }]]},
+                "Roles" : [ { "Ref": "FirehoseKinesisRole" } ]
+            }
+        },
+        "firehoseloggroup": {
+            "Type" : "AWS::Logs::LogGroup",
+            "Properties" : {
+                "LogGroupClass" : "STANDARD",
+                "LogGroupName" : {"Fn::Join": ["",["/aws/kinesisfirehose/", {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kinesisfirehosesteam", { "Ref": "STACKVERSION" }]]}]]},
+                "RetentionInDays" : 1,
+                "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }]
+            }
+        },
+        "firehoselogstream": {
+            "Type" : "AWS::Logs::LogStream",
+            "Properties" : {
+                "LogGroupName" : {"Ref": "firehoseloggroup"},
+                "LogStreamName" : "DestinationDelivery"
+            }
+        },
+        "firehoseS3BackupBucket": {
+          "Type": "AWS::S3::Bucket",
+          "Properties": {
+            "BucketEncryption": {
+              "ServerSideEncryptionConfiguration": [
+                {
+                  "BucketKeyEnabled": true,
+                  "ServerSideEncryptionByDefault": {
+                    "SSEAlgorithm": "AES256"
+                  }
+                }
+              ]
+            },
+            "BucketName": {"Fn::Join" : ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kinesis-firehose-backup-bucket", { "Ref": "STACKVERSION" }]]},
+            "ObjectLockEnabled": false,
+            "PublicAccessBlockConfiguration": {
+              "BlockPublicAcls": true,
+              "BlockPublicPolicy": true,
+              "IgnorePublicAcls": true,
+              "RestrictPublicBuckets": true
+            },
+            "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }]
+          },
+          "DependsOn": []
+        },
+        "firehoseKinesisToHTTP": {
+              "Type" : "AWS::KinesisFirehose::DeliveryStream",
+              "Properties" : {
+                  "DeliveryStreamName" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "kinesisfirehosestream", { "Ref": "STACKVERSION" }]]},
+                  "DeliveryStreamType" : "KinesisStreamAsSource",
+                  "HttpEndpointDestinationConfiguration":{
+                    "BufferingHints" : {
+                      "IntervalInSeconds" : 5,
+                      "SizeInMBs" : 1
+                    },
+                    "CloudWatchLoggingOptions" : {
+                        "Enabled" : true,
+                        "LogGroupName" : {"Ref": "firehoseloggroup"},
+                        "LogStreamName" : {"Ref": "firehoselogstream"}
+                    },
+                    "EndpointConfiguration" : {
+                      "AccessKey" : "{{resolve:secretsmanager:dev-kafkapoc-mabr8-firehosefdphttpaccesskey-001:SecretString:accesskey}}",
+                      "Name" : {"Fn::Join": ["-",[{ "Ref": "ENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fdpstreamendpoint", { "Ref": "STACKVERSION" }]]},
+                      "Url" : "https://solutionexchange.federateddataplatform.nhs.uk/stream-proxy/api/streams/ri.foundry.main.dataset.6fe5a3fa-6711-4fd5-80d1-178ecfa3ab41/views/ri.foundry-streaming.main.view.3ef0d360-5842-45ee-8a59-bfde517906d4/jsonRecords"
+                    },
+                    "ProcessingConfiguration": {
+                        "Enabled" : true,
+                        "Processors" : [ 
+                          { "Type": "Lambda", "Parameters": [ { "ParameterName": "LambdaArn", "ParameterValue": { "Fn::GetAtt" : [ "firehoseTransformFunction", "Arn" ] } } ]} ]
+                    },
+                    "RoleARN" : { "Fn::GetAtt" : [ "FirehoseKinesisRole", "Arn" ] },
+                    "S3BackupMode" : "AllData",
+                    "S3Configuration" : {
+                      "BucketARN" : { "Fn::GetAtt" : [ "firehoseS3BackupBucket", "Arn" ] },
+                      "BufferingHints" : {
+                          "IntervalInSeconds" : 60,
+                          "SizeInMBs" : 1
+                      },
+                      "CloudWatchLoggingOptions" : {
+                        "Enabled" : true,
+                        "LogGroupName" : {"Ref": "firehoseloggroup"},
+                        "LogStreamName" : {"Ref": "firehoselogstream"}
+                      },
+                      "CompressionFormat" : "UNCOMPRESSED",
+                      "ErrorOutputPrefix" : "FirehoseErrorLogs/",
+                      "Prefix" : "messages/",
+                      "RoleARN" : { "Fn::GetAtt" : [ "FirehoseKinesisRole", "Arn" ] }
+                    }
+                  },
+                  "KinesisStreamSourceConfiguration": {
+                    "KinesisStreamARN" : { "Fn::GetAtt" : [ "KinesisSteam001", "Arn" ] },
+                    "RoleARN" : { "Fn::GetAtt" : [ "FirehoseKinesisRole", "Arn" ] }
+                  },
+                  "Tags" : [ {
+                      "Key" : "shortcode",
+                      "Value" : { "Ref": "SHORTCODE" }
+                  } ]
+              },
+              "DependsOn": ["FirehoseKinesisRolePolicy", "firehoseloggroup", "firehoselogstream"]
+        }
+    }
+}

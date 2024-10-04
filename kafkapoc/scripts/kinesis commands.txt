@@ -1,0 +1,8 @@
+aws kinesis list-shards --stream-name dev-kafkapoc-mabr8-kinesiscwsteam-001  --region eu-west-2
+
+
+aws kinesis get-shard-iterator --stream-name dev-kafkapoc-mabr8-kinesiscwsteam-001  --shard-id shardId-000000000000 --shard-iterator-type TRIM_HORIZON --region eu-west-2
+
+SHARDITERATOR=$(aws kinesis get-shard-iterator --stream-name dev-kafkapoc-mabr8-kinesiscwsteam-001  --shard-id shardId-000000000001 --shard-iterator-type TRIM_HORIZON --region eu-west-2 | jq -r ."ShardIterator")
+
+aws kinesis get-records --limit 10 --shard-iterator $SHARDITERATOR --region eu-west-2
