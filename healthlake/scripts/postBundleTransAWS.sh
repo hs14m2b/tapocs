@@ -2,7 +2,7 @@
 
 . ./setHealthlakeEndpoint.sh
 
-curl -X POST ${HEALTHLAKEENDPOINT}DocumentReference \
+curl -X POST ${HEALTHLAKEENDPOINT} \
     -H "Content-Type: application/fhir+json" \
     -H "Authorization: Bearer THISISTHETOKEN" \
-    --data "@docref.json"
+    --data "@bundleTrans.json" --verbose
