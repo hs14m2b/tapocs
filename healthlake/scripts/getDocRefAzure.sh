@@ -2,6 +2,6 @@
 
 . ./setHealthlakeEndpointAzure.sh
 
-curl -X GET ${HEALTHLAKEENDPOINT}DocumentReference/03a6a02c-2408-44f1-bf55-0bd15e916965 \
-    --header "Authorization: Bearer ${token}"
+curl -X GET ${HEALTHLAKEENDPOINT}DocumentReference/1031090a-beb4-4db7-8cb1-55f3057d5efa \
+    --header "Authorization: Bearer ${token}" --verbose
 

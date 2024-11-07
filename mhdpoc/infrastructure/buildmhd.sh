@@ -16,12 +16,32 @@ echo $TIMESTAMP
 
 cd ..
 mkdir build
-# build lambda code
 cd lambdas
+
+# set up test libraries
+cd ../tests/spec
+npm install
+cd ../../lambdas
+npm install
+# run the tests
+npx jasmine --config="../tests/spec/support/jasmine.json"
+jasRetVal=$?
+if [ $jasRetVal -ne 0 ]; then
+    echo "Jasmine has determined there is a test failure - stopping build"
+    cd ..
+    rm -fR build
+
+    echo "build failed"
+    exit $jasRetVal
+else
+    echo "Jasmine has determined the tests are fine - continuing build"
+fi
+# build lambda code
+
 mkdir nodejs
 cp package.json nodejs/package.json
 cd nodejs
-npm install
+npm install --omit=dev
 cd ..
 #zip -qr ${TIMESTAMP}stack000lambdas.zip ./*
 zip -qr ${TIMESTAMP}dependenciesLayer.zip nodejs
@@ -29,7 +49,7 @@ rm -fR nodejs
 mkdir certs
 cp ../certs/tsassolarchdemoapi.* certs
 # need to include node modules due to bug in Lambda that doesn't enable the AWS SDK v2 to be loaded via Layer
-npm install
+npm install --omit=dev
 zip -qr ${TIMESTAMP}mhdpocapilambdas.zip *
 cp ${TIMESTAMP}dependenciesLayer.zip ../build/${TIMESTAMP}dependenciesLayer.zip
 cp ${TIMESTAMP}mhdpocapilambdas.zip ../build/${TIMESTAMP}mhdpocapilambdas.zip

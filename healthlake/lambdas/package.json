@@ -8,5 +8,8 @@
     "jsonwebtoken": "^9.0.2",
     "uuid": "^9.0.0",
     "zlib": "^1.0.5"
+  },
+  "devDependencies": {
+    "jasmine": "^5.4.0"
   }
 }
