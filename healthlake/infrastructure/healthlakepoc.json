@@ -167,6 +167,29 @@
         },
         "DependsOn": ["healthlakeServiceRole"]
     },
+    "healthlakeLambdaPolicy":{
+      "Type" : "AWS::IAM::Policy",
+      "Properties" : {
+          "PolicyDocument" : {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "Stmt1709827347702",
+                "Action": [
+                  "sns:Publish",
+                  "kms:*"
+                ],
+                "Effect": "Allow",
+                "Resource": "*"
+              }
+
+            ]
+          },
+          "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "healthlakelambdapolicy", {"Ref": "STACKVERSION"}]]},
+          "Roles": [{"Ref": "healthlakepocLambdaRole"}]
+        },
+        "DependsOn": ["healthlakepocLambdaRole"]
+    },
     "smartonfhirauthFunction": {
       "Type": "AWS::Serverless::Function",
       "Properties": {
@@ -212,6 +235,8 @@
                     { "Fn::Join": ["", ["healthlake.",{ "Ref": "AWS::URLSuffix" }]]},
                     { "Fn::Join": ["", ["logs.",{ "Ref": "AWS::URLSuffix" }]]},
                     { "Fn::Join": ["", ["lambda.",{ "Ref": "AWS::URLSuffix" }]]},
+                    { "Fn::Join": ["", ["cloudtrail.",{ "Ref": "AWS::URLSuffix" }]]},
+                    { "Fn::Join": ["", ["sns.",{ "Ref": "AWS::URLSuffix" }]]},
                     { "Fn::Join": ["", ["s3.",{ "Ref": "AWS::URLSuffix" }]]}
                   ]
                 },
@@ -356,6 +381,182 @@
           "Roles": [{"Ref": "healthlakeServiceRole"}]
         },
         "DependsOn": ["healthlakeServiceRole"]
+    },
+    "healthlakecloudtrail": {
+      "Type" : "AWS::CloudTrail::Trail",
+      "Properties" : {
+          "AdvancedEventSelectors" : [ {
+            "FieldSelectors" : [ 
+              {
+                "Equals" : [ "Management" ],
+                "Field" : "eventCategory"
+              },
+              {
+                "NotEquals" : [ "kms.amazonaws.com", "rdsdata.amazonaws.com" ],
+                "Field" : "eventSource"
+              }                                                        
+             ],
+            "Name" : "Selector for healthlake events"
+          }],
+          "EnableLogFileValidation" : false,
+          "IncludeGlobalServiceEvents" : false,
+          "IsLogging" : true,
+          "IsMultiRegionTrail" : false,
+          "IsOrganizationTrail" : false,
+          "S3BucketName" : {"Ref": "outputBucketForHealthlake"},
+          "S3KeyPrefix" : "CloudTrailEvents",
+          "SnsTopicName" : { "Fn::GetAtt": ["healthlakeEventsTopic", "TopicName"] },
+          "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }],
+          "TrailName" : {"Fn::Join": ["-", [{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "healthlaketrail", {"Ref": "STACKVERSION"}]]}
+      },
+      "DependsOn": ["healthlakeEventsTopic", "cloudtrailBucketPolicy", "cloudtrailSNSPolicy"]
+    },
+    "healthlakeEventsTopic": {
+      "Type" : "AWS::SNS::Topic",
+      "Properties" : {
+          "DisplayName" : "CloudTrail Events for Healthlake",
+          "FifoTopic" : false,
+          "KmsMasterKeyId" : {"Ref" : "healthlakeKey"},
+          "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }],
+          "TopicName" : {"Fn::Join": ["-", [{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "cloudtrailevents", {"Ref": "STACKVERSION"}]]}
+      }
+    },
+    "cloudtrailBucketPolicy": {
+      "Type" : "AWS::S3::BucketPolicy",
+      "Properties" : {
+          "Bucket" : {"Ref": "outputBucketForHealthlake"},
+          "PolicyDocument" : {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "AWSCloudTrailPolicy",
+                    "Effect": "Allow",
+                    "Principal": {"Service": "cloudtrail.amazonaws.com"},
+                    "Action": [
+                        "s3:PutObject*",
+                        "s3:Abort*",
+                        "s3:GetBucketAcl"
+                    ],
+                    "Resource": [
+                      {"Fn::Join": ["", [{"Fn::GetAtt": ["outputBucketForHealthlake", "Arn"]}]]},
+                      {"Fn::Join": ["", [{"Fn::GetAtt": ["outputBucketForHealthlake", "Arn"]}, "/*"]]}
+                    ],
+                    "Condition": {
+                        "StringLike": {
+                            "aws:sourceAccount": { "Ref": "AWS::AccountId" }
+                        }
+                    }     
+                }
+            ]
+          }
+            
+        }
+    },
+    "cloudtrailSNSPolicy" : {
+      "Type" : "AWS::SNS::TopicPolicy",
+      "Properties" : {
+          "Topics" : [{ "Ref": "healthlakeEventsTopic" }],
+          "PolicyDocument" : {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "AWSCloudTrailPolicySNS",
+                    "Effect": "Allow",
+                    "Principal": {"Service": "cloudtrail.amazonaws.com"},
+                    "Action": [
+                        "sns:Publish"
+                    ],
+                    "Resource": "*",
+                    "Condition": {
+                        "StringLike": {
+                            "aws:sourceAccount": { "Ref": "AWS::AccountId" }
+                        }
+                    }     
+                }
+            ]
+          }
+            
+        }
+    },
+    "cloudtrailSNSFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "healthlakepoclambdas.zip",
+        "Description": "The lambda function that evaluates the bearer token and authorizes the FHIR request to the Healthlake datastore",
+        "Environment": {
+          "Variables":{
+            "ROLEARN": { "Fn::GetAtt": ["healthlakeServiceRole", "Arn"] },
+            "SNSTOPICARN": {"Ref": "healthlakeSpecificEventsTopic"}
+          }
+        },
+        "Events": {"SNSTrigger":{
+          "Type": "SNS",
+          "Properties": {
+            "Topic": {"Ref": "healthlakeEventsTopic"}
+          }
+        }},
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "cloudtrailSNS", {"Ref": "STACKVERSION"}]]
+        },
+        "Handler": "cloudtrailSNSFunction.handler",
+        "Role": { "Fn::GetAtt": ["healthlakepocLambdaRole", "Arn"] },
+        "Runtime": "nodejs18.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["healthlakepocLambdaRole"]
+    },
+    "cloudtrailSNSFunctionPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+          "Action": "lambda:InvokeFunction",
+          "FunctionName": {"Ref": "cloudtrailSNSFunction"},
+          "Principal": "sns.amazonaws.com"
+      }
+    },
+    "healthlakeSpecificEventsTopic": {
+      "Type" : "AWS::SNS::Topic",
+      "Properties" : {
+          "DisplayName" : "Healthlake Create and Update Events",
+          "FifoTopic" : false,
+          "KmsMasterKeyId" : {"Ref" : "healthlakeKey"},
+          "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }],
+          "TopicName" : {"Fn::Join": ["-", [{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "healthlakeevents", {"Ref": "STACKVERSION"}]]}
+      }
+    },
+    "healthlakeSNSFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "healthlakepoclambdas.zip",
+        "Description": "The lambda function that evaluates the bearer token and authorizes the FHIR request to the Healthlake datastore",
+        "Environment": {
+          "Variables":{
+            "ROLEARN": { "Fn::GetAtt": ["healthlakeServiceRole", "Arn"] }
+          }
+        },
+        "Events": {"SNSTrigger":{
+          "Type": "SNS",
+          "Properties": {
+            "Topic": {"Ref": "healthlakeSpecificEventsTopic"}
+          }
+        }},
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "POCNAME" },{ "Ref": "BRANCHNAME" }, "healthlakeSNS", {"Ref": "STACKVERSION"}]]
+        },
+        "Handler": "healthlakeSNSFunction.handler",
+        "Role": { "Fn::GetAtt": ["healthlakepocLambdaRole", "Arn"] },
+        "Runtime": "nodejs18.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["healthlakepocLambdaRole"]
+    },
+    "healthlakeSNSFunctionPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+          "Action": "lambda:InvokeFunction",
+          "FunctionName": {"Ref": "healthlakeSNSFunction"},
+          "Principal": "sns.amazonaws.com"
+      }
     }
+  
   }
 }
