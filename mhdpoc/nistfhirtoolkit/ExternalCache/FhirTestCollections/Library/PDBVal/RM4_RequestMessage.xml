@@ -57,9 +57,9 @@
         </action>
         <action>
             <assert id="RM4_4">
-                <description value="Bundle.meta.profile: Minimal Metadata or Comprehensive Metadata."/>
+                <description value="Bundle.meta.profile: Minimal Metadata or Comprehensive Metadata or Comprehensive UnContained Metadata."/>
                 <compareToSourceId value="request"/>
-                <compareToSourceExpression value="Bundle.meta.profile = 'http://profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Minimal.ProvideBundle' or Bundle.meta.profile='http://profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Comprehensive.ProvideBundle'"/>
+                <compareToSourceExpression value="Bundle.meta.profile = 'https://profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Minimal.ProvideBundle' or Bundle.meta.profile='https://profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Comprehensive.ProvideBundle'  or Bundle.meta.profile='https://profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.UnContained.Comprehensive.ProvideBundle'"/>
                 <warningOnly value="false"/>
             </assert>
         </action>

@@ -11,10 +11,6 @@
       "Type": "String",
       "Description": "The API-M environment the deployment supports - values are internal-dev, internal-dev-sandbox, internal-qa, internal-qa-sandbox, ref (all previous are non-prod), sandbox, dev, int, prod"
     },
-    "APIKEY": {
-      "Type": "String",
-      "Description": "The API Key used to authenticate against the API-M platform"
-    },
     "BEDOMAIN": {
       "Type": "String",
       "Default": "mhdpocbe",
@@ -82,7 +78,7 @@
           "BRANCHNAME": { "Ref": "BRANCHNAME" },
           "FEDOMAIN": { "Ref": "FEDOMAIN" },
           "APIENVIRONMENT": {"Ref": "APIENVIRONMENT"},
-          "APIKEY": {"Ref": "APIKEY"},
+          "APIKNAMEPARAM": {"Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "apimkeyname"]]},
           "APIKEYSECRET": {"Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "apimclientcertkey"]]}
         }
       },
@@ -129,7 +125,8 @@
                         "Sid": "SSMRead",
                         "Effect": "Allow",
                         "Action": [
-                            "secretsmanager:GetSecretValue"
+                            "secretsmanager:GetSecretValue",
+                            "ssm:GetParameter"
                         ],
                         "Resource": "*"
                     }
@@ -168,36 +165,6 @@
         }
       }
     },
-    "S3InputBucket": {
-      "Type": "AWS::S3::Bucket",
-      "Properties": {
-        "BucketEncryption": {
-          "ServerSideEncryptionConfiguration": [
-            {
-              "BucketKeyEnabled": true,
-              "ServerSideEncryptionByDefault": {
-                "SSEAlgorithm": "AES256"
-              }
-            }
-          ]
-        },
-        "BucketName": {
-          "Fn::Join": [
-            "-",
-            [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
-          ]
-        },
-        "ObjectLockEnabled": false,
-        "PublicAccessBlockConfiguration": {
-          "BlockPublicAcls": true,
-          "BlockPublicPolicy": true,
-          "IgnorePublicAcls": true,
-          "RestrictPublicBuckets": true
-        },
-        "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }]
-      },
-      "DependsOn": []
-    },
     "mhdServerFunctionLayer": {
       "Type": "AWS::Serverless::LayerVersion",
       "Properties": {
@@ -217,16 +184,6 @@
       "Properties": {
         "CodeUri": "mhdpocapilambdas.zip",
         "Description": "The lambda function that acts as a dummy MHDS Base Endpoint",
-        "Environment": {
-          "Variables" : {
-            "S3BUCKET" : {
-              "Fn::Join": [
-                "-",
-                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
-              ]
-            }
-          }
-        },
         "Events": {
           "Api": {
             "Type": "HttpApi",
@@ -252,7 +209,7 @@
         "FunctionName": {
           "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-MHDSBaseEndpointFunction"]]
         },
-        "Handler": "MHDSBaseEndpoint.handler",
+        "Handler": "MHDSBaseEndpointFactory.handler",
         "Layers": [{"Ref": "mhdServerFunctionLayer"}],
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
         "Runtime": "nodejs18.x",
@@ -265,16 +222,6 @@
       "Properties": {
         "CodeUri": "mhdpocapilambdas.zip",
         "Description": "The lambda function that acts as a dummy FHIR endpoint for DocumentReference resources",
-        "Environment": {
-          "Variables" : {
-            "S3BUCKET" : {
-              "Fn::Join": [
-                "-",
-                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
-              ]
-            }
-          }
-        },
         "Events": {
           "Api": {
             "Type": "HttpApi",
@@ -300,7 +247,7 @@
         "FunctionName": {
           "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-DocumentReferenceFunction"]]
         },
-        "Handler": "DocumentReference.handler",
+        "Handler": "DocumentReferenceFactory.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
         "Runtime": "nodejs18.x",
         "Timeout": 300
@@ -312,16 +259,6 @@
       "Properties": {
         "CodeUri": "mhdpocapilambdas.zip",
         "Description": "The lambda function that acts as a dummy FHIR endpoint for DocumentReference resources search",
-        "Environment": {
-          "Variables" : {
-            "S3BUCKET" : {
-              "Fn::Join": [
-                "-",
-                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
-              ]
-            }
-          }
-        },
         "Events": {
           "Api": {
             "Type": "HttpApi",
@@ -347,101 +284,7 @@
         "FunctionName": {
           "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-DocumentReferenceSearchFunction"]]
         },
-        "Handler": "DocumentReferenceSearch.handler",
-        "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs18.x",
-        "Timeout": 300
-      },
-      "DependsOn": ["mhdpocbeLambdaRole"]
-    },
-    "DocumentManifestFunction": {
-      "Type": "AWS::Serverless::Function",
-      "Properties": {
-        "CodeUri": "mhdpocapilambdas.zip",
-        "Description": "The lambda function that acts as a dummy FHIR endpoint for DocumentManifest resources",
-        "Environment": {
-          "Variables" : {
-            "S3BUCKET" : {
-              "Fn::Join": [
-                "-",
-                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
-              ]
-            }
-          }
-        },
-        "Events": {
-          "Api": {
-            "Type": "HttpApi",
-            "Properties": {
-              "ApiId": { "Ref": "mhdHttpApi" },
-              "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/DocumentManifest/{dmid+}",
-              "TimeoutInMillis": 29000,
-              "PayloadFormatVersion": "2.0"
-            }
-          },
-          "ApiSecure": {
-            "Type": "HttpApi",
-            "Properties": {
-              "ApiId": { "Ref": "mhdHttpApiSecure" },
-              "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/DocumentManifest/{dmid+}",
-              "TimeoutInMillis": 29000,
-              "PayloadFormatVersion": "2.0"
-            }
-          }
-        },
-        "FunctionName": {
-          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-DocumentManifestFunction"]]
-        },
-        "Handler": "DocumentManifest.handler",
-        "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs18.x",
-        "Timeout": 300
-      },
-      "DependsOn": ["mhdpocbeLambdaRole"]
-    },
-    "DocumentManifestSearchFunction": {
-      "Type": "AWS::Serverless::Function",
-      "Properties": {
-        "CodeUri": "mhdpocapilambdas.zip",
-        "Description": "The lambda function that acts as a dummy FHIR endpoint for DocumentManifest resources",
-        "Environment": {
-          "Variables" : {
-            "S3BUCKET" : {
-              "Fn::Join": [
-                "-",
-                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
-              ]
-            }
-          }
-        },
-        "Events": {
-          "Api": {
-            "Type": "HttpApi",
-            "Properties": {
-              "ApiId": { "Ref": "mhdHttpApi" },
-              "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/DocumentManifest",
-              "TimeoutInMillis": 29000,
-              "PayloadFormatVersion": "2.0"
-            }
-          },
-          "ApiSecure": {
-            "Type": "HttpApi",
-            "Properties": {
-              "ApiId": { "Ref": "mhdHttpApiSecure" },
-              "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/DocumentManifest",
-              "TimeoutInMillis": 29000,
-              "PayloadFormatVersion": "2.0"
-            }
-          }
-        },
-        "FunctionName": {
-          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-DocumentManifestSearchFunction"]]
-        },
-        "Handler": "DocumentManifestSearch.handler",
+        "Handler": "DocumentReferenceSearchFactory.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
         "Runtime": "nodejs18.x",
         "Timeout": 300
@@ -453,16 +296,6 @@
       "Properties": {
         "CodeUri": "mhdpocapilambdas.zip",
         "Description": "The lambda function that acts as a dummy FHIR endpoint for List resources",
-        "Environment": {
-          "Variables" : {
-            "S3BUCKET" : {
-              "Fn::Join": [
-                "-",
-                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
-              ]
-            }
-          }
-        },
         "Events": {
           "Api": {
             "Type": "HttpApi",
@@ -500,16 +333,6 @@
       "Properties": {
         "CodeUri": "mhdpocapilambdas.zip",
         "Description": "The lambda function that acts as a dummy FHIR endpoint for List resources",
-        "Environment": {
-          "Variables" : {
-            "S3BUCKET" : {
-              "Fn::Join": [
-                "-",
-                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
-              ]
-            }
-          }
-        },
         "Events": {
           "Api": {
             "Type": "HttpApi",
@@ -542,28 +365,18 @@
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
     },
-    "DiagnosticReportFunction": {
+    "DiagnosticReportLocalFunction": {
       "Type": "AWS::Serverless::Function",
       "Properties": {
         "CodeUri": "mhdpocapilambdas.zip",
-        "Description": "The lambda function that acts as a dummy FHIR endpoint for DiagnosticReport resources",
-        "Environment": {
-          "Variables" : {
-            "S3BUCKET" : {
-              "Fn::Join": [
-                "-",
-                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
-              ]
-            }
-          }
-        },
+        "Description": "The lambda function that acts as a dummy local FHIR endpoint for DiagnosticReport resources",
         "Events": {
           "Api": {
             "Type": "HttpApi",
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/DiagnosticReport/{diagnosticreportid+}",
+              "Path": "/mhdspoc/FHIR/R4/DiagnosticReportLocal/{diagnosticreportid+}",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -573,16 +386,16 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApiSecure" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/DiagnosticReport/{diagnosticreportid+}",
+              "Path": "/mhdspoc/FHIR/R4/DiagnosticReportLocal/{diagnosticreportid+}",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
           }
         },
         "FunctionName": {
-          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-DiagnosticReportFunction"]]
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-DiagnosticReportLocalFunction"]]
         },
-        "Handler": "DiagnosticReport.handler",
+        "Handler": "DiagnosticReportLocal.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
         "Runtime": "nodejs18.x",
         "Timeout": 300
@@ -596,12 +409,6 @@
         "Description": "The lambda function that acts as a proxy to retrieve DiagnosticReport resources",
         "Environment": {
           "Variables" : {
-            "S3BUCKET" : {
-              "Fn::Join": [
-                "-",
-                [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "fhirresources"]
-              ]
-            },
             "SECRETSMGRCERT":  {
               "Fn::Join": [
                 "-",
@@ -622,12 +429,32 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/mhdspoc/FHIR/R4/DiagnosticReportProxy",
+              "Path": "/mhdspoc/FHIR/R4/DiagnosticReport",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
           },
           "ApiSecure": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/DiagnosticReport",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "Api1": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApi" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/FHIR/R4/DiagnosticReportProxy",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiSecure1": {
             "Type": "HttpApi",
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApiSecure" },
@@ -679,6 +506,43 @@
           "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-introspectFunction"]]
         },
         "Handler": "introspect.handler",
+        "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs18.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["mhdpocbeLambdaRole"]
+    },
+    "TokenFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "mhdpocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy Oauth2 token endpoint and passes requests on to API-M",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApi" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/oauth2/token",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiSecure": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "mhdHttpApiSecure" },
+              "Method": "ANY",
+              "Path": "/mhdspoc/oauth2/token",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-tokenFunction"]]
+        },
+        "Handler": "token.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
         "Runtime": "nodejs18.x",
         "Timeout": 300
@@ -754,14 +618,14 @@
           "EndpointConfiguration": "REGIONAL",
           "MutualTlsAuthentication": {
             "TruststoreUri" :  { "Fn::Join": ["", [
-              "s3://", 
+              "s3://",
               {
                 "Fn::Join": [
                   "-",
                   [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "certs","bucket"]
                 ]
               },
-              "/certs/202406031150tsassolarchdemoapitruststore.pem"]]} 
+              "/certs/202406031150tsassolarchdemoapitruststore.pem"]]}
           },
           "Route53": {
             "HostedZoneId": {"Ref": "HOSTEDZONEID"}

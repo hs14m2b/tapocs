@@ -2,7 +2,8 @@
     <id value="xds"/>
     <meta>
         <lastUpdated value="2013-07-01T13:11:33Z"/>
-        <!--@{BundleMetaComprehensiveProfileElement}-->
+        <!-- test tooling does not allow a specific element for UnContained or some reason so hard coding value here-->
+        <profile value="https://profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.UnContained.Comprehensive.ProvideBundle"/>
     </meta>
     <type value="transaction"/>
     <entry>

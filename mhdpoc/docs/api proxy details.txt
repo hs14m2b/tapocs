@@ -1,6 +1,6 @@
 Api Proxy is hosted on API-M and is called nhse-tsas-solarch-demo-api
 
-GitHub setup requires repository to be forked and needs separate author and reviewer. 
+GitHub setup requires repository to be forked and needs separate author and reviewer.
 To enable commits have used personal github account (matthewandkaren@hotmail.com) as fork
 Make local changes on branch. Publish branch to fork. Go into GitHub with personal account and create upstream pull request
 Log into GitHub with corporate account and review pull request and merge.
@@ -20,7 +20,7 @@ The developer portal does not create clients that have access to the "internal" 
 https://apigee.com/organizations/nhsd-nonprod/apps
 There doesn't appear to be any description on confluence as to how to do this.
 
-To enable private_key_jwt auth on the app the jwks-resource-url custom attribute needs to be set. 
+To enable private_key_jwt auth on the app the jwks-resource-url custom attribute needs to be set.
 The simplest way to do this is to create a "dummy" app on the developer portal with the public key and copy the generated url for the jwks endpoint
 
 For this example the following has been created
@@ -96,15 +96,20 @@ curl -X POST https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/
 open access
 curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0
 curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DocumentReference/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0
-curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0 -H "NHSE-NRL-Pointer-URL: https://internal-dev-sandbox-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01"
-curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DiagnosticReportProxy -H "NHSE-NRL-Pointer-URL: https://internal-dev-sandbox-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01"
+curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DiagnosticReportLocal/Y05868-0e5741ab-55bc-4c80-90a5-c56df5a9a5e0 -H "NHSE-NRL-Pointer-URL: https://internal-dev-sandbox-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01"
+curl -X GET https://internal-dev-sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DiagnosticReport -H "NHSE-NRL-Pointer-URL: https://internal-dev-sandbox-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReportLocal/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01"
 curl -X GET https://internal-dev.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DiagnosticReportProxy -H "apikey: Too5BdPayTQACdw1AJK1rD4nKUD0Ag7J" -H "NHSE-NRL-Pointer-URL: https://internal-dev-sandbox-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReport/Y05868-1e404af3-077f-4bee-b7a6-a9be97e1ce01"
+curl -X GET https://sandbox.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DiagnosticReport -H "NHSE-NRL-Pointer-URL: https://sandbox-mhdpoctlsma-mhdpocbe.nhsdta.com/mhdspoc/FHIR/R4/DiagnosticReportLocal/UNIQUEIDFORREPORT-1e404af3-077f-4bee-b7a6-a9be97e1ce01"
 
 
 Backend of API is protected by root cert that is located in /home/matthew/certs for issuing new client certs to be used by API proxy
 
 API specification borrows from https://github.com/NHSDigital/personal-demographics-service-api/blob/master/specification/personal-demographics.yaml
 
+
+Using Auth in the Sanbox environment
+ - create a client application in teh Sandbox environment and give it access to the "Identity Service (Sanbox)" API - this enables it to call the sandbox.api.service.nhs.uk/oauth2/token endpoint
+ - add the jwks file to the API Client as normal and use the API Key details to authenticate against the Sanbox Oauth2 API. The bearer token can then be included in the calls to Sandbox APIs.
 
 
 

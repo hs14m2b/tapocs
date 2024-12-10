@@ -7,7 +7,7 @@
     </variable>
     <variable>
         <name value="getFixtureRequestQueryParams"/>
-        <defaultValue value="?fixtureId=pdb&amp;baseTestCollection=MHD_DocumentRecipient_comprehensive"/>
+        <defaultValue value="?fixtureId=pdb"/>
     </variable>
     <variable>
         <name value="expectedFixtureResponseBundleEntryCount"/>
@@ -33,6 +33,11 @@
         <expression value="''"/>
         <sourceId value="anonymous"/>
     </variable>
+    <variable>
+        <!-- need to work out how to dynamically set DR_5 and DR_6 to fail as no binary in a dynamic document-->
+        <name value="expectedFailAssertionIdList"/>
+        <defaultValue value="('RM4_5'|'SUBJ4_1'|'DR_5'|'TR_1')"/>
+    </variable>
 
     <test>
         <description value="Submit Provide Document Bundle to MHD Document Recipient."/>
@@ -41,7 +46,7 @@
                 <description value="Module usage description"/>
                 <modifierExtension url="https://github.com/usnistgov/asbestos/wiki/TestScript-Import">
                     <extension url="component">
-                        <valueString value="../../Library/AggregateModule/MHDPDBSuccess2.xml"/>
+                        <valueString value="../../Library/AggregateModule/MHD_NRL_PDBSuccess2.xml"/>
                     </extension>
                     <extension url="urn:variable-in">
                         <valueString value="isComprehensiveMetadataExpected"/>

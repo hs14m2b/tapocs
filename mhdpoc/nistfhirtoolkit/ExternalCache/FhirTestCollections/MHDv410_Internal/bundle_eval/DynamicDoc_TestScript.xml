@@ -28,7 +28,7 @@
     </variable>
     <variable>
         <name value="isComprehensive"/>
-        <expression value="Bundle.meta.profile = 'https://profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Comprehensive.ProvideBundle'"/>
+        <expression value="Bundle.meta.profile = 'https://profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.UnContained.Comprehensive.ProvideBundle' or Bundle.meta.profile = 'https://profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Comprehensive.ProvideBundle'"/>
         <sourceId value="request"/>
     </variable>
 

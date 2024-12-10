@@ -1,6 +1,6 @@
 import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
-import { getDocRef } from './get_document_ref_sandpit.mjs'
+import { getDocRef } from './get_document_ref.mjs'
 
 const REGION = "eu-west-2";
 const s3Client = new S3Client({
@@ -23,45 +23,20 @@ async function getS3Object(params) {
   // return Buffer.concat(await stream.toArray())
 }
 
-const S3BUCKET = process.env['S3BUCKET'];
-const APIMKEYSECRET = process.env['APIMKEYSECRET'];
+const APIKEYSECRET = process.env['APIKEYSECRET'];
 const APIENVIRONMENT = process.env['APIENVIRONMENT'];
+const APIKNAMEPARAM = process.env['APIKNAMEPARAM'];
 
 export const handler = async (event) => {
   console.log(JSON.stringify(event));
     try {
         console.log(event.body);
-        
+
         //get the documentid path parameter and put into template
         const documentid = event.pathParameters.documentid;
-        /*
-        //no need to retrieve from S3 as now directly in NRL
-        let key = "DocumentReference-urn:oid:"+documentid;
-        let params = {
-          Key: key,
-          Bucket: S3BUCKET,
-        };
-
-        let buf;
-        try {
-          buf = await getS3Object(params);
-        } catch (error) {
-          key = "DocumentReference-urn:uuid:"+documentid;
-          params = {
-            Key: key,
-            Bucket: S3BUCKET,
-          };
-          buf = await getS3Object(params);
-        }
-        
-        //convert the Buffer to a string
-        let docRefString = buf.toString();
-        console.log(docRefString);
-        */
 
         console.log("getting doc from NRL");
-        let nrlresponse = await getDocRef(documentid);
-        let nrlDocRef = JSON.parse(nrlresponse.body);
+        let nrlresponse = await getDocRef(documentid, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
         console.log(nrlresponse);
 
 

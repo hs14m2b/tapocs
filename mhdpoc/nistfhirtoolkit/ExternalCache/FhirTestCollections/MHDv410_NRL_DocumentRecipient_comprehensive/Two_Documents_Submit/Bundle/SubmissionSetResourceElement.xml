@@ -41,7 +41,10 @@
         </coding>
     </code>
     <subject>
-        <reference value="${patientResourceId}"/>
+		<identifier>
+			<system value="https://fhir.nhs.uk/Id/nhs-number"/>
+			<value value="${patientResourceIdValue}"/>
+		</identifier>
     </subject>
     <date value="2021-08-23T22:13:00-05:00"/>
     <entry>

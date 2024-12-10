@@ -1,6 +1,7 @@
 import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
-import { getDocRef } from './get_document_ref_sandpit.mjs'
+import { getDocRef } from './get_document_ref.mjs'
+import { searchResourceWithRetry } from './search_resource_healthlake.mjs';
 
 const REGION = "eu-west-2";
 const s3Client = new S3Client({
@@ -23,90 +24,52 @@ async function getS3Object(params) {
   // return Buffer.concat(await stream.toArray())
 }
 
-const S3BUCKET = process.env['S3BUCKET'];
-const APIMKEYSECRET = process.env['APIMKEYSECRET'];
+const APIKEYSECRET = process.env['APIKEYSECRET'];
 const APIENVIRONMENT = process.env['APIENVIRONMENT'];
+const APIKNAMEPARAM = process.env['APIKNAMEPARAM'];
+
+async function searchHealthlake(event){
+  let maxDuration=25000;
+  try {
+    console.log("searching healthlake")
+    let healthlakeresponse = await searchResourceWithRetry(maxDuration,event.queryStringParameters, "DocumentReference", "Y05868", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+    console.log("healthlake response is " + JSON.stringify(healthlakeresponse));
+    let searchsetBundle = JSON.parse(healthlakeresponse.body);
+    if (searchsetBundle.entry) searchsetBundle.total = searchsetBundle.entry.length;
+    return searchsetBundle;
+  } catch (error) {
+    console.log(error);
+    return false;
+  }
+}
+
+
+
 
 export const handler = async (event) => {
   console.log(JSON.stringify(event));
     try {
         console.log(event.body);
-        
-        //get the documentReferenceId query parameter 
-        const drid = event.queryStringParameters.identifier;
-        let key = "DocumentReference-"+drid;
-        let params = {
-          Key: key,
-          Bucket: S3BUCKET,
-        };
-        let searchsetTemplate = {
-          "resourceType": "Bundle",
-          "type": "searchset",
-          "total": 0,
-          "link": [ {
-            "relation": "self",
-            "url": "https://" + event.headers.host + event.rawPath + "?" + event.rawQueryString
-          } ],
-          "entry": [  ]
-        };      
 
+        //try healthlake
         try {
-          let buf = await getS3Object(params);
-          //convert the Buffer to a string
-          let docRefString = buf.toString();
-          console.log(docRefString);
-          let docRef = JSON.parse(docRefString);
-          let fullUrl = "https://" + event.headers.host + event.rawPath + "/" + docRef.id;
-          let NRLParams = {
-            "subject": {
-              "identifier": {
-                "system": "https://fhir.nhs.uk/Id/nhs-number",
-                "value": "4409815415"
-              }
-            },
-            "type": {
-              "coding": [
-                {
-                  "system": "http://snomed.info/sct",
-                  "code": "736253002",
-                  "display": "Mental Health Crisis Plan"
-                }
-              ]
-            },
-            "custodian": {
-              "identifier": {
-                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-                "value": "Y05868"
-              }
-            }
+          let searchsetBundle = await searchHealthlake(event);
+          if (searchsetBundle){
+            //return the searchset
+            let healthlakeResponse = {
+              statusCode: 200,
+              "headers": {
+                  "Content-Type": "application/fhir+json"
+              },
+              body: JSON.stringify(searchsetBundle)
+            };
+            console.log(JSON.stringify(healthlakeResponse));
+            return healthlakeResponse;
           }
-          let nrlDocRefId = (docRef.id.startsWith(NRLParams.custodian.identifier.value)) ? docRef.id : NRLParams.custodian.identifier.value + "-" + docRef.id; 
-          let nrlresponse = await getDocRef(nrlDocRefId);
-          let nrlDocRef = JSON.parse(nrlresponse.body);
-          console.log(nrlresponse);
-          let searchsetEntry = {
-              "fullUrl": fullUrl,
-              "resource": nrlDocRef,
-              "search": {
-                "mode": "match"
-              }
-          };
-          searchsetTemplate.entry.push(searchsetEntry);
-          searchsetTemplate.total = 1;   
         } catch (error) {
-          console.log("unable to find any DocumentReference objects");
+          console.log("caught an unexpected error processing data from healthlake");
+          throw error;
         }
-
-
-        let response = {
-            statusCode: 200,
-            "headers": {
-                "Content-Type": "application/fhir+json"
-            },
-            body: JSON.stringify(searchsetTemplate)
-        };
-        console.log(JSON.stringify(response));
-        return response;
     } catch (error) {
         console.log("caught error " + error.message);
         let response = {

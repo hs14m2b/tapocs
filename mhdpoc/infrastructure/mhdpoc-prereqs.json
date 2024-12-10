@@ -107,6 +107,17 @@
           "Tags" : [ { "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } } ]
         }
     },
+    "apimKeyNameParam": {
+      "Type" : "AWS::SSM::Parameter",
+      "Properties" : {
+        "Description" : "Name of the API Key for authenticating to API Management platform",
+        "Name" : {"Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "apimkeyname"]]},
+        "Tags" : {  "shortcode": { "Ref": "SHORTCODE" } },
+        "Tier" : "Standard",
+        "Type" : "String",
+        "Value" : "TOBESET"
+      }
+    },
     "S3CertsBucket": {
       "Type": "AWS::S3::Bucket",
       "Properties": {
