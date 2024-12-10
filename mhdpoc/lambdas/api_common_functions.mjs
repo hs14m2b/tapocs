@@ -5,23 +5,23 @@ import {
   SecretsManagerClient,
   GetSecretValueCommand,
 } from "@aws-sdk/client-secrets-manager";
+import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm"; // ES Modules import
+
+const REGION = "eu-west-2";
+let ssmclient;
 
 const { sign } = jwt;
 const HTTPS = "https://";
 
-let https;
-try {
-  https = await import('node:https');
-} catch (err) {
-  console.log('https support is disabled!');
-}
+import https from "node:https";
+import { error } from 'console';
 
 export const createSignedJwtForAuth = (apiKey, kid, privatekey, oauth_fqdn, oauth_auth_path) =>
 {
 
 	let jwtid = uuidv4();
 	let expiresIn = 300;
-    let client_token_sign_options = { 
+    let client_token_sign_options = {
 		"algorithm": "RS512",
 		"subject": apiKey,
 		"issuer": apiKey,
@@ -40,13 +40,13 @@ export const createSignedJwtForAuth = (apiKey, kid, privatekey, oauth_fqdn, oaut
 export const getOAuth2AccessToken = async (signed_jwt, oauth_fqdn, oauth_auth_path) =>
 {
 
-	// form data
+    // form data
 	let postData = new URLSearchParams({
         "grant_type": "client_credentials",
         "client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
         "client_assertion": signed_jwt
       }).toString();
-  
+
     //console.log("request POST data is " + JSON.stringify(postData));
     // request option
 	let options = {
@@ -60,7 +60,7 @@ export const getOAuth2AccessToken = async (signed_jwt, oauth_fqdn, oauth_auth_pa
           'Content-Length': postData.length
         }
       };
-   
+
       console.log("request options are  " + JSON.stringify(options));
       return new Promise(function (resolve, reject) {
           // request object
@@ -79,12 +79,13 @@ export const getOAuth2AccessToken = async (signed_jwt, oauth_fqdn, oauth_auth_pa
                   reject(err);
               })
           });
-           
+
           // req error
           req.on('error', function (err) {
             console.log(err);
+            reject(err);
           });
-           
+
           //send request with the postData form
           req.write(postData);
           req.end();
@@ -102,7 +103,7 @@ export const getOAuth2AccessTokenViaTokenExchange = async (signed_jwt, id_token,
         "subject_token_type": "urn:ietf:params:oauth:token-type:id_token",
         "subject_token": id_token
       }).toString();
-  
+
     //console.log("request POST data is " + JSON.stringify(postData));
     // request option
 	let options = {
@@ -116,7 +117,7 @@ export const getOAuth2AccessTokenViaTokenExchange = async (signed_jwt, id_token,
           'Content-Length': postData.length
         }
       };
-   
+
       console.log("request options are  " + JSON.stringify(options));
       return new Promise(function (resolve, reject) {
           // request object
@@ -135,12 +136,13 @@ export const getOAuth2AccessTokenViaTokenExchange = async (signed_jwt, id_token,
                   reject(err);
               })
           });
-           
+
           // req error
           req.on('error', function (err) {
             console.log(err);
+            reject(err);
           });
-           
+
           //send request with the postData form
           req.write(postData);
           req.end();
@@ -188,12 +190,12 @@ let options = {
               reject(err);
           })
       });
-       
+
       // req error
       req.on('error', function (err) {
         console.log(err);
       });
-       
+
       //send request
       req.end();
   });
@@ -203,13 +205,13 @@ export const getSecretValue = async (secretName) =>
 {
     const secret_name = secretName;
     console.log("looking for secret name " + secret_name);
-  
+
     const client = new SecretsManagerClient({
       region: "eu-west-2",
     });
-    
+
     let response;
-    
+
     try {
       response = await client.send(
         new GetSecretValueCommand({
@@ -222,9 +224,22 @@ export const getSecretValue = async (secretName) =>
       // https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
       throw error;
     }
-    
+
     const secret = response.SecretString;
     return secret;
+}
+
+export const getParamValue = async (paramName) => {
+    if (!ssmclient || ssmclient === undefined) ssmclient = new SSMClient({ region: REGION });
+    let input = {
+        "Name": paramName
+    }
+    console.log("looking for param name " + paramName);
+    const command = new GetParameterCommand(input);
+    const response = await ssmclient.send(command);
+    console.log("response from param store ", response );
+    let returned_parameter = response.Parameter.Value;
+    return returned_parameter;
 }
 
 export const environmentNeedsAuth = (apienvironment) =>
@@ -238,3 +253,68 @@ export const nrlEnvironmentMapping = (apienvironment) =>
   if (apienvironment == "int") return "int";
   return "sandbox";
 }
+
+/**
+  * @param {Object} object
+  * @param {string} key
+  * @return {any} value
+ */
+export const getParameterCaseInsensitive = (object, key) => {
+  const asLowercase = key.toLowerCase();
+  return object[Object.keys(object)
+    .find(k => k.toLowerCase() === asLowercase)
+  ];
+}
+
+export const getDiagnosticReportFromLocalServer = async (pointerUrl, CLIENTCERTIFICATE, CLIENTCERTIFICATEKEY) =>
+  {
+
+    //extract the host
+    let urlObject = new URL(pointerUrl);
+    // request option
+    let options = {
+      host: urlObject.hostname,
+      port: 443,
+      method: 'GET',
+      path: urlObject.pathname,
+      rejectUnauthorized: false,
+      key: CLIENTCERTIFICATEKEY,
+      cert: CLIENTCERTIFICATE,
+      headers: {
+        'accept': 'application/fhir+json;version=1'
+      }
+    };
+
+    console.log("request options are  " + JSON.stringify(options));
+    return new Promise(function (resolve, reject) {
+        // request object
+        var req = https.request(options, function (res) {
+            var result = '';
+            console.log("HTTP status code: " + res.statusCode);
+            res.on('data', function (chunk) {
+                result += chunk;
+            });
+            res.on('end', function () {
+                console.log(result);
+                let response = {
+                  "status": res.statusCode,
+                  "body": result
+                }
+                resolve(response);
+            });
+            res.on('error', function (err) {
+                console.log(err);
+                reject(err);
+            })
+        });
+
+        // req error
+        req.on('error', function (err) {
+          console.log(err);
+          reject(err);
+        });
+
+        //send request
+        req.end();
+    });
+};

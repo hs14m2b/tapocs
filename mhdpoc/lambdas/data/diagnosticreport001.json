@@ -32,8 +32,10 @@
       "text": "CT of head-neck"
     },
     "subject": {
-      "reference": "Patient/f201",
-      "display": "Roel"
+      "identifier": {
+        "system": "https://fhir.nhs.uk/Id/nhs-number",
+        "value": "4409815415"
+      }
     },
     "effectiveDateTime": "2012-12-01T12:00:00+01:00",
     "issued": "2012-12-01T12:00:00+01:00",
@@ -58,6 +60,16 @@
             "display": "Malignant tumor of craniopharyngeal duct"
           }
         ]
+      }
+    ],
+    "presentedForm": [
+      {
+        "contentType": "text/plain",
+        "data": "Q1QgYnJhaW5zOiBsYXJnZSB0dW1vciBzcGhlbm9pZC9jbGl2dXMu"
+      },
+      {
+        "contentType":"text/html",
+        "data": "PGh0bWw+PGJvZHk+PGRpdiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94aHRtbCI+PHA+PGI+R2VuZXJhdGVkIE5hcnJhdGl2ZSB3aXRoIERldGFpbHM8L2I+PC9wPjxwPjxiPmlkPC9iPjogZjIwMTwvcD48cD48Yj5zdGF0dXM8L2I+OiBmaW5hbDwvcD48cD48Yj5jYXRlZ29yeTwvYj46IFJhZGlvbG9neSA8c3Bhbj4oRGV0YWlscyA6IHtTTk9NRUQgQ1QgY29kZSAnMzk0OTE0MDA4JyA9ICdSYWRpb2xvZ3kgLSBzcGVjaWFsaXR5JywgZ2l2ZW4gYXMgJ1JhZGlvbG9neSd9OyB7aHR0cDovL3Rlcm1pbm9sb2d5LmhsNy5vcmcvQ29kZVN5c3RlbS92Mi0wMDc0IGNvZGUgJ1JBRCcgPSAnUmFkaW9sb2d5KTwvc3Bhbj48L3A+PHA+PGI+Y29kZTwvYj46IENUIG9mIGhlYWQtbmVjayA8c3Bhbj4oRGV0YWlscyA6IHtTTk9NRUQgQ1QgY29kZSAnNDI5ODU4MDAwJyA9ICdDb21wdXRlZCB0b21vZ3JhcGh5IChDVCkgb2YgaGVhZCBhbmQgbmVjaycsIGdpdmVuIGFzICdDb21wdXRlZCB0b21vZ3JhcGh5IChDVCkgb2YgaGVhZCBhbmQgbmVjayd9KTwvc3Bhbj48L3A+PHA+PGI+c3ViamVjdDwvYj46IDxhPlJvZWw8L2E+PC9wPjxwPjxiPmVmZmVjdGl2ZTwvYj46IDAxLzEyLzIwMTIgMTI6MDA6MDAgUE08L3A+PHA+PGI+aXNzdWVkPC9iPjogMDEvMTIvMjAxMiAxMjowMDowMCBQTTwvcD48cD48Yj5wZXJmb3JtZXI8L2I+OiA8YT5CbGlqZG9ycCBNQzwvYT48L3A+PHA+PGI+aW1hZ2luZ1N0dWR5PC9iPjogSEVBRCBhbmQgTkVDSyBDVCBESUNPTSBpbWFnaW5nIHN0dWR5PC9wPjxwPjxiPmNvbmNsdXNpb248L2I+OiBDVCBicmFpbnM6IGxhcmdlIHR1bW9yIHNwaGVub2lkL2NsaXZ1cy48L3A+PHA+PGI+Y29uY2x1c2lvbkNvZGU8L2I+OiBNYWxpZ25hbnQgdHVtb3Igb2YgY3JhbmlvcGhhcnluZ2VhbCBkdWN0IDxzcGFuPihEZXRhaWxzIDoge1NOT01FRCBDVCBjb2RlICcxODgzNDAwMDAnID0gJ01hbGlnbmFudCB0dW1vciBvZiBjcmFuaW9waGFyeW5nZWFsIGR1Y3QnLCBnaXZlbiBhcyAnTWFsaWduYW50IHR1bW9yIG9mIGNyYW5pb3BoYXJ5bmdlYWwgZHVjdCd9KTwvc3Bhbj48L3A+PC9kaXY+PC9ib2R5PjwvaHRtbD4="
       }
     ]
   }

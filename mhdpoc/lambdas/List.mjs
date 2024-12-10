@@ -1,64 +1,33 @@
-import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-const REGION = "eu-west-2";
-const s3Client = new S3Client({
-    apiVersion: '2006-03-01',
-    region: REGION
-});
+import { getResource } from './get_resource_healthlake.mjs';
 
-async function getS3Object(params) {
-  const response = await s3Client
-      .send(new GetObjectCommand(params))
-  const stream = response.Body;
-
-  return new Promise((resolve, reject) => {
-      const chunks = []
-      stream.on('data', chunk => { console.log("received a chunk"); chunks.push(chunk) })
-      stream.on('end', () => resolve(Buffer.concat(chunks)))
-      stream.on('error', err => reject(err))
-  });
-  // if readable.toArray() is support
-  // return Buffer.concat(await stream.toArray())
-}
-
-const S3BUCKET = process.env['S3BUCKET'];
+const APIENVIRONMENT = process.env['APIENVIRONMENT'];
+const APIKEYSECRET = process.env['APIKEYSECRET'];
+const APIKNAMEPARAM = process.env['APIKNAMEPARAM'];
 
 export const handler = async (event) => {
     console.log(JSON.stringify(event));
     try {
         console.log(event.body);
-        
+
         //get the dmid path parameter and put into template
         const listid = event.pathParameters.listid;
-        let key = "List-urn:uuid:"+listid;
-        let params = {
-          Key: key,
-          Bucket: S3BUCKET,
-        };
 
-        let buf;
-        try {
-          buf = await getS3Object(params);
-        } catch (error) {
-          key = "List-urn:oid:"+listid;
-          params = {
-            Key: key,
-            Bucket: S3BUCKET,
-          };
-          buf = await getS3Object(params);
-        }
-        //convert the Buffer to a string
-        let listString = buf.toString();
-        console.log(listString);
+        //get from healthlake
+        console.log("getting resource from healthlake")
+        let healthlakeresponse = await getResource(listid, "List", "Y05868", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+        console.log("healthlake response is " + JSON.stringify(healthlakeresponse));
 
         let response = {
-            statusCode: 200,
-            "headers": {
-                "Content-Type": "application/fhir+json"
-            },
-            body: listString
-        };
-        console.log(JSON.stringify(response));
-        return response;
+          statusCode: healthlakeresponse.status,
+          "headers": {
+              "Content-Type": "application/fhir+json"
+          },
+          body: healthlakeresponse.body
+      };
+      console.log(JSON.stringify(response));
+      return response;
+
+
     } catch (error) {
         console.log("caught error " + error.message);
         let response = {

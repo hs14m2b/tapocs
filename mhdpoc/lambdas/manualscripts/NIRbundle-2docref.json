@@ -1,0 +1,238 @@
+{
+  "resourceType": "Bundle",
+  "id": "xds",
+  "meta": {
+      "lastUpdated": "2013-07-01T13:11:33Z",
+      "profile": [
+          "https://profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.UnContained.Comprehensive.ProvideBundle"
+      ]
+  },
+  "type": "transaction",
+  "entry": [
+      {
+          "fullUrl": "urn:uuid:1e404af3-077f-4bee-b7a6-a9be97e1ce02",
+          "resource": {
+              "resourceType": "DocumentReference",
+              "meta": {
+                  "profile": [
+                      "https://profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Minimal.DocumentReference"
+                  ]
+              },
+              "identifier" : [{
+                  "type" : {
+                    "text" : "Accession-Number"
+                  },
+                  "value" : "X26.1234567890"
+              }],
+              "masterIdentifier": {
+                  "system": "urn:ietf:rfc:3986",
+                  "value": "urn:oid:1.2.10.255.255.254.2024.6.28.14.9.41.60.1"
+              },
+              "status": "current",
+              "type": {
+                  "coding": [
+                      {
+                          "system": "https://nicip.nhs.uk",
+                          "code": "MAULR",
+                          "display": "MRA Upper limb Rt"
+                      }
+                  ]
+              },
+              "category": [
+                  {
+                      "coding": [
+                          {
+                              "system": "http://snomed.info/sct",
+                              "code": "721981007",
+                              "display": "Diagnostic studies report"
+                          }
+                      ]
+                  }
+              ],
+              "subject": {
+                  "identifier": {
+                      "system": "https://fhir.nhs.uk/Id/nhs-number",
+                      "value": "4409815415"
+                  }
+              },
+              "date": "2015-02-07T13:28:17.239+02:00",
+              "custodian": {
+                  "identifier": {
+                      "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                      "value": "X26"
+                  }
+              },
+              "author": [{
+                "identifier": {
+                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                    "value": "X26"
+                }
+              }],
+              "content": [
+                  {
+                      "attachment": {
+                          "contentType": "application/pdf",
+                          "url": "https://int.api.service.nhs.uk/nhse-tsas-solarch-demo-api/mhdspoc/FHIR/R4/DiagnosticReportLocal/1e404af3-077f-4bee-b7a6-a9be97e1ce02",
+                          "title": "Diagnostic Studies Report",
+                          "creation": "2022-12-21T10:45:41+11:00"
+                      },
+                      "format": {
+                          "code": "apiplatform",
+                          "display": "API Platform"
+                      }
+                  }
+              ]
+          },
+          "request": {
+              "method": "POST",
+              "url": "DocumentReference"
+          }
+      },
+      {
+        "fullUrl": "urn:uuid:1e404af3-077f-4bee-b7a6-a9be97e1ce03",
+        "resource": {
+            "resourceType": "DocumentReference",
+            "meta": {
+                "profile": [
+                    "https://profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Minimal.DocumentReference"
+                ]
+            },
+            "identifier" : [{
+                "type" : {
+                  "text" : "Accession-Number"
+                },
+                "value" : "X26.1234567890"
+            }],
+            "masterIdentifier": {
+                "system": "urn:ietf:rfc:3986",
+                "value": "urn:oid:1.2.10.255.255.254.2024.6.28.14.9.41.60.1"
+            },
+            "status": "current",
+            "type": {
+                "coding": [
+                    {
+                        "system": "https://nicip.nhs.uk",
+                        "code": "MAULR",
+                        "display": "MRA Upper limb Rt"
+                    }
+                ]
+            },
+            "category": [
+                {
+                    "coding": [
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "103693007",
+                            "display": "Diagnostic procedure"
+                        }
+                    ]
+                }
+            ],
+            "subject": {
+                "identifier": {
+                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "value": "4409815415"
+                }
+            },
+            "date": "2015-02-07T13:28:17.239+02:00",
+            "custodian": {
+                "identifier": {
+                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                    "value": "X26"
+                }
+            },
+            "author": [{
+              "identifier": {
+                  "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                  "value": "X26"
+              }
+            }],
+            "content": [
+                {
+                    "attachment": {
+                        "contentType": "application/dicom+json",
+                        "url": "https://some.local.pacs.system.nhe.uk/wadors/study/1e404af3-077f-4bee-b7a6-a9be97e1ce02/metadata",
+                        "title": "DICOM imaging study metadata",
+                        "creation": "2022-12-21T10:45:41+11:00"
+                    },
+                    "format": {
+                        "code": "direct",
+                        "display": "Direct"
+                    }
+                }
+            ]
+        },
+        "request": {
+            "method": "POST",
+            "url": "DocumentReference"
+        }
+    },
+    {
+          "fullUrl": "urn:uuid:3fdc72f4-a11d-4a9d-9260-a9f745779e02",
+          "resource": {
+              "resourceType": "List",
+              "meta": {
+                  "profile": [
+                      "https://profiles.ihe.net/ITI/MHD/StructureDefinition/IHE.MHD.Minimal.SubmissionSet"
+                  ]
+              },
+              "text": {
+                  "status": "extensions",
+                  "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">List(SubmissionSet) with Patient</div>"
+              },
+              "extension": [
+                  {
+                      "url": "https://profiles.ihe.net/ITI/MHD/StructureDefinition/ihe-sourceId",
+                      "valueIdentifier": {
+                          "value": "urn:oid:1.3.6.1.4.1.21367.2009.1.2.1"
+                      }
+                  }
+              ],
+              "identifier": [
+                  {
+                      "use": "official",
+                      "system": "urn:ietf:rfc:3986"
+                  },
+                  {
+                      "use": "usual",
+                      "system": "urn:ietf:rfc:3986",
+                      "value": "urn:oid:1.2.10.255.255.254.2024.6.28.14.9.41.61.2"
+                  }
+              ],
+              "status": "current",
+              "mode": "working",
+              "code": {
+                  "coding": [
+                      {
+                          "system": "https://profiles.ihe.net/ITI/MHD/CodeSystem/MHDlistTypes",
+                          "code": "submissionset"
+                      }
+                  ]
+              },
+              "subject": {
+                "identifier": {
+                  "system": "https://fhir.nhs.uk/Id/nhs-number",
+                  "value": "4409815415"
+                }
+              },
+              "date": "2021-08-23T22:13:00-05:00",
+              "entry": [
+                  {
+                      "item": {
+                          "reference": "urn:uuid:1e404af3-077f-4bee-b7a6-a9be97e1ce02"
+                      }
+                  },
+                  {
+                    "item": {
+                        "reference": "urn:uuid:1e404af3-077f-4bee-b7a6-a9be97e1ce03"
+                    }
+                  }
+              ]
+          },
+          "request": {
+              "method": "POST",
+              "url": "List"
+          }
+      }
+  ]
+}
