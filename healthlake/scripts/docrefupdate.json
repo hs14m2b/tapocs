@@ -94,6 +94,20 @@
           "system": "https://fhir.nhs.uk/Id/nhs-number",
           "value": "6700028191"
         }
+      },
+      "event": [
+        {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "394848005",
+                "display": "Mental health crisis"
+              }
+            ]
+          }
+      ],
+      "period": {
+        "start": "2022-12-21T10:45:41+11:00"
       }
     }
 }
