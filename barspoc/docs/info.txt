@@ -19,7 +19,11 @@ Certificate and Domain requested 25/1/25
 plain TLS
 curl -v https://int-barspoc-barspocbe.nhsdta.com/barspoc/FHIR/R4/Appointment/1234
 TLSMA
-curl -v https://int-barspoc-barspocbe.nhsdta.com/barspoc/FHIR/R4/Appointment/1234 --cert ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.crt --key ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.key
+
+patient%3Aidentifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C6700028191
+
+curl -v https://int-barspoc-barspocbe.nhsdta.com/barspoc/FHIR/R4/Appointment/4a3836f5-2d42-4d3e-87c1-680173b7fa5c --cert ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.crt --key ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.key
+curl -v https://int-barspoc-barspocbe.nhsdta.com/barspoc/FHIR/R4/Appointment?patient%3Aidentifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C6700028191 --cert ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.crt --key ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.key
 
 
 https://main-xcapoc-001.xcapocbe.nhsesolarch.com/barspoc/FHIR/R4/Appointment/1234

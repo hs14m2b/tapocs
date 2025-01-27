@@ -1,0 +1,47 @@
+{
+  "resourceType": "Appointment",
+  "id": "4a3836f5-2d42-4d3e-87c1-680173b7fa5c",
+  "status": "booked",
+  "extension": [
+  {
+  "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Portal-Link",
+  "valueUrl": "https://my.portal.com/Appointment/4a3836f5-2d42-4d3e-87c1-680173b7fa5c"
+  },
+  {
+  "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Client-id",
+  "valueCode": "myportal-01"
+  },
+  {
+  "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Appointment-Status",
+  "valueCoding": {
+  "system": "http://hl7.org/fhir/appointmentstatus",
+  "code": "booked"
+  }
+  },
+  {
+  "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Consultation-Medium",
+  "valueCode": "FACE_TO_FACE"
+  },
+  {
+  "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Encounter-Class",
+  "valueCode": "outpatient"
+  }
+  ],
+  "description": "Dermatology",
+  "start": "2026-04-10T09:05:00.000Z",
+  "end": "2026-04-10T10:05:00.000Z",
+  "participant": [
+    {
+    "actor": {
+      "type": "Patient",
+      "identifier": {
+        "system": "https://fhir.nhs.uk/Id/nhs-number",
+        "value": "6700028191"
+      }
+    },
+    "status": "accepted"
+  }],
+  "slot": [{
+    "reference": "Slot/4a3836f5-2d42-4d3e-87c1-680173b7fa5c"}]
+}
+  

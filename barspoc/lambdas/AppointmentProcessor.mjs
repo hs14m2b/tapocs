@@ -1,10 +1,56 @@
 // Filename: AppointmentProcessor.mjs
-export const handler = async (event, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM) => {
+
+async function searchHealthlake(event, healthlakeSearchHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM){
+    let maxDuration=25000;
+    try {
+      console.log("searching healthlake")
+      let healthlakeresponse = await healthlakeSearchHelper.getResource(event.pathParameters.appointmentid, "Appointment", "Y05868", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+      console.log("healthlake response is " + JSON.stringify(healthlakeresponse));
+      let resourceResponse = JSON.parse(healthlakeresponse.body);
+      return resourceResponse;
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
+  }
+  
+export const handler = async (event, healthlakeSearchHelper, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM) => {
   console.log(JSON.stringify(event));
     try {
         //get the appointmentid path parameter and put into template
         const appointmentid = event.pathParameters.appointmentid;
-
+        //try healthlake
+        try {
+            let resourceResponse = await searchHealthlake(event, healthlakeSearchHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+            if (resourceResponse){
+              //return the resource
+              let healthlakeResponse = {
+                statusCode: 200,
+                "headers": {
+                    "Content-Type": "application/fhir+json",
+                    "X-Response-Source": "Healthlake"
+                },
+                body: JSON.stringify(resourceResponse)
+              };
+              console.log(JSON.stringify(healthlakeResponse));
+              return healthlakeResponse;
+            }
+            else {
+              console.log("searchHealthlake failed");
+              let response = {
+                statusCode: 500,
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ "result": "searchHealthlake failed" })
+              }
+              return response;
+            }
+          } catch (error) {
+            console.log("caught an unexpected error processing data from healthlake");
+            throw error;
+          }
+  
         let response1 = {
             statusCode: 200,
             "headers": {

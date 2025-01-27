@@ -39,8 +39,8 @@ const searchResource = async (querystringValues, resourceType, org, APIENVIRONME
       }
     };
 
-    //always get an access token...
-    if (true){
+    //disable always get an access token...for now
+    if (false){
       let currentTime = Date.now();
       //get the apikey key and key name and access token if not present or last retrieved more than 5 minutes ago
       if (accessToken=="" || !APIKEYKEY || !APIKEYNAME || ((currentTime - apikeykeyLastRetrieved) > 300000)){
@@ -139,9 +139,86 @@ const searchResourceWithRetry = async (maxDuration, querystringValues, resourceT
   return searchResult;
 }
 
+const getResource = async (id, resourceType, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM) =>
+  {
+    let XRequestID = uuidv4();
+    // request option
+    let options = {
+      host: HEALTHLAKEFQDN,
+      port: 443,
+      method: 'GET',
+      path: HEALTHLAKEPATH + resourceType + "/" + id,
+      rejectUnauthorized: false,
+      headers: {
+        'Authorization': 'Bearer THISISTHEOKEN',
+        'X-Request-ID': XRequestID
+      }
+    };
+
+    //disabling "always get an access token..." for now
+    if (false){
+      let currentTime = Date.now();
+      //get the apikey key and key name and access token if not present or last retrieved more than 5 minutes ago
+      if (accessToken=="" || !APIKEYKEY || !APIKEYNAME || ((currentTime - apikeykeyLastRetrieved) > 300000)){
+        //clear the current accessToken
+        accessToken = "";
+        console.log("retrieving certificates from secrets manager");
+        APIKEYKEY = await getSecretValue(APIKEYSECRET);
+        console.log("retrieving API Key Name from Parameter Store");
+        APIKEYNAME = await getParamValue(APIKNAMEPARAM);
+        //set key last retrieve to now
+        apikeykeyLastRetrieved = currentTime;
+        //get api access token
+        //APIKEYKEY is in format KID|KEY
+        let kid = APIKEYKEY.substr(0, APIKEYKEY.indexOf("|"));
+        let key = APIKEYKEY.substr(APIKEYKEY.indexOf("|")+1)
+        let signedJwt = createSignedJwtForAuth(APIKEYNAME, kid, key, APIENVIRONMENT + ".api.service.nhs.uk", "/oauth2/token")
+        let tokenResponse = await getOAuth2AccessToken(signedJwt, APIENVIRONMENT + ".api.service.nhs.uk", "/oauth2/token");
+        //load into JSON object
+        let tokenResponseJson = JSON.parse(tokenResponse);
+        accessToken = tokenResponseJson.access_token;
+      }
+      //add access token to headers
+      options.headers["Authorization"] = "Bearer " + accessToken;
+    }
+
+    console.log("request options are  " + JSON.stringify(options));
+    return new Promise(function (resolve, reject) {
+        // request object
+        var req = https.request(options, function (res) {
+            var result = '';
+            console.log("HTTP status code: " + res.statusCode);
+            res.on('data', function (chunk) {
+                result += chunk;
+            });
+            res.on('end', function () {
+                console.log(result);
+                let response = {
+                  "status": res.statusCode,
+                  "headers": res.headers,
+                  "body": result
+                }
+                resolve(response);
+            });
+            res.on('error', function (err) {
+                console.log(err);
+                reject(err);
+            })
+        });
+
+        // req error
+        req.on('error', function (err) {
+          console.log(err);
+        });
+
+        //send request
+        req.end();
+    });
+}
 export class search_resource_healthlake{
   constructor(){
     this.searchResource = searchResource;
     this.searchResourceWithRetry = searchResourceWithRetry;
+    this.getResource = getResource;
   }
 }

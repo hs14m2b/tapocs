@@ -1,5 +1,6 @@
 var searchResource_return_value="";
 var searchResourceWithRetry_return_value="";
+var getResource_return_value="";
 
 function searchResource_promise(){
   this.searchResource_call_count++;
@@ -18,6 +19,15 @@ function searchResourceWithRetry_promise(){
   });
 }
 
+function getResource_promise(){
+  console.log("running the getResource_promise function");
+  this.getResource_call_count++;
+  getResource_return_value = this.getResource_return_values[this.getResource_call_count];
+  return new Promise(function(resolve, reject){
+      resolve(getResource_return_value);
+  });
+}
+
 function searchResource_promise_obj(searchResource_return_values){
   this.searchResource_return_values = searchResource_return_values;
   this.searchResource_call_count = -1;
@@ -32,9 +42,17 @@ class searchResourceWithRetry_promise_obj{
   }
 }
 
-const searchResource =  (querystringValues, resourceType, org, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM) =>
+class getResource_promise_obj{
+  constructor(getResource_return_values){
+    this.getResource_return_values = getResource_return_values;
+    this.getResource_call_count = -1;
+    this.promise = getResource_promise;
+  }
+}
+
+function searchResource (querystringValues, resourceType, org, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)
 {
-  return this.searchResource_promise_obj;
+  return this.searchResource_promise_obj.promise();
 }
 
 
@@ -43,14 +61,22 @@ function searchResourceWithRetry(maxDuration, querystringValues, resourceType, o
   return this.searchResourceWithRetry_promise_obj.promise();
 }
 
+function getResource(id, resourceType, org, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM) 
+{
+    return this.getResource_promise_obj.promise();
+}
+  
 export class search_resource_healthlake{
-  constructor(searchResource_return_values, searchResourceWithRetry_return_values){
+  constructor(searchResource_return_values, searchResourceWithRetry_return_values, getResource_return_values){
     console.log("creating the helper");
     this.searchResource_promise_obj = new searchResource_promise_obj(searchResource_return_values);
     this.searchResourceWithRetry_promise_obj = new searchResourceWithRetry_promise_obj(searchResourceWithRetry_return_values);
-    this.searchResourceWithRetry = searchResourceWithRetry;
+    this.getResource_promise_obj = new getResource_promise_obj(getResource_return_values);
     this.searchResource = searchResource;
+    this.searchResourceWithRetry = searchResourceWithRetry;
+    this.getResource = getResource;
     this.message = "I exist";
+    console.log("finished creating the helper");
   }
 }
 

@@ -45,7 +45,7 @@ cd ..
 zip -qr ${TIMESTAMP}dependenciesLayer.zip nodejs
 rm -fR nodejs
 mkdir certs
-cp ../certs/tsassolarchdemoapi.* certs
+#cp ../certs/tsassolarchdemoapi.* certs
 # need to include node modules due to bug in Lambda that doesn't enable the AWS SDK v2 to be loaded via Layer
 npm install
 zip -qr ${TIMESTAMP}barspocapilambdas.zip *
