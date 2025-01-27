@@ -1,0 +1,246 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Parameters": {
+    "AWSREGIONNAME": {
+      "Type": "String",
+      "Default": "eu-west-2",
+      "Description": "The AWS region name"
+    },
+    "APIENVIRONMENT": {
+      "Type": "String",
+      "Description": "The API-M environment the deployment supports - values are internal-dev, internal-dev-sandbox, internal-qa, internal-qa-sandbox, ref (all previous are non-prod), sandbox, dev, int, prod"
+    },
+    "BEDOMAIN": {
+      "Type": "String",
+      "Default": "barspocbe",
+      "Description": "Back end domain identifier"
+    },
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "The branchname to derive fqdn"
+    },
+    "PROJECTNAME": {
+      "Type": "String",
+      "Default": "barspoc",
+      "Description": "Project name for the deployment"
+    },
+    "PROJECTNAMESECURE": {
+      "Type": "String",
+      "Default": "barspoctlsma",
+      "Description": "Project name for the deployment"
+    },
+    "CFCERTARN": {
+      "Type": "String",
+      "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/6736e423-7278-444e-aa34-7d849d896d4f"
+    },
+    "CERTIFICATEARN": {
+      "Type": "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/c4bf4fbf-7440-4345-8720-eff73b19bcce",
+      "Description": "The certificate ARN for the nhsdta.com domain"
+    },
+    "DEPLOYMENTSTAGENAME": {
+      "Type": "String",
+      "Default": "prod",
+      "Description": "The stage deployment name"
+    },
+    "FEDOMAIN": {
+      "Type": "String",
+      "Default": "barspocfe",
+      "Description": "The frontend domain identifier"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Default": "Z1075FNTZPAM5I",
+      "Description": "The ID of the Route53 hosted zone"
+    },
+    "ROOTDOMAIN": {
+      "Type": "String",
+      "Default": "nhsdta.com",
+      "Description": "The root domain name"
+    },
+    "SHORTCODE": {
+      "Type": "String",
+      "Default": "mabr8",
+      "Description": "The shortcode for tags"
+    }
+  },
+  "Globals": {
+    "Function": {
+      "Tags": {
+        "shortcode": { "Ref": "SHORTCODE" }
+      },
+      "Environment": {
+        "Variables": {
+          "ROOTDOMAIN": { "Ref": "ROOTDOMAIN" },
+          "BRANCHNAME": { "Ref": "BRANCHNAME" },
+          "FEDOMAIN": { "Ref": "FEDOMAIN" },
+          "APIENVIRONMENT": {"Ref": "APIENVIRONMENT"},
+          "APIKNAMEPARAM": {"Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "apimkeyname"]]},
+          "APIKEYSECRET": {"Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "apimclientcertkey"]]}
+        }
+      },
+      "Timeout": 300
+    }
+  },
+  "Resources": {
+    "barspocbeLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess",
+          "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+          "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+          "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB"
+        ],
+        "Path": "/service-role/",
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "APIENVIRONMENT" },  "barspocbeLambdaRole-001", "ssmread"]
+              ]
+            },
+            "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Sid": "SSMRead",
+                        "Effect": "Allow",
+                        "Action": [
+                            "secretsmanager:GetSecretValue",
+                            "ssm:GetParameter"
+                        ],
+                        "Resource": "*"
+                    }
+                ]
+            }
+        }        ],
+        "RoleName": {
+          "Fn::Join": [
+            "",
+            [{ "Ref": "APIENVIRONMENT" }, "-", "barspocbeLambdaRole-001"]
+          ]
+        }
+      }
+    },
+    "barspocbeCWRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/CloudWatchEventsFullAccess"
+        ],
+        "Path": "/service-role/",
+        "RoleName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-", "barspocbeCWRole"]]
+        }
+      }
+    },
+    "AppointmentFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "barspocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint for Appointment resources",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "ANY",
+              "Path": "/barspoc/FHIR/R4/Appointment/{appointmentid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-AppointmentFunction"]]
+        },
+        "Handler": "AppointmentFactory.handler",
+        "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs18.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["barspocbeLambdaRole"]
+    },
+    "AppointmentSearchFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "barspocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint for Appointment resources search",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "ANY",
+              "Path": "/barspoc/FHIR/R4/Appointment",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-AppointmentSearchFunction"]]
+        },
+        "Handler": "AppointmentSearchFactory.handler",
+        "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs18.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["barspocbeLambdaRole"]
+    },
+    "barsHttpApi": {
+      "Type": "AWS::Serverless::HttpApi",
+      "Properties": {
+        "Description": "HTTP API for the bars requests",
+        "Domain": {
+          "BasePath": ["/"],
+          "CertificateArn": {"Ref": "CERTIFICATEARN"},
+          "DomainName": {"Fn::Join": [".", [{"Fn::Join": ["-", [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "BEDOMAIN" }]]},{ "Ref": "ROOTDOMAIN" }]]},
+          "EndpointConfiguration": "REGIONAL",
+          "MutualTlsAuthentication": {
+            "TruststoreUri" :  { "Fn::Join": ["", ["s3://",{"Fn::Join": ["-",[ { "Ref": "SHORTCODE" }, "certs","bucket"]]},{"Fn::Join": ["",["/", { "Ref": "PROJECTNAME" }, "/", { "Ref": "APIENVIRONMENT" }, "/certs/20250115truststore.pem"]]} ]]}
+          },
+          "Route53": {
+            "HostedZoneId": {"Ref": "HOSTEDZONEID"}
+          },
+          "SecurityPolicy": "TLS_1_2"
+        },
+        "Name": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-barsHttpApi"]]
+        },
+        "StageName": "$default"
+      }
+    }
+  }
+}

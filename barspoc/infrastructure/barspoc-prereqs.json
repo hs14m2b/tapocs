@@ -1,0 +1,152 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Parameters": {
+    "AWSREGIONNAME": {
+      "Type": "String",
+      "Default": "eu-west-2",
+      "Description": "The AWS region name"
+    },
+    "APIENVIRONMENT": {
+      "Type": "String",
+      "Description": "The API-M environment the deployment supports - values are internal-dev, internal-dev-sandbox, internal-qa, internal-qa-sandbox, ref (all previous are non-prod), sandbox, dev, int, prod"
+    },
+    "BEDOMAIN": {
+      "Type": "String",
+      "Default": "mhdpocbe",
+      "Description": "Back end domain identifier"
+    },
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "The branchname to derive fqdn"
+    },
+    "PROJECTNAME": {
+      "Type": "String",
+      "Default": "barspoc",
+      "Description": "Project name for the deployment"
+    },
+    "PROJECTNAMESECURE": {
+      "Type": "String",
+      "Default": "barspoctlsma",
+      "Description": "Project name for the deployment"
+    },
+    "CFCERTARN": {
+      "Type": "String",
+      "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/6736e423-7278-444e-aa34-7d849d896d4f"
+    },
+    "CERTIFICATEARN": {
+      "Type": "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/c4bf4fbf-7440-4345-8720-eff73b19bcce",
+      "Description": "The certificate ARN for the nhsdta.com domain"
+    },
+    "DEPLOYMENTSTAGENAME": {
+      "Type": "String",
+      "Default": "prod",
+      "Description": "The stage deployment name"
+    },
+    "FEDOMAIN": {
+      "Type": "String",
+      "Default": "barspocfe",
+      "Description": "The frontend domain identifier"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Default": "Z1075FNTZPAM5I",
+      "Description": "The ID of the Route53 hosted zone"
+    },
+    "ROOTDOMAIN": {
+      "Type": "String",
+      "Default": "nhsdta.com",
+      "Description": "The root domain name"
+    },
+    "SHORTCODE": {
+      "Type": "String",
+      "Default": "mabr8",
+      "Description": "The shortcode for tags"
+    }
+  },
+  "Resources": {
+    "mhdCertSecret": {
+      "Type" : "AWS::SecretsManager::Secret",
+      "Properties" : {
+          "Description" : "Client Certificate for presenting to NIR Backend DiagnosticReport APIs",
+          "Name" : {
+            "Fn::Join": [
+              "-",
+              [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "clientcert"]
+            ]
+          },
+          "Tags" : [ { "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } } ]
+        }
+    },
+    "mhdKeySecret": {
+      "Type" : "AWS::SecretsManager::Secret",
+      "Properties" : {
+          "Description" : "Client Certificate Private Key for presenting to NIR Backend DiagnosticReport APIs",
+          "Name" : {
+            "Fn::Join": [
+              "-",
+              [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "clientcertkey"]
+            ]
+          },
+          "Tags" : [ { "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } } ]
+        }
+    },
+    "apimKeySecret": {
+      "Type" : "AWS::SecretsManager::Secret",
+      "Properties" : {
+          "Description" : "Client Certificate Private Key for authenticating to API Management platform",
+          "Name" : {
+            "Fn::Join": [
+              "-",
+              [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "apimclientcertkey"]
+            ]
+          },
+          "Tags" : [ { "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } } ]
+        }
+    },
+    "apimKeyNameParam": {
+      "Type" : "AWS::SSM::Parameter",
+      "Properties" : {
+        "Description" : "Name of the API Key for authenticating to API Management platform",
+        "Name" : {"Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "apimkeyname"]]},
+        "Tags" : {  "shortcode": { "Ref": "SHORTCODE" } },
+        "Tier" : "Standard",
+        "Type" : "String",
+        "Value" : "TOBESET"
+      }
+    },
+    "S3CertsBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "BucketKeyEnabled": true,
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        },
+        "BucketName": {
+          "Fn::Join": [
+            "-",
+            [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "certs","bucket"]
+          ]
+        },
+        "ObjectLockEnabled": false,
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }]
+      },
+      "DependsOn": []
+    }
+  }
+}

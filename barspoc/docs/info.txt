@@ -1,0 +1,68 @@
+Purpose - PoC to act as both BaRS Provider and BaRS Consumer for basic appointment management
+
+Using INT environment - setup for certificates etc located at https://simplifier.net/guide/nhsbookingandreferralstandard/Home/Build/Testing-and-Environments?version=1.8.1#onboarding
+
+Domain for BaRS supplier - BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk
+Requesting certificate and domain - needs domain first with arbitraty CNAME entry - this then allows certificate to be created. 
+Certificate is then used to create the custom domain name in API GW - which provides the actual domain name to which the original DNS entry needs a CNAME entry to.
+
+creating a CSR for certificate
+openssl genrsa -out BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.key 2048
+openssl req -new -key BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.key -out BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.csr
+
+Certificate and Domain requested 25/1/25
+
+
+
+ "TruststoreUri" :  { "Fn::Join": ["", ["s3://",{"Fn::Join": ["-",[ { "Ref": "SHORTCODE" }, "certs","bucket"]]},{"Fn::Join": ["",["/", { "Ref": "PROJECTNAME" }, "/", { "Ref": "APIENVIRONMENT" }, "/certs/20250115truststore.pem"]]} ]]}
+
+plain TLS
+curl -v https://int-barspoc-barspocbe.nhsdta.com/barspoc/FHIR/R4/Appointment/1234
+TLSMA
+curl -v https://int-barspoc-barspocbe.nhsdta.com/barspoc/FHIR/R4/Appointment/1234 --cert ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.crt --key ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.key
+
+
+https://main-xcapoc-001.xcapocbe.nhsesolarch.com/barspoc/FHIR/R4/Appointment/1234
+
+main-xcapoc-001.xcapocbe.nhsesolarch.com
+
+curl -v https://main-xcapoc-001-xcapocbe.nhsdta.com/barspoc/FHIR/R4/Appointment/1234
+
+main-xcapoc-001-xcapocbe.nhsdta.com
+main-xcapoc-001-xcapocbe.nhsdta.com
+
+HTTP API Gateway configuration:
+- load the certificate for the custom domain into AWS Cert Manager
+- create a Custom Domain which links the certificate - note the AWS DNS name for the custom domain name (e.g. d-e21uw67fwb.execute-api.eu-west-2.amazonaws.com) 
+    - note - this is different to the "normal" domain name for the API (e.g. cs4cbdgvl9.execute-api.eu-west-2.amazonaws.com)
+- create a CNAME record for the actual domain pointing to the Custom Domain name domain - all should now work OK
+
+
+
+
+
+
+//cloudformation snippet
+    },
+    "barsHttpApiDomainName": {
+      "Type" : "AWS::ApiGateway::DomainName",
+      "Properties" : {
+        "RegionalCertificateArn" : "arn:aws:acm:eu-west-2:865198111306:certificate/784b9c71-c7bb-42b5-a568-0dd7d2a8f8ae",
+        "DomainName" : "BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk",
+          "EndpointConfiguration" : {
+            "Types" : [ "REGIONAL" ]
+          },
+          "SecurityPolicy" : "TLS_1_2",
+          "Tags" : [ {
+            "Key" : "shortcode",
+            "Value" : {"Ref":"SHORTCODE"}
+            }
+          ]
+        }
+    },
+    "barsHttpApiBasePathMapping": {
+      "Type" : "AWS::ApiGateway::BasePathMappingV2",
+      "Properties" : {
+          "DomainNameArn" : {"Ref": "barsHttpApiDomainName"},
+          "RestApiId" : {"Ref": "barsHttpApi"}
+      }
