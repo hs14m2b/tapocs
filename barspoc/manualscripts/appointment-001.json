@@ -40,7 +40,19 @@
       }
     },
     "status": "accepted"
-  }],
+  },
+  {
+    "actor": {
+      "type": "Location",
+      "identifier": {
+        "system" : "https://fhir.nhs.uk/Id/ods-organization-code",
+        "value" : "RX809"
+},
+      "display": "Grantham Hospital Outpatients"
+    },
+    "status": "accepted"
+  }
+  ],
   "slot": [{
     "reference": "Slot/4a3836f5-2d42-4d3e-87c1-680173b7fa5c"}]
 }

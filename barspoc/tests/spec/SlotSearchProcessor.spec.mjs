@@ -1,4 +1,4 @@
-import { handler } from '../../lambdas/SlotQueryProcessor.mjs';
+import { handler } from '../../lambdas/SlotSearchProcessor.mjs';
 import { search_resource_healthlake } from './helpers/search_resource_healthlake_helper.mjs'
 import { getParameterCaseInsensitive } from '../../lambdas/api_common_functions.mjs';
 import { sendDocRef } from './helpers/post_document_ref_helper.mjs'

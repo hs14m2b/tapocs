@@ -12,61 +12,31 @@ openssl req -new -key BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.key -out BaRS-I
 
 Certificate and Domain requested 25/1/25
 
+Certificate issued by ITOC - see https://digital.nhs.uk/services/path-to-live-environments/path-to-live-forms/combined-endpoint-and-service-registration-request
+DNS entry issued by DNS team.
 
 
- "TruststoreUri" :  { "Fn::Join": ["", ["s3://",{"Fn::Join": ["-",[ { "Ref": "SHORTCODE" }, "certs","bucket"]]},{"Fn::Join": ["",["/", { "Ref": "PROJECTNAME" }, "/", { "Ref": "APIENVIRONMENT" }, "/certs/20250115truststore.pem"]]} ]]}
+Merging crt and key
+certutil -mergepfx BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.crt BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.pfx  -- this allows browser based access using client cert.
+
 
 plain TLS
 curl -v https://int-barspoc-barspocbe.nhsdta.com/barspoc/FHIR/R4/Appointment/1234
 TLSMA
 
-patient%3Aidentifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C6700028191
+curl -vk https://BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk/barspoc/FHIR/R4/Appointment?patient%3Aidentifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C6700028191 --cert ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.crt --key ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.key
 
-curl -v https://int-barspoc-barspocbe.nhsdta.com/barspoc/FHIR/R4/Appointment/4a3836f5-2d42-4d3e-87c1-680173b7fa5c --cert ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.crt --key ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.key
-curl -v https://int-barspoc-barspocbe.nhsdta.com/barspoc/FHIR/R4/Appointment?patient%3Aidentifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C6700028191 --cert ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.crt --key ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.key
+#with BaRS certificate
+curl -vk https://bars-int-x26.tsassolarch.thirdparty.nhs.uk/barspoc/FHIR/R4/Appointment/4a3836f5-2d42-4d3e-87c1-680173b7fa5c --cert ../certs/BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.crt --key ../certs/BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.key
 
-
-https://main-xcapoc-001.xcapocbe.nhsesolarch.com/barspoc/FHIR/R4/Appointment/1234
-
-main-xcapoc-001.xcapocbe.nhsesolarch.com
-
-curl -v https://main-xcapoc-001-xcapocbe.nhsdta.com/barspoc/FHIR/R4/Appointment/1234
-
-main-xcapoc-001-xcapocbe.nhsdta.com
-main-xcapoc-001-xcapocbe.nhsdta.com
 
 HTTP API Gateway configuration:
 - load the certificate for the custom domain into AWS Cert Manager
-- create a Custom Domain which links the certificate - note the AWS DNS name for the custom domain name (e.g. d-e21uw67fwb.execute-api.eu-west-2.amazonaws.com) 
+- For API Gateway need to have a "verification" certificate issued by AWS, with DNS verification to prove ownership of the domain.
+  - in AWS Certificate Manager - request a new public certificate in the relevant domain name (bars-int-x26.tsassolarch.thirdparty.nhs.uk) 
+  - AWS then requires a CNAME record to be created in a random subdomain - send this request to DNS team
+- create a Custom Domain which links the certificate - note the AWS DNS name for the custom domain name (e.g. d-cwm1q2lhll.execute-api.eu-west-2.amazonaws.com) 
     - note - this is different to the "normal" domain name for the API (e.g. cs4cbdgvl9.execute-api.eu-west-2.amazonaws.com)
 - create a CNAME record for the actual domain pointing to the Custom Domain name domain - all should now work OK
+  - e.g. bars-int-x26.tsassolarch.thirdparty.nhs.uk. 3600 IN CNAME d-cwm1q2lhll.execute-api.eu-west-2.amazonaws.com.
 
-
-
-
-
-
-//cloudformation snippet
-    },
-    "barsHttpApiDomainName": {
-      "Type" : "AWS::ApiGateway::DomainName",
-      "Properties" : {
-        "RegionalCertificateArn" : "arn:aws:acm:eu-west-2:865198111306:certificate/784b9c71-c7bb-42b5-a568-0dd7d2a8f8ae",
-        "DomainName" : "BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk",
-          "EndpointConfiguration" : {
-            "Types" : [ "REGIONAL" ]
-          },
-          "SecurityPolicy" : "TLS_1_2",
-          "Tags" : [ {
-            "Key" : "shortcode",
-            "Value" : {"Ref":"SHORTCODE"}
-            }
-          ]
-        }
-    },
-    "barsHttpApiBasePathMapping": {
-      "Type" : "AWS::ApiGateway::BasePathMappingV2",
-      "Properties" : {
-          "DomainNameArn" : {"Ref": "barsHttpApiDomainName"},
-          "RestApiId" : {"Ref": "barsHttpApi"}
-      }

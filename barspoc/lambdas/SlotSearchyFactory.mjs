@@ -1,5 +1,5 @@
 import { search_resource_healthlake } from './search_resource_healthlake_object.mjs';
-import { handler as processor } from './SlotQueryProcessor.mjs';
+import { handler as processor } from './SlotSearchProcessor.mjs';
 import { getParameterCaseInsensitive } from './api_common_functions.mjs';
 
 const APIKEYSECRET = process.env['APIKEYSECRET'];
