@@ -13,10 +13,9 @@ openssl req -new -key BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.key -out BaRS-I
 Certificate and Domain requested 25/1/25
 
 Certificate issued by ITOC - see https://digital.nhs.uk/services/path-to-live-environments/path-to-live-forms/combined-endpoint-and-service-registration-request
-DNS entry issued by DNS team.
+DNS entry issued by DNS team (email team with details - don't need domain before getting certificate)
 
-
-Merging crt and key
+Merging crt and key (in case need to load client cert into cert store on laptop)
 certutil -mergepfx BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.crt BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.pfx  -- this allows browser based access using client cert.
 
 
@@ -39,4 +38,18 @@ HTTP API Gateway configuration:
     - note - this is different to the "normal" domain name for the API (e.g. cs4cbdgvl9.execute-api.eu-west-2.amazonaws.com)
 - create a CNAME record for the actual domain pointing to the Custom Domain name domain - all should now work OK
   - e.g. bars-int-x26.tsassolarch.thirdparty.nhs.uk. 3600 IN CNAME d-cwm1q2lhll.execute-api.eu-west-2.amazonaws.com.
+
+
+
+BaRS Receiver set up in INT as follows (manual process - emailing the BaRS team with Base URL information):
+"matthewbrown":"https://bars-int-x26.tsassolarch.thirdparty.nhs.uk/barspoc/fhir/r4" 
+
+So will need as an "identifier" in DocumentReference resources
+{"system":"https://fhir.nhs.uk/Id/dos-service-id","value":"matthewbrown"}
+
+Base64 encoded = eyJzeXN0ZW0iOiJodHRwczovL2ZoaXIubmhzLnVrL0lkL2Rvcy1zZXJ2aWNlLWlkIiwidmFsdWUiOiJtYXR0aGV3YnJvd24ifQ==
+
+So the header you need (along with the others) is
+NHSD-Target-Identifier: eyJzeXN0ZW0iOiJodHRwczovL2ZoaXIubmhzLnVrL0lkL2Rvcy1zZXJ2aWNlLWlkIiwidmFsdWUiOiJtYXR0aGV3YnJvd24ifQ==
+when invoking the BaRS proxy
 

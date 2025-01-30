@@ -13,7 +13,7 @@
     },
     "BEDOMAIN": {
       "Type": "String",
-      "Default": "mhdpocbe",
+      "Default": "barspocbe",
       "Description": "Back end domain identifier"
     },
     "BRANCHNAME": {
@@ -68,32 +68,6 @@
     }
   },
   "Resources": {
-    "mhdCertSecret": {
-      "Type" : "AWS::SecretsManager::Secret",
-      "Properties" : {
-          "Description" : "Client Certificate for presenting to NIR Backend DiagnosticReport APIs",
-          "Name" : {
-            "Fn::Join": [
-              "-",
-              [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "clientcert"]
-            ]
-          },
-          "Tags" : [ { "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } } ]
-        }
-    },
-    "mhdKeySecret": {
-      "Type" : "AWS::SecretsManager::Secret",
-      "Properties" : {
-          "Description" : "Client Certificate Private Key for presenting to NIR Backend DiagnosticReport APIs",
-          "Name" : {
-            "Fn::Join": [
-              "-",
-              [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "clientcertkey"]
-            ]
-          },
-          "Tags" : [ { "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } } ]
-        }
-    },
     "apimKeySecret": {
       "Type" : "AWS::SecretsManager::Secret",
       "Properties" : {
@@ -117,36 +91,6 @@
         "Type" : "String",
         "Value" : "TOBESET"
       }
-    },
-    "S3CertsBucket": {
-      "Type": "AWS::S3::Bucket",
-      "Properties": {
-        "BucketEncryption": {
-          "ServerSideEncryptionConfiguration": [
-            {
-              "BucketKeyEnabled": true,
-              "ServerSideEncryptionByDefault": {
-                "SSEAlgorithm": "AES256"
-              }
-            }
-          ]
-        },
-        "BucketName": {
-          "Fn::Join": [
-            "-",
-            [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "certs","bucket"]
-          ]
-        },
-        "ObjectLockEnabled": false,
-        "PublicAccessBlockConfiguration": {
-          "BlockPublicAcls": true,
-          "BlockPublicPolicy": true,
-          "IgnorePublicAcls": true,
-          "RestrictPublicBuckets": true
-        },
-        "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }]
-      },
-      "DependsOn": []
     }
   }
 }

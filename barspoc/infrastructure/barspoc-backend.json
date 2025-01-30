@@ -180,6 +180,33 @@
         }
       }
     },
+    "DefaultRouteFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "barspocapilambdas.zip",
+        "Description": "The lambda function that catches unexpected routes",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "ANY",
+              "Path": "$default",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-DefaultRouteFunction"]]
+        },
+        "Handler": "DefaultRouteFactory.handler",
+        "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs18.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["barspocbeLambdaRole"]
+    },
     "AppointmentFunction": {
       "Type": "AWS::Serverless::Function",
       "Properties": {
@@ -192,6 +219,16 @@
               "ApiId": { "Ref": "barsHttpApi" },
               "Method": "ANY",
               "Path": "/barspoc/FHIR/R4/Appointment/{appointmentid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiLowerCase": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "ANY",
+              "Path": "/barspoc/fhir/r4/Appointment/{appointmentid+}",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -219,6 +256,16 @@
               "ApiId": { "Ref": "barsHttpApi" },
               "Method": "ANY",
               "Path": "/barspoc/FHIR/R4/Appointment",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiLowerCase": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "ANY",
+              "Path": "/barspoc/fhir/r4/Appointment",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }

@@ -10,11 +10,11 @@
 #APIENVIRONMENT="ref"
 APIENVIRONMENT=$1
 echo $APIENVIRONMENT
-ENVIRONMENT="mhdpocbe"
+ENVIRONMENT="barspocbe"
 TIMESTAMP=$(date +%s)
 echo $TIMESTAMP
 
 #prereqs
-aws cloudformation deploy --template-file mhdpoc-prereqs.json --stack-name ${APIENVIRONMENT}-mabr8-mhdpocprereqsstack --capabilities "CAPABILITY_NAMED_IAM" --region "eu-west-2" --parameter-overrides "APIENVIRONMENT=${APIENVIRONMENT}"
+aws cloudformation deploy --template-file barspoc-prereqs.json --stack-name ${APIENVIRONMENT}-mabr8-barspocprereqsstack --capabilities "CAPABILITY_NAMED_IAM" --region "eu-west-2" --parameter-overrides "APIENVIRONMENT=${APIENVIRONMENT}"
 
 echo "built and deployed application"
