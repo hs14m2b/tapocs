@@ -19,6 +19,8 @@ Testing the API in the "internal" environments.
 The developer portal does not create clients that have access to the "internal" instances of APIs. To create a client app a login to apigee non-prod is needed.
 https://apigee.com/organizations/nhsd-nonprod/apps
 There doesn't appear to be any description on confluence as to how to do this.
+Could set up via https://dos-internal.ptl.api.platform.nhs.uk/MyApplications
+?
 
 To enable private_key_jwt auth on the app the jwks-resource-url custom attribute needs to be set.
 The simplest way to do this is to create a "dummy" app on the developer portal with the public key and copy the generated url for the jwks endpoint

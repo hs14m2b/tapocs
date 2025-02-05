@@ -53,3 +53,6 @@ So the header you need (along with the others) is
 NHSD-Target-Identifier: eyJzeXN0ZW0iOiJodHRwczovL2ZoaXIubmhzLnVrL0lkL2Rvcy1zZXJ2aWNlLWlkIiwidmFsdWUiOiJtYXR0aGV3YnJvd24ifQ==
 when invoking the BaRS proxy
 
+NRL information
+Valuesets contained in code in github repo as follows:
+https://github.com/NHSDigital/NRLF/tree/develop/resources/fhir

@@ -24,8 +24,6 @@ let example = {
   "resourceType": "DocumentReference",
   "status": "current",
   "docStatus": "final",
-  "identifier": [  {    "system": "https://fhir.nhs.uk/Id/BaRS-Identifier",    "value": "4a3836f5-2d42-4d3e-87c1-680173b7fa5c"  },  
-  {    "value": "matthewbrown",    "system": "https://fhir.nhs.uk/Id/dos-service-id"  }],
   "type": {
     "coding": [
       {
@@ -221,14 +219,14 @@ async function sendDocRef (docRef, accessToken)
       host: "int.api.service.nhs.uk",
       port: 443,
       method: 'POST',
-      path: "/booking-and-referral/FHIR/R4/DocumentReference",
+      path: "/record-locator/producer/FHIR/R4/DocumentReference",
       rejectUnauthorized: false,
       headers: {
         'Authorization': 'Bearer '+ accessToken,
         'accept': 'application/fhir+json;version=1',
         'x-request-id': XRequestID,
         'x-correlation-id': '11C46F5F-CDEF-4865-94B2-0EE0EDCC26DA',
-        'NHSD-End-User-Organisation-ODS': 'ewrCoCAicmVzb3VyY2VUeXBlIjogIk9yZ2FuaXphdGlvbiIsCsKgICJpZGVudGlmaWVyIjogW wrCoCDCoCB7CsKgIMKgIMKgICJodHRwczovL2ZoaXIubmhzLnVrL0lkL29kcy1vcmdhbml6YXRpb24tY29kZSIsCsKgIMK gIMKgICJ2YWx1ZSI6ICJYMjYiCgoKwqAgwqAgfSwKwqAgIm5hbWUiOiAiTkhTIEVOR0xBTkQgLSBYMjYiCsKgIF0KfQ==',
+        'NHSD-End-User-Organisation-ODS': ODSCode,//'ewrCoCAicmVzb3VyY2VUeXBlIjogIk9yZ2FuaXphdGlvbiIsCsKgICJpZGVudGlmaWVyIjogW wrCoCDCoCB7CsKgIMKgIMKgICJodHRwczovL2ZoaXIubmhzLnVrL0lkL29kcy1vcmdhbml6YXRpb24tY29kZSIsCsKgIMK gIMKgICJ2YWx1ZSI6ICJYMjYiCgoKwqAgwqAgfSwKwqAgIm5hbWUiOiAiTkhTIEVOR0xBTkQgLSBYMjYiCsKgIF0KfQ==',
         'content-type': 'application/fhir+json;version=1',
         'content-length': datalength
     }
@@ -284,5 +282,5 @@ async function getAccessToken(){
 }
 let accessToken = await getAccessToken();
 console.log("got access token");
-let result = await sendDocRef(example2, accessToken);
+let result = await sendDocRef(example, accessToken);
 console.log(result);
