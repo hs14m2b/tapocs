@@ -1,0 +1,38 @@
+{
+  "resourceType" : "SearchParameter",
+  "id" : "uk-core-nhsnumber-si",
+  "url" : "http://hl7.org/fhir/R4/SearchParameter/uk-core-nhsnumber-si",
+  "version" : "0.0.1",
+  "name" : "UKCoreNHSNumberSubjectIdentifier",
+  "status" : "active",
+  "date" : "2024-05-08",
+  "publisher" : "NHS England TSAS",
+  "contact" : [
+    {
+      "telecom" : [
+        {
+          "system" : "other",
+          "value" : "https://https://www.england.nhs.uk//"
+        }
+      ]
+    }
+  ],
+  "description" : "Returns DocumentReferences with a subject identifier with a NHS Number.",
+  "jurisdiction" : [
+    {
+      "coding" : [
+        {
+          "system" : "urn:iso:std:iso:3166",
+          "code" : "UK",
+          "display" : "United Kingdom"
+        }
+      ]
+    }
+  ],
+  "code" : "nhsnumbersi",
+  "base" : [
+    "DocumentReference"
+  ],
+  "type" : "token",
+  "expression" : "DocumentReference.subject.identifier.where(system = 'https://fhir.nhs.uk/Id/nhs-number').value"
+}
