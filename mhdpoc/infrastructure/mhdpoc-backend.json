@@ -560,7 +560,7 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApi" },
               "Method": "ANY",
-              "Path": "/ping",
+              "Path": "/mhdspoc/ping",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -570,7 +570,7 @@
             "Properties": {
               "ApiId": { "Ref": "mhdHttpApiSecure" },
               "Method": "ANY",
-              "Path": "/ping",
+              "Path": "/mhdspoc/ping",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }

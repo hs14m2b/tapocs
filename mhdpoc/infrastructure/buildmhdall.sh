@@ -5,7 +5,7 @@ echo $SHELL
 #ENVIRONMENTLIST=( internal-dev-sandbox internal-dev internal-qa internal-qa-sandbox sandbox dev int ref )
 #ENVIRONMENTLIST=( internal-dev-sandbox )
 #ENVIRONMENTLIST=( int ref )
-ENVIRONMENTLIST=( int )
+ENVIRONMENTLIST=( dev int )
 
 #do initial build once
 S3CODEBUCKET="codepipeline-eu-west-2-467564981221"

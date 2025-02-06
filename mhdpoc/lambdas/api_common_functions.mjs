@@ -104,7 +104,7 @@ export const getOAuth2AccessTokenViaTokenExchange = async (signed_jwt, id_token,
         "subject_token": id_token
       }).toString();
 
-    //console.log("request POST data is " + JSON.stringify(postData));
+    console.log("request POST data is " + JSON.stringify(postData));
     // request option
 	let options = {
         host: oauth_fqdn,
