@@ -12,7 +12,7 @@ export default function Header() {
                 </svg>
 
                 <span className="nhsuk-header__service-name">
-                  Test Next.js Service<noscript> running without Javascript</noscript>
+                  Test Next.js 14 Service<noscript> running without Javascript</noscript>
                 </span>
               </Link>
             </div>
