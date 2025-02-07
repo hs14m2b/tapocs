@@ -1,0 +1,12 @@
+https://nextjs.org/docs/app/building-your-application/upgrading/version-14
+
+remove reference to sladg@next-lamba package from package.json. Then run
+
+npm i next@next-14 react@18 react-dom@18 && npm i eslint-config-next@next-14 -D
+
+ensure node is upgraded to >=18.17.0
+
+npm run build
+npm run start
+
+^ these then "just work" and app runs OK locally.

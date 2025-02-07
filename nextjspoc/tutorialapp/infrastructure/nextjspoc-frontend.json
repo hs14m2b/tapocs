@@ -222,8 +222,7 @@
                 "OriginProtocolPolicy": "https-only",
                 "OriginReadTimeout": 25,
                 "OriginSSLProtocols": ["TLSv1.2"]
-              },
-              "OriginPath": "/_server"
+              }
             }
           ],
           "CacheBehaviors": [
