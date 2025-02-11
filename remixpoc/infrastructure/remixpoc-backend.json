@@ -1,0 +1,164 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Parameters": {
+    "AWSREGIONNAME": {
+      "Type": "String",
+      "Default": "eu-west-2",
+      "Description": "The AWS region name"
+    },
+    "BEDOMAIN": {
+      "Type": "String",
+      "Default": "remixpocbe",
+      "Description": "Back end domain identifier"
+    },
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "The branchname to derive fqdn"
+    },
+    "CFCERTARN": {
+      "Type": "String",
+      "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/6736e423-7278-444e-aa34-7d849d896d4f"
+    },
+    "CERTIFICATEARN": {
+      "Type": "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/c4bf4fbf-7440-4345-8720-eff73b19bcce",
+      "Description": "The certificate ARN for the nhsdta.com domain"
+    },
+    "DEPLOYMENTSTAGENAME": {
+      "Type": "String",
+      "Default": "prod",
+      "Description": "The stage deployment name"
+    },
+    "FEDOMAIN": {
+      "Type": "String",
+      "Default": "remixpocfe",
+      "Description": "The frontend domain identifier"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Default": "Z1075FNTZPAM5I",
+      "Description": "The ID of the Route53 hosted zone"
+    },
+    "ROOTDOMAIN": {
+      "Type": "String",
+      "Default": "nhsdta.com",
+      "Description": "The root domain name"
+    },
+    "SHORTCODE": {
+      "Type": "String",
+      "Default": "mabr8",
+      "Description": "The shortcode for tags"
+    }
+  },
+  "Globals": {
+    "Function": {
+      "Tags": {
+        "shortcode": { "Ref": "SHORTCODE" }
+      },
+      "Environment": {
+        "Variables": {
+          "ROOTDOMAIN": { "Ref": "ROOTDOMAIN" },
+          "BRANCHNAME": { "Ref": "BRANCHNAME" },
+          "FEDOMAIN": { "Ref": "FEDOMAIN" }
+        }
+      },
+      "Timeout": 300
+    }
+  },
+  "Resources": {
+    "remixpocbeLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess",
+          "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+          "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+          "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB"
+        ],
+        "Path": "/service-role/",
+        "RoleName": {
+          "Fn::Join": [
+            "",
+            [{ "Ref": "BRANCHNAME" }, "-", "remixpocbeLambdaRole-001"]
+          ]
+        }
+      }
+    },
+    "remixpocbeLambdaSSMPolicy":{
+      "Type" : "AWS::IAM::Policy",
+      "Properties" : {
+          "PolicyDocument" : {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "Stmt1709827347702",
+                "Action": [
+                  "ssm:GetParameter",
+                  "kms:*"
+                ],
+                "Effect": "Allow",
+                "Resource": "*"
+              }
+            ]
+          },
+          "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "BRANCHNAME" }, "remixpocbeLambdaSSMPolicy"]]},
+          "Roles": [{"Ref": "remixpocbeLambdaRole"}]
+        },
+        "DependsOn": ["remixpocbeLambdaRole"]
+    },
+    "remixServerFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "code.zip",
+        "Description": "The lambda function that starts the remix server and handles requests from the API gateway",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "remixHttpApi" },
+              "Method": "ANY",
+              "Path": "$default",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-remixServer"]]
+        },
+        "Handler": "index.handler",
+        "Role": { "Fn::GetAtt": ["remixpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["remixpocbeLambdaRole"]
+    },
+    "remixHttpApi": {
+      "Type": "AWS::Serverless::HttpApi",
+      "Properties": {
+        "Description": "HTTP API for the remix server requests",
+        "Name": {
+          "Fn::Join": ["", [{ "Ref": "BRANCHNAME" }, "-remixHttpApi"]]
+        },
+        "StageName": "$default"
+      }
+    }
+  }
+}
