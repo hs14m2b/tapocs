@@ -3,6 +3,7 @@ import { createSignedJwtForAuth, getOAuth2AccessToken } from '../api_common_func
 import { readFileSync } from 'node:fs';
 
 const apiClientPrivateKey = readFileSync('../../certs/mhdtest001.key', 'utf8');
+const docRef = readFileSync('docref-plain.json', 'utf8'); //load the document reference from a file as a string
 
 import { URLSearchParams } from 'url';
 import jwt from 'jsonwebtoken';
@@ -213,7 +214,7 @@ let example2 = {
 
 async function sendDocRef (docRef, accessToken)
   {
-    let postString = JSON.stringify(docRef);
+    let postString = docRef;
     let datalength = postString.length
     let XRequestID = uuidv4();
     // request option
@@ -284,5 +285,5 @@ async function getAccessToken(){
 }
 let accessToken = await getAccessToken();
 console.log("got access token");
-let result = await sendDocRef(example2, accessToken);
+let result = await sendDocRef(docRef, accessToken);
 console.log(result);

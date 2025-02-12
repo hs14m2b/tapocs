@@ -3,7 +3,6 @@ import { createSignedJwtForAuth, getOAuth2AccessToken } from '../api_common_func
 import { readFileSync } from 'node:fs';
 
 const apiClientPrivateKey = readFileSync('../../certs/mhdtest001.key', 'utf8');
-const docRef = readFileSync('docref-plain.json', 'utf8'); //load the document reference from a file as a string
 
 import { URLSearchParams } from 'url';
 import jwt from 'jsonwebtoken';
@@ -12,6 +11,7 @@ const { sign } = jwt;
 const HTTPS = "https://";
 const ODSCode = "X26";
 const OAuthAPIKey = "JE4ESpy5NzFyG5n4U6pKqk8HGXeRjLhZ"; //API Key for BaRS Demonstrator
+const docRefId = "X26-b0b09869-114a-4829-ab09-87428eebf530";
 
 let https;
 try {
@@ -22,105 +22,16 @@ try {
 let newId = "X26-4a3836f5-2d42-4d3e-87c1-680173b7fa5c";//uuidv4(); //Y05868-70bce845-679e-42ea-a909-30ac78ec1956
 console.log(newId);
 
-let example2 = {
-  "resourceType": "DocumentReference",
-  "id": "X26-4a3836f5-2d42-4d3e-87c1-680173b7fa5c",
-  "masterIdentifier": [
-    {
-      "system": "urn:ietf:rfc:3986",
-      "value": "urn:uuid:27e2b1c8-ecd8-48f8-9958-8e614cc7ad73"
-    }
-  ],
-  "identifier": [
-    {
-      "system": "https://fhir.nhs.uk/Id/BaRS-Identifier",
-      "value": "4a3836f5-2d42-4d3e-87c1-680173b7fa5c"
-    },
-    {
-      "system": "https://fhir.nhs.uk/Id/dos-service-id",
-      "value": "matthewbrown"
-    },
-    {
-      "system": "https://fhir.nhs.uk/id/product-id",
-      "value": "6a5fc9f4-4af4-4819-b5d1-1339d9b64295"
-    }
-  ],
-  "status": "current",
-  "type": {
-    "coding": [
-      {
-        "system": "http://snomed.info/sct",
-        "code": "749001000000101",
-        "display": "Appointment (record artifact)"
-      }
-    ]
-  },
-  "category": [
-    {
-      "coding": [
-        {
-          "system": "http://snomed.info/sct",
-          "code": "419891008",
-          "display": "Record Artifact"
-        }
-      ]
-    }
-  ],
-  "subject": {
-    "identifier": {
-      "system": "https://fhir.nhs.uk/Id/nhs-number",
-      "value": "9876543210"
-    }
-  },
-  "custodian": {
-    "identifier": {
-      "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-      "value": "X26",
-      "display": "NHS ENGLAND - X26"
-    }
-  },
-  "content": [
-    {
-      "attachment": {
-        "contentType": "application/fhir+json",
-        "language": "en-UK",
-        "url": "https://bars-int-x26.tsassolarch.thirdparty.nhs.uk/barspoc/FHIR/R4/Appointment/4a3836f5-2d42-4d3e-87c1-680173b7fa5c"
-      },
-      "format": {
-        "system": "https://fhir.nhs.uk/CodeSystem/message-events-bars",
-        "code": "booking-request",
-        "display": "Booking Request - Request"
-      }
-    }
-  ],
-  "context": {
-    "period": {
-      "start": "2025-01-15T09:50:00Z",
-      "end": "2025-01-15T10:00:00Z"
-    },
-    "practiceSetting": {
-      "coding": [
-        {
-          "system": "http://snomed.info/sct",
-          "code": "394802001",
-          "display": "General medicine (qualifier value)"
-        }
-      ]
-    }
-  }
-}
 
-async function sendDocRef (docRef, accessToken)
+async function deleteDocRef (accessToken)
   {
-    let postString = docRef;
-    let datalength = postString.length
     let XRequestID = uuidv4();
     // request option
     let options = {
       host: "int.api.service.nhs.uk",
       port: 443,
-      method: 'POST',
-      path: "/record-locator/producer/FHIR/R4/DocumentReference",
+      method: 'DELETE',
+      path: "/record-locator/producer/FHIR/R4/DocumentReference/"+docRefId,
       rejectUnauthorized: false,
       headers: {
         'Authorization': 'Bearer '+ accessToken,
@@ -128,9 +39,7 @@ async function sendDocRef (docRef, accessToken)
         'x-request-id': XRequestID,
         'x-correlation-id': '11C46F5F-CDEF-4865-94B2-0EE0EDCC26DA',
         'NHSD-End-User-Organisation-ODS': ODSCode,//'ewrCoCAicmVzb3VyY2VUeXBlIjogIk9yZ2FuaXphdGlvbiIsCsKgICJpZGVudGlmaWVyIjogW wrCoCDCoCB7CsKgIMKgIMKgICJodHRwczovL2ZoaXIubmhzLnVrL0lkL29kcy1vcmdhbml6YXRpb24tY29kZSIsCsKgIMK gIMKgICJ2YWx1ZSI6ICJYMjYiCgoKwqAgwqAgfSwKwqAgIm5hbWUiOiAiTkhTIEVOR0xBTkQgLSBYMjYiCsKgIF0KfQ==',
-        'content-type': 'application/fhir+json;version=1',
-        'content-length': datalength
-    }
+      }
     };
 
     console.log("request options are  " + JSON.stringify(options));
@@ -163,7 +72,6 @@ async function sendDocRef (docRef, accessToken)
         });
 
         //send request with the postString json
-        req.write(postString);
         req.end();
     });
 }
@@ -183,5 +91,5 @@ async function getAccessToken(){
 }
 let accessToken = await getAccessToken();
 console.log("got access token");
-let result = await sendDocRef(docRef, accessToken);
+let result = await deleteDocRef(accessToken);
 console.log(result);
