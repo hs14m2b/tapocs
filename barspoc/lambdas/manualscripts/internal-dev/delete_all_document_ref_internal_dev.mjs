@@ -1,26 +1,15 @@
-import { createSignedJwtForAuth, getOAuth2AccessToken } from '../api_common_functions.mjs';
+import { createSignedJwtForAuth, getOAuth2AccessToken } from '../../api_common_functions.mjs';
 
 import { readFileSync } from 'node:fs';
 
-const apiClientPrivateKey = readFileSync('../../certs/mhdtest001.key', 'utf8');
+const apiClientPrivateKey = readFileSync('../../../certs/mhdtest001.key', 'utf8');
 
-import { URLSearchParams } from 'url';
-import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-const { sign } = jwt;
 const HTTPS = "https://";
 const ODSCode = "X26";
 const OAuthAPIKey = "gtAI0HnGrrFherJweKLnhQRph0Ud60Cs"; //API Key for barsnrlpoc in internal-dev
 const APIDomain = "internal-dev.api.service.nhs.uk";
-const docRefId = "X26-f7a2ed6e-ec29-4413-8509-1fa26a36308d";
 const NHSNumber = "9876543210";
-
-let https;
-try {
-  https = await import('node:https');
-} catch (err) {
-  console.log('https support is disabled!');
-}
 
 async function getDocRef (accessToken)
   {
@@ -56,8 +45,56 @@ async function getDocRef (accessToken)
       }
       let responseJson = await fetchResponse.json();
       console.log(JSON.stringify(responseJson, null, 4));
+      console.log("Number of results: " + responseJson.total);
+      if (responseJson.total > 0) {
+        for (let i = 0; i < responseJson.total; i++) {
+          console.log("Document Reference ID: " + responseJson.entry[i].resource.id);
+          console.log("Custodian: " + responseJson.entry[i].resource.custodian.identifier.value);
+          console.log("Custodian according to the id: " + responseJson.entry[i].resource.id.split("-")[0]);
+          await deleteDocRef(accessToken, responseJson.entry[i].resource.id);
+        }
+    }
+  }
+    return fetchResponse.status
+}
+
+async function deleteDocRef (accessToken, docRefId)
+  {
+    let url = HTTPS + APIDomain + "/record-locator/producer/FHIR/R4/DocumentReference/" + docRefId;
+    let custodianOrg = docRefId.split("-")[0];
+    let XRequestID = uuidv4();
+    // request option
+    let options = {
+      method: 'DELETE',
+      rejectUnauthorized: false,
+      headers: {
+        'Authorization': 'Bearer '+ accessToken,
+        'accept': 'application/fhir+json;version=1',
+        'x-request-id': XRequestID,
+        'x-correlation-id': '11C46F5F-CDEF-4865-94B2-0EE0EDCC26DA',
+        'NHSD-End-User-Organisation-ODS': custodianOrg,
+      }
+    };
+
+    console.log("request options are  " + JSON.stringify(options, null, 4));
+    let fetchResponse = await fetch(url, options);
+    if (!fetchResponse.ok) {
+      //get the body of the response
+      let responseText = await fetchResponse.text();
+      console.log(responseText);
+      throw new Error(`Response status: ${fetchResponse.status}`);
+    }
+    else {  
+      console.log(fetchResponse.status);
+      // Display the key/value pairs
+      for (const pair of fetchResponse.headers.entries()) {
+        console.log(`${pair[0]}: ${pair[1]}`);
+      }
+      let responseJson = await fetchResponse.json();
+      console.log(JSON.stringify(responseJson, null, 4));
     }
     return fetchResponse.status
+
 }
 
 async function getAccessToken(){

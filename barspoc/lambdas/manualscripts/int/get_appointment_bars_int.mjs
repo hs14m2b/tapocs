@@ -1,22 +1,15 @@
-import { createSignedJwtForAuth, getOAuth2AccessToken } from '../api_common_functions.mjs';
+import { createSignedJwtForAuth, getOAuth2AccessToken } from '../../api_common_functions.mjs';
 import { createPrivateKey } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
-const apiClientPrivateKey = readFileSync('../../certs/mhdtest001.key', 'utf8');
+const apiClientPrivateKey = readFileSync('../../../certs/mhdtest001.key', 'utf8');
 
-import { URLSearchParams } from 'url';
-import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-const { sign } = jwt;
 const HTTPS = "https://";
+const ODSCode = "X26";
+const OAuthAPIKey = "JE4ESpy5NzFyG5n4U6pKqk8HGXeRjLhZ"; //API Key for BaRS Demonstrator
 const APIDomain = "int.api.service.nhs.uk";
 
-let https;
-try {
-  https = await import('node:https');
-} catch (err) {
-  console.log('https support is disabled!');
-}
 let appointmentId = "4a3836f5-2d42-4d3e-87c1-680173b7fa5c";
 
 
@@ -33,6 +26,7 @@ let appointmentId = "4a3836f5-2d42-4d3e-87c1-680173b7fa5c";
         'X-Request-ID': XRequestID,
         'X-Correlation-ID': XRequestID,
         //'NHSD-End-User-Organisation-ODS': 'ewrCoCAicmVzb3VyY2VUeXBlIjogIk9yZ2FuaXphdGlvbiIsCsKgICJpZGVudGlmaWVyIjogW wrCoCDCoCB7CsKgIMKgIMKgICJodHRwczovL2ZoaXIubmhzLnVrL0lkL29kcy1vcmdhbml6YXRpb24tY29kZSIsCsKgIMK gIMKgICJ2YWx1ZSI6ICJYMjYiCgoKwqAgwqAgfSwKwqAgIm5hbWUiOiAiTkhTIEVOR0xBTkQgLSBYMjYiCsKgIF0KfQ==',
+        //'NHSD-End-User-Organisation': 'ewrCoCAicmVzb3VyY2VUeXBlIjogIk9yZ2FuaXphdGlvbiIsCsKgICJpZGVudGlmaWVyIjogW wrCoCDCoCB7CsKgIMKgIMKgICJodHRwczovL2ZoaXIubmhzLnVrL0lkL29kcy1vcmdhbml6YXRpb24tY29kZSIsCsKgIMK gIMKgICJ2YWx1ZSI6ICJYMjYiCgoKwqAgwqAgfSwKwqAgIm5hbWUiOiAiTkhTIEVOR0xBTkQgLSBYMjYiCsKgIF0KfQ==',
         'NHSD-Target-Identifier': 'eyJzeXN0ZW0iOiJodHRwczovL2ZoaXIubmhzLnVrL0lkL2Rvcy1zZXJ2aWNlLWlkIiwidmFsdWUiOiJtYXR0aGV3YnJvd24ifQ=='
       }
     }
@@ -51,9 +45,7 @@ let appointmentId = "4a3836f5-2d42-4d3e-87c1-680173b7fa5c";
   }
 
   async function getAccessToken(){
-    //console.log(apiClientPrivateKey);
-    //let secretOrPrivateKey = createPrivateKey(apiClientPrivateKey);
-    let blah = await createSignedJwtForAuth("JE4ESpy5NzFyG5n4U6pKqk8HGXeRjLhZ",
+    let blah = await createSignedJwtForAuth(OAuthAPIKey,
     "mhdtest001", apiClientPrivateKey,
     APIDomain, "/oauth2/token");
     //console.log(blah);

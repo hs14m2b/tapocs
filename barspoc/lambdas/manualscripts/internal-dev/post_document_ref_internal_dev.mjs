@@ -1,10 +1,10 @@
-import { createSignedJwtForAuth, getOAuth2AccessToken } from '../api_common_functions.mjs';
+import { createSignedJwtForAuth, getOAuth2AccessToken } from '../../api_common_functions.mjs';
 
 import { readFileSync } from 'node:fs';
 
-const apiClientPrivateKey = readFileSync('../../certs/mhdtest001.key', 'utf8');
+const apiClientPrivateKey = readFileSync('../../../certs/mhdtest001.key', 'utf8');
 //const docRef = readFileSync('docref-plain.json', 'utf8'); //load the document reference from a file as a string
-const docRef = readFileSync('docref-bars.json', 'utf8'); //load the document reference from a file as a string
+const docRef = readFileSync('../docref-bars.json', 'utf8'); //load the document reference from a file as a string
 
 import { URLSearchParams } from 'url';
 import jwt from 'jsonwebtoken';
@@ -14,15 +14,6 @@ const HTTPS = "https://";
 const ODSCode = "V4T0L";//"X26"; //V4T0L is the ODS code for the BaRS proxy
 const OAuthAPIKey = "gtAI0HnGrrFherJweKLnhQRph0Ud60Cs"; //API Key for barsnrlpoc in internal-dev
 const APIDomain = "internal-dev.api.service.nhs.uk";
-
-let https;
-try {
-  https = await import('node:https');
-} catch (err) {
-  console.log('https support is disabled!');
-}
-let newId = "X26-4a3836f5-2d42-4d3e-87c1-680173b7fa5c";//uuidv4(); //Y05868-70bce845-679e-42ea-a909-30ac78ec1956
-console.log(newId);
 
 async function sendDocRef (docRef, accessToken)
   {
@@ -47,6 +38,7 @@ async function sendDocRef (docRef, accessToken)
     };
 
     console.log("request options are  " + JSON.stringify(options, null, 4));
+    console.log("url is " + url);
     let fetchResponse = await fetch(url, options);
     if (!fetchResponse.ok) {
       //get the body of the response
@@ -65,9 +57,7 @@ async function sendDocRef (docRef, accessToken)
 }
 
 async function getAccessToken(){
-  //console.log(apiClientPrivateKey);
-  //let secretOrPrivateKey = createPrivateKey(apiClientPrivateKey);
-  //"test-1" key identifier is hard-coded into the bars proxy for all environments.
+  //"test-1" key identifier is hard-coded into the bars proxy for all environments. otherwise use mhdtest001
   //used here to enable re-use of the same client app for the bars/nrl poc.
   let blah = await createSignedJwtForAuth(OAuthAPIKey,
   "test-1", apiClientPrivateKey,

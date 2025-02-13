@@ -1,29 +1,20 @@
-import { createSignedJwtForAuth, getOAuth2AccessToken } from '../api_common_functions.mjs';
+import { createSignedJwtForAuth, getOAuth2AccessToken } from '../../api_common_functions.mjs';
 
 import { readFileSync } from 'node:fs';
 
-const apiClientPrivateKey = readFileSync('../../certs/mhdtest001.key', 'utf8');
+const apiClientPrivateKey = readFileSync('../../../certs/mhdtest001.key', 'utf8');
 
-import { URLSearchParams } from 'url';
-import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-const { sign } = jwt;
 const HTTPS = "https://";
 const ODSCode = "X26";
-const OAuthAPIKey = "gtAI0HnGrrFherJweKLnhQRph0Ud60Cs"; //API Key for barsnrlpoc in internal-dev
-const APIDomain = "internal-dev.api.service.nhs.uk";
-const docRefId = "X26-f7a2ed6e-ec29-4413-8509-1fa26a36308d";
-
-let https;
-try {
-  https = await import('node:https');
-} catch (err) {
-  console.log('https support is disabled!');
-}
+const OAuthAPIKey = "JE4ESpy5NzFyG5n4U6pKqk8HGXeRjLhZ"; //API Key for BaRS Demonstrator
+const APIDomain = "int.api.service.nhs.uk";
+const NHSNumber = "6700028191"; // 6700028191 // 9876543210
 
 async function getDocRef (accessToken)
   {
-    let url = HTTPS + APIDomain + "/record-locator/consumer/FHIR/R4/DocumentReference/" + docRefId;
+    let subjectIdentifier = new URLSearchParams({"subject:identifier" : "https://fhir.nhs.uk/Id/nhs-number|" + NHSNumber}).toString();
+    let url = HTTPS + APIDomain + "/record-locator/consumer/FHIR/R4/DocumentReference?" + subjectIdentifier;
     let XRequestID = uuidv4();
     // request option
     let options = {
@@ -54,17 +45,21 @@ async function getDocRef (accessToken)
       }
       let responseJson = await fetchResponse.json();
       console.log(JSON.stringify(responseJson, null, 4));
+      console.log("Number of results: " + responseJson.total);
+      if (responseJson.total > 0) {
+        for (let i = 0; i < responseJson.total; i++) {
+          console.log("Document Reference ID: " + responseJson.entry[i].resource.id);
+          console.log("Custodian: " + responseJson.entry[i].resource.custodian.identifier.value);
+        }
     }
+  }
     return fetchResponse.status
 }
 
 async function getAccessToken(){
-  //console.log(apiClientPrivateKey);
-  //let secretOrPrivateKey = createPrivateKey(apiClientPrivateKey);
   let blah = await createSignedJwtForAuth(OAuthAPIKey,
   "mhdtest001", apiClientPrivateKey,
   APIDomain, "/oauth2/token");
-  //console.log(blah);
   let blah2 = await getOAuth2AccessToken(blah, APIDomain, "/oauth2/token");
   console.log(blah2);
   //load into JSON object
