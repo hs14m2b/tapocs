@@ -46,20 +46,20 @@
       }
     },
     "author": [
-        {
-          "identifier": {
-            "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-            "value": "X26",
-            "display": "NHS ENGLAND - X26"
-            }
-        }
-      ],
+      {
+        "identifier": {
+          "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+          "value": "X26"
+        },
+        "display": "NHS ENGLAND - X26"
+      }
+    ],
     "custodian": {
       "identifier": {
         "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-        "value": "X26",
-        "display": "NHS ENGLAND - X26"
-      }
+        "value": "X26"
+      },
+      "display": "NHS ENGLAND - X26"
     },
     "content": [
       {
@@ -69,9 +69,9 @@
           "url": "https://bars-int-x26.tsassolarch.thirdparty.nhs.uk/barspoc/FHIR/R4/Appointment/4a3836f5-2d42-4d3e-87c1-680173b7fa5c"
         },
         "format": {
-          "system": "https://fhir.nhs.uk/CodeSystem/message-events-bars",
-          "code": "booking-request",
-          "display": "Booking Request - Request"
+            "system": "https://fhir.nhs.uk/England/CodeSystem/England-NRLFormatCode",
+            "code": "urn:nhs-ic:structured",
+            "display": "Structured Document"
         },
         "extension": [
           {

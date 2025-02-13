@@ -56,3 +56,6 @@ when invoking the BaRS proxy
 NRL information
 Valuesets contained in code in github repo as follows:
 https://github.com/NHSDigital/NRLF/tree/develop/resources/fhir
+
+URL to create API-M client apps in the non-prod instance (e.g. internal-dev etc)
+https://dos-internal.ptl.api.platform.nhs.uk/MyApplications

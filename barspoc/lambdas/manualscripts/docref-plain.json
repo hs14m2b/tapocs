@@ -32,17 +32,17 @@
       {
         "identifier": {
           "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-          "value": "X26",
-          "display": "NHS ENGLAND - X26"
-      }
+          "value": "X26"
+        },
+        "display": "NHS ENGLAND - X26"
       }
     ],
     "custodian": {
       "identifier": {
         "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-        "value": "X26",
-        "display": "NHS ENGLAND - X26"
-      }
+        "value": "X26"
+      },
+      "display": "NHS ENGLAND - X26"
     },
     "description": "Physical document mental health crisis plan",
     "securityLabel": [
