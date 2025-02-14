@@ -6,16 +6,13 @@ const apiClientPrivateKey = readFileSync('../../../certs/mhdtest001.key', 'utf8'
 
 import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
-const ODSCode = "X26";
-const OAuthAPIKey = "gtAI0HnGrrFherJweKLnhQRph0Ud60Cs"; //API Key for barsnrlpoc in internal-dev
-const APIDomain = "internal-dev.api.service.nhs.uk";
-//const NHSNumber = "9876543210";
-const NHSNumber = "6700028191";
+import { APIDomain, OAuthAPIKey, OAuthAPIKeyName, ODSCode, NHSDEndUserOrganisation, NHSDTargetIdentifier } from './config.mjs';
+const NHSNumber = "6700028191"; // 6700028191 // 9876543210
 
 async function getDocRef (accessToken)
   {
     let subjectIdentifier = new URLSearchParams({"subject:identifier" : "https://fhir.nhs.uk/Id/nhs-number|" + NHSNumber}).toString();
-    let url = HTTPS + APIDomain + "/record-locator/consumer/FHIR/R4/DocumentReference?" + subjectIdentifier;
+    let url = HTTPS + APIDomain + "/booking-and-referral/FHIR/R4/DocumentReference?" + subjectIdentifier;
     let XRequestID = uuidv4();
     // request option
     let options = {
@@ -23,7 +20,7 @@ async function getDocRef (accessToken)
       rejectUnauthorized: false,
       headers: {
         'Authorization': 'Bearer '+ accessToken,
-        'accept': 'application/fhir+json;version=1',
+        'accept': 'application/fhir+json;version=1.1.0',
         'x-request-id': XRequestID,
         'x-correlation-id': '11C46F5F-CDEF-4865-94B2-0EE0EDCC26DA',
         'NHSD-End-User-Organisation-ODS': ODSCode,
@@ -61,7 +58,7 @@ async function getDocRef (accessToken)
 
 async function deleteDocRef (accessToken, docRefId)
   {
-    let url = HTTPS + APIDomain + "/record-locator/producer/FHIR/R4/DocumentReference/" + docRefId;
+    let url = HTTPS + APIDomain + "/booking-and-referral/FHIR/R4/DocumentReference/" + docRefId;
     let custodianOrg = docRefId.split("-")[0];
     let XRequestID = uuidv4();
     // request option
@@ -70,7 +67,7 @@ async function deleteDocRef (accessToken, docRefId)
       rejectUnauthorized: false,
       headers: {
         'Authorization': 'Bearer '+ accessToken,
-        'accept': 'application/fhir+json;version=1',
+        'accept': 'application/fhir+json;version=1.1.0',
         'x-request-id': XRequestID,
         'x-correlation-id': '11C46F5F-CDEF-4865-94B2-0EE0EDCC26DA',
         'NHSD-End-User-Organisation-ODS': custodianOrg,

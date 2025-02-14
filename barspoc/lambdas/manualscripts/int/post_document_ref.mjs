@@ -8,9 +8,8 @@ const docRef = readFileSync('../docref-plain.json', 'utf8'); //load the document
 
 import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
-const ODSCode = "X26"; //V4T0L is the ODS code for the BaRS proxy
-const OAuthAPIKey = "JE4ESpy5NzFyG5n4U6pKqk8HGXeRjLhZ"; //API Key for BaRS Demonstrator
-const APIDomain = "int.api.service.nhs.uk";
+//V4T0L is the ODS code for the BaRS proxy
+import { APIDomain, OAuthAPIKey, OAuthAPIKeyName, ODSCode, NHSDEndUserOrganisation, NHSDTargetIdentifier } from './config.mjs';
 
 async function sendDocRef (docRef, accessToken)
   {

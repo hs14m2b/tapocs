@@ -8,29 +8,35 @@ const docRef = readFileSync('../docref-bars.json', 'utf8'); //load the document 
 
 import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
+import { APIDomain, OAuthAPIKey, OAuthAPIKeyName, NHSDEndUserOrganisation, NHSDTargetIdentifier } from './config.mjs';
+const docRefId = "V4T0L-86fe42b5-6d7c-4e49-938a-6e4cbf5362ec";
 const ODSCode = "X26";
-const OAuthAPIKey = "gtAI0HnGrrFherJweKLnhQRph0Ud60Cs"; //API Key for barsnrlpoc in internal-dev
-const APIDomain = "internal-dev.api.service.nhs.uk";
-
-
-async function sendDocRef (docRef, accessToken)
+async function updateDocRef (accessToken)
   {
-    let postString = docRef;
+    let docRefJson = JSON.parse(docRef);
+    docRefJson.id = docRefId;
+    let newPeriod = {
+      "start": "2025-04-15T09:50:00Z",
+      "end": "2025-04-15T10:00:00Z"
+    };
+    docRefJson.context.period = newPeriod;
+
+    let postString = JSON.stringify(docRefJson);
     let XRequestID = uuidv4();
-    let url = HTTPS + APIDomain + "/booking-and-referral/FHIR/R4/DocumentReference";
+    let url = HTTPS + APIDomain + "/record-locator/producer/FHIR/R4/DocumentReference";
 
     // request option
     let options = {
-      method: 'POST',
+      method: 'PUT',
       rejectUnauthorized: false,
       headers: {
         'Authorization': 'Bearer '+ accessToken,
         'accept': 'application/fhir+json;version=1.1.0',
         'x-request-id': XRequestID,
         'x-correlation-id': '11C46F5F-CDEF-4865-94B2-0EE0EDCC26DA',
-        //'NHSD-End-User-Organisation-ODS': ODSCode,
+        'NHSD-End-User-Organisation-ODS': ODSCode,
         //'NHSD-End-User-Organisation': 'ewrCoCAicmVzb3VyY2VUeXBlIjogIk9yZ2FuaXphdGlvbiIsCsKgICJpZGVudGlmaWVyIjogW wrCoCDCoCB7CsKgIMKgIMKgICJodHRwczovL2ZoaXIubmhzLnVrL0lkL29kcy1vcmdhbml6YXRpb24tY29kZSIsCsKgIMK gIMKgICJ2YWx1ZSI6ICJYMjYiCgoKwqAgwqAgfSwKwqAgIm5hbWUiOiAiTkhTIEVOR0xBTkQgLSBYMjYiCsKgIF0KfQ==',
-        'content-type': 'application/fhir+json;version=1.1.0',
+        'content-type': 'application/fhir+json',
       },
       body: postString
     };
@@ -67,5 +73,5 @@ async function getAccessToken(){
 }
 let accessToken = await getAccessToken();
 console.log("got access token");
-let result = await sendDocRef(docRef, accessToken);
+let result = await updateDocRef(accessToken);
 console.log(result);

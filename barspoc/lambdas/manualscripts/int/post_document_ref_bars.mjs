@@ -8,9 +8,7 @@ const docRef = readFileSync('../docref-bars.json', 'utf8'); //load the document 
 
 import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
-const ODSCode = "X26";
-const OAuthAPIKey = "gtAI0HnGrrFherJweKLnhQRph0Ud60Cs"; //API Key for barsnrlpoc in internal-dev
-const APIDomain = "internal-dev.api.service.nhs.uk";
+import { APIDomain, OAuthAPIKey, OAuthAPIKeyName, ODSCode, NHSDEndUserOrganisation, NHSDTargetIdentifier } from './config.mjs';
 
 
 async function sendDocRef (docRef, accessToken)
@@ -28,9 +26,9 @@ async function sendDocRef (docRef, accessToken)
         'accept': 'application/fhir+json;version=1.1.0',
         'x-request-id': XRequestID,
         'x-correlation-id': '11C46F5F-CDEF-4865-94B2-0EE0EDCC26DA',
-        //'NHSD-End-User-Organisation-ODS': ODSCode,
+        'NHSD-End-User-Organisation-ODS': ODSCode,
         //'NHSD-End-User-Organisation': 'ewrCoCAicmVzb3VyY2VUeXBlIjogIk9yZ2FuaXphdGlvbiIsCsKgICJpZGVudGlmaWVyIjogW wrCoCDCoCB7CsKgIMKgIMKgICJodHRwczovL2ZoaXIubmhzLnVrL0lkL29kcy1vcmdhbml6YXRpb24tY29kZSIsCsKgIMK gIMKgICJ2YWx1ZSI6ICJYMjYiCgoKwqAgwqAgfSwKwqAgIm5hbWUiOiAiTkhTIEVOR0xBTkQgLSBYMjYiCsKgIF0KfQ==',
-        'content-type': 'application/fhir+json;version=1.1.0',
+        'content-type': 'application/fhir+json',
       },
       body: postString
     };

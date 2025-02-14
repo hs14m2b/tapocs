@@ -6,9 +6,7 @@ const apiClientPrivateKey = readFileSync('../../../certs/mhdtest001.key', 'utf8'
 
 import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
-const ODSCode = "X26";
-const OAuthAPIKey = "JE4ESpy5NzFyG5n4U6pKqk8HGXeRjLhZ"; //API Key for BaRS Demonstrator
-const APIDomain = "int.api.service.nhs.uk";
+import { APIDomain, OAuthAPIKey, OAuthAPIKeyName, ODSCode, NHSDEndUserOrganisation, NHSDTargetIdentifier } from './config.mjs';
 const NHSNumber = "6700028191"; // 6700028191 // 9876543210
 
 async function getDocRef (accessToken)

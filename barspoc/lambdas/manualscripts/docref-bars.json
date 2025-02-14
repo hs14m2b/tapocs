@@ -1,9 +1,5 @@
 {
     "resourceType": "DocumentReference",
-    "masterIdentifier": {
-        "system": "urn:ietf:rfc:3986",
-        "value": "urn:uuid:27e2b1c8-ecd8-48f8-9958-8e614cc7ad73"
-    },
     "identifier": [
       {
         "system": "https://fhir.nhs.uk/Id/BaRS-Identifier",
@@ -34,7 +30,7 @@
           {
             "system": "http://snomed.info/sct",
             "code": "419891008",
-            "display": "Record Artifact"
+            "display": "Record Artifact (record artifact)"
           }
         ]
       }
@@ -45,6 +41,7 @@
         "value": "6700028191"
       }
     },
+    "date": "2025-02-14T08:25:13.136693+00:00",
     "author": [
       {
         "identifier": {
@@ -65,7 +62,6 @@
       {
         "attachment": {
           "contentType": "application/fhir+json",
-          "language": "en-UK",
           "url": "https://bars-int-x26.tsassolarch.thirdparty.nhs.uk/barspoc/FHIR/R4/Appointment/4a3836f5-2d42-4d3e-87c1-680173b7fa5c"
         },
         "format": {
