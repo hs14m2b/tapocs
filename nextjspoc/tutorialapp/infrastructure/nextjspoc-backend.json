@@ -128,18 +128,13 @@
       "Properties": {
         "CodeUri": "code.zip",
         "Description": "The lambda function that starts the nextjs server and handles requests from the API gateway",
-        "Environment": {
-          "Variables": {
-            "NEXTJS_LAMBDA_BASE_PATH": "_server"
-          }
-        },
         "Events": {
           "Api": {
             "Type": "HttpApi",
             "Properties": {
               "ApiId": { "Ref": "nextjsHttpApi" },
               "Method": "ANY",
-              "Path": "/_server/{proxy+}",
+              "Path": "$default",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
@@ -151,7 +146,7 @@
         "Handler": "index.handler",
         "Layers": [{ "Ref": "nextjsServerFunctionLayer" }],
         "Role": { "Fn::GetAtt": ["nextjspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjspocbeLambdaRole"]
@@ -192,7 +187,7 @@
         },
         "Handler": "checkfavcolour.handler",
         "Role": { "Fn::GetAtt": ["nextjspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjspocbeLambdaRole"]
@@ -219,7 +214,7 @@
         },
         "Handler": "startsession.handler",
         "Role": { "Fn::GetAtt": ["nextjspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs16.x",
+        "Runtime": "nodejs18.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjspocbeLambdaRole"]

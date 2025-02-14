@@ -1,0 +1,7 @@
+using opennext to package app...
+
+run
+npx open-next@latest build
+in nextjs-blog folder - this builds the next application and puts output in .open-next.
+(the old sladg library used .next)
+
