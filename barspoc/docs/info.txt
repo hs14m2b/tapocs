@@ -21,6 +21,9 @@ certutil -mergepfx BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.crt BaRS-INT-X26.T
 
 plain TLS
 curl -v https://int-barspoc-barspocbe.nhsdta.com/barspoc/FHIR/R4/Appointment/1234
+
+curl -v https://t6tc3zwi42.execute-api.eu-west-2.amazonaws.com/barspoc/fhir/r4/Appointment/4a3836f5-2d42-4d3e-87c1-680173b7fa5c
+
 TLSMA
 
 curl -vk https://BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk/barspoc/FHIR/R4/Appointment?patient%3Aidentifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C6700028191 --cert ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.crt --key ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.key
@@ -28,6 +31,7 @@ curl -vk https://BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk/barspoc/FHIR/R4/Appo
 #with BaRS certificate
 curl -vk https://bars-int-x26.tsassolarch.thirdparty.nhs.uk/barspoc/FHIR/R4/Appointment/4a3836f5-2d42-4d3e-87c1-680173b7fa5c --cert ../certs/BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.crt --key ../certs/BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.key
 
+curl -vk https://bars-int-x26.tsassolarch.thirdparty.nhs.uk/barspoc/fhir/r4/Appointment/4a3836f5-2d42-4d3e-87c1-680173b7fa5c --cert ../certs/BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.crt --key ../certs/BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.key
 
 HTTP API Gateway configuration:
 - load the certificate for the custom domain into AWS Cert Manager
@@ -56,3 +60,7 @@ when invoking the BaRS proxy
 NRL information
 Valuesets contained in code in github repo as follows:
 https://github.com/NHSDigital/NRLF/tree/develop/resources/fhir
+
+URL to create API-M client apps in the non-prod instance (e.g. internal-dev etc)
+https://dos-internal.ptl.api.platform.nhs.uk/MyApplications
+https://apigee.com/organizations/nhsd-nonprod/apps

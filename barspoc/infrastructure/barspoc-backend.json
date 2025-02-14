@@ -291,7 +291,7 @@
           "DomainName": {"Ref": "BARSDOMAIN"},
           "EndpointConfiguration": "REGIONAL",
           "MutualTlsAuthentication": {
-            "TruststoreUri" :  { "Fn::Join": ["", ["s3://",{"Fn::Join": ["-",[ { "Ref": "SHORTCODE" }, "certs","bucket"]]},{"Fn::Join": ["",["/", { "Ref": "PROJECTNAME" }, "/", { "Ref": "APIENVIRONMENT" }, "/certs/20250128truststore.pem"]]} ]]}
+            "TruststoreUri" :  { "Fn::Join": ["", ["s3://",{"Fn::Join": ["-",[ { "Ref": "SHORTCODE" }, "certs","bucket"]]},{"Fn::Join": ["",["/", { "Ref": "PROJECTNAME" }, "/", { "Ref": "APIENVIRONMENT" }, "/certs/20250214truststore.pem"]]} ]]}
           },
           "OwnershipVerificationCertificateArn": {"Ref": "BARSVERIFICATIONCERTIFICATEARN"},
           "SecurityPolicy": "TLS_1_2"

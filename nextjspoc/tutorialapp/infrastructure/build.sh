@@ -40,8 +40,8 @@ sed -i "s/nextjspocapilambdas\.zip/${TIMESTAMP}nextjspocapilambdas\.zip/g" nextj
 sed -i "s/BLDTIME/${TIMESTAMP}/g" nextjspoc-edge.json
 
 #backend
-aws cloudformation package --use-json --template-file nextjspoc-backend.json --s3-bucket ${S3CODEBUCKET} --output-template-file ${TIMESTAMP}nextjspoc-backend.json --region ${REGION}
-aws cloudformation deploy --template-file ${TIMESTAMP}nextjspoc-backend.json --stack-name main-mabr8-nextjspocbestack --capabilities "CAPABILITY_NAMED_IAM" --region ${REGION}
+#aws cloudformation package --use-json --template-file nextjspoc-backend.json --s3-bucket ${S3CODEBUCKET} --output-template-file ${TIMESTAMP}nextjspoc-backend.json --region ${REGION}
+#aws cloudformation deploy --template-file ${TIMESTAMP}nextjspoc-backend.json --stack-name main-mabr8-nextjspocbestack --capabilities "CAPABILITY_NAMED_IAM" --region ${REGION}
 #lambda at edge
 #aws cloudformation package --use-json --template-file nextjspoc-edge.json --s3-bucket ${USS3CODEBUCKET} --output-template-file ${TIMESTAMP}nextjspoc-edge.json
 #aws cloudformation deploy --template-file ${TIMESTAMP}nextjspoc-edge.json --stack-name main-mabr8-nextjspocedgestack --capabilities "CAPABILITY_NAMED_IAM" --region "us-east-1"
