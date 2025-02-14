@@ -6,11 +6,8 @@ const apiClientPrivateKey = readFileSync('../../../certs/mhdtest001.key', 'utf8'
 
 import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
-const ODSCode = "X26";
-const OAuthAPIKey = "gtAI0HnGrrFherJweKLnhQRph0Ud60Cs"; //API Key for barsnrlpoc in internal-dev
-const APIDomain = "internal-dev.api.service.nhs.uk";
-//const NHSNumber = "9876543210";
-const NHSNumber = "6700028191";
+import { APIDomain, OAuthAPIKey, OAuthAPIKeyName, ODSCode, NHSDEndUserOrganisation, NHSDTargetIdentifier } from './config.mjs';
+const NHSNumber = "6700028191"; // 6700028191 // 9876543210
 
 async function getDocRef (accessToken)
   {

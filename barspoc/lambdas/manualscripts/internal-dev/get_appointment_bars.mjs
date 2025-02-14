@@ -6,9 +6,7 @@ const apiClientPrivateKey = readFileSync('../../../certs/mhdtest001.key', 'utf8'
 
 import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
-const ODSCode = "X26";
-const OAuthAPIKey = "gtAI0HnGrrFherJweKLnhQRph0Ud60Cs"; //API Key for barsnrlpoc in internal-dev
-const APIDomain = "internal-dev.api.service.nhs.uk";
+import { APIDomain, OAuthAPIKey, OAuthAPIKeyName, ODSCode, NHSDEndUserOrganisation, NHSDTargetIdentifier } from './config.mjs';
 
 let appointmentId = "4a3836f5-2d42-4d3e-87c1-680173b7fa5c";
 
@@ -26,8 +24,9 @@ let appointmentId = "4a3836f5-2d42-4d3e-87c1-680173b7fa5c";
         'X-Request-ID': XRequestID,
         'X-Correlation-ID': XRequestID,
         //'NHSD-End-User-Organisation-ODS': 'ewrCoCAicmVzb3VyY2VUeXBlIjogIk9yZ2FuaXphdGlvbiIsCsKgICJpZGVudGlmaWVyIjogW wrCoCDCoCB7CsKgIMKgIMKgICJodHRwczovL2ZoaXIubmhzLnVrL0lkL29kcy1vcmdhbml6YXRpb24tY29kZSIsCsKgIMK gIMKgICJ2YWx1ZSI6ICJYMjYiCgoKwqAgwqAgfSwKwqAgIm5hbWUiOiAiTkhTIEVOR0xBTkQgLSBYMjYiCsKgIF0KfQ==',
-        'NHSD-End-User-Organisation': 'ewrCoCAicmVzb3VyY2VUeXBlIjogIk9yZ2FuaXphdGlvbiIsCsKgICJpZGVudGlmaWVyIjogW wrCoCDCoCB7CsKgIMKgIMKgICJodHRwczovL2ZoaXIubmhzLnVrL0lkL29kcy1vcmdhbml6YXRpb24tY29kZSIsCsKgIMK gIMKgICJ2YWx1ZSI6ICJYMjYiCgoKwqAgwqAgfSwKwqAgIm5hbWUiOiAiTkhTIEVOR0xBTkQgLSBYMjYiCsKgIF0KfQ==',
-        'NHSD-Target-Identifier': 'eyJzeXN0ZW0iOiJodHRwczovL2ZoaXIubmhzLnVrL0lkL2Rvcy1zZXJ2aWNlLWlkIiwidmFsdWUiOiJtYXR0aGV3YnJvd24ifQ=='
+        'NHSD-End-User-Organisation': NHSDEndUserOrganisation,
+        'NHSD-Target-Identifier': NHSDTargetIdentifier,
+        'NHSD-ID-Token': "dummyvalue"
       }
     }
     console.log("request options are  " + JSON.stringify(options));

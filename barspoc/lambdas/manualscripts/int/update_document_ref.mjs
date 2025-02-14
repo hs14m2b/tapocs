@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
 import { APIDomain, OAuthAPIKey, OAuthAPIKeyName, NHSDEndUserOrganisation, NHSDTargetIdentifier } from './config.mjs';
 const docRefId = "V4T0L-86fe42b5-6d7c-4e49-938a-6e4cbf5362ec";
-const ODSCode = "X26";
+const ODSCode = "V4T0L";
 async function updateDocRef (accessToken)
   {
     let docRefJson = JSON.parse(docRef);
@@ -23,7 +23,7 @@ async function updateDocRef (accessToken)
 
     let postString = JSON.stringify(docRefJson);
     let XRequestID = uuidv4();
-    let url = HTTPS + APIDomain + "/record-locator/producer/FHIR/R4/DocumentReference";
+    let url = HTTPS + APIDomain + "/record-locator/producer/FHIR/R4/DocumentReference/" + docRefId;
 
     // request option
     let options = {
@@ -62,7 +62,7 @@ async function updateDocRef (accessToken)
 async function getAccessToken(){
   //let secretOrPrivateKey = createPrivateKey(apiClientPrivateKey);
   let blah = await createSignedJwtForAuth(OAuthAPIKey,
-  "mhdtest001", apiClientPrivateKey,
+    OAuthAPIKeyName, apiClientPrivateKey,
   APIDomain, "/oauth2/token");
   //console.log(blah);
   let blah2 = await getOAuth2AccessToken(blah, APIDomain, "/oauth2/token");

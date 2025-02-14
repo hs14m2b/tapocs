@@ -8,9 +8,10 @@ const docRef = readFileSync('../docref-bars.json', 'utf8'); //load the document 
 
 import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
-import { APIDomain, OAuthAPIKey, OAuthAPIKeyName, ODSCode, NHSDEndUserOrganisation, NHSDTargetIdentifier } from './config.mjs';
-const docRefId = "V4T0L-86fe42b5-6d7c-4e49-938a-6e4cbf5362ec";
-
+import { APIDomain, OAuthAPIKey, OAuthAPIKeyName, NHSDEndUserOrganisation, NHSDTargetIdentifier } from './config.mjs';
+const docRefId = "V4T0L-6b49cc96-44cb-4ecf-8144-42541f82fc03";
+//const ODSCode = "V4T0L";
+import { ODSCode } from './config.mjs';
 async function updateDocRef (accessToken)
   {
     let docRefJson = JSON.parse(docRef);
@@ -23,7 +24,7 @@ async function updateDocRef (accessToken)
 
     let postString = JSON.stringify(docRefJson);
     let XRequestID = uuidv4();
-    let url = HTTPS + APIDomain + "/booking-and-referral/FHIR/R4/DocumentReference";
+    let url = HTTPS + APIDomain + "/booking-and-referral/FHIR/R4/DocumentReference/" + docRefId;
 
     // request option
     let options = {
@@ -62,7 +63,7 @@ async function updateDocRef (accessToken)
 async function getAccessToken(){
   //let secretOrPrivateKey = createPrivateKey(apiClientPrivateKey);
   let blah = await createSignedJwtForAuth(OAuthAPIKey,
-  "mhdtest001", apiClientPrivateKey,
+    OAuthAPIKeyName, apiClientPrivateKey,
   APIDomain, "/oauth2/token");
   //console.log(blah);
   let blah2 = await getOAuth2AccessToken(blah, APIDomain, "/oauth2/token");
