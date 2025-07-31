@@ -1,0 +1,34 @@
+erDiagram
+    HEALTHCARESERVICE ||--|| SCHEDULE : "has"
+    SCHEDULE ||--o{ SLOT : "contains"
+    APPOINTMENT ||--|| SLOT : "books"
+    HEALTHCARESERVICE ||--o{ APPOINTMENT : "satisfies"
+    
+
+    HEALTHCARESERVICE {
+        id id PK
+        string name
+        string category
+    }
+    SCHEDULE {
+        id id
+        reference actor[HEALTHCARESERVICE] FK
+        date planningHorizonStart
+        date planningHorizonEnd
+    }
+    SLOT {
+        id id
+        date start
+        date end
+        string status
+        reference SCHEDULE FK
+        reference actor[HEALTHCARESERVICE] FK
+    }
+    APPOINTMENT {
+        id id
+        string status
+        date start
+        date end
+        reference SLOT FK
+        reference participant[actor[HEALTHCARESERVICE]] FK
+    }

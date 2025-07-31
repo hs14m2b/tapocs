@@ -1,0 +1,35 @@
+sequenceDiagram
+    actor ICB
+    actor P as Patient
+    participant NHSA as NHS App
+    participant BP as BaRS Proxy
+    participant MYA as Manage Your Appt
+    participant NRL as National Record Locator
+    participant NHSN as NHS Notify
+    participant T as Tasking Service (PDM)
+    ICB->>+BP: Request vaccine using BaRS ServiceRequest
+    BP->>MYA: Request vaccine using BaRS ServiceRequest
+    MYA-->>BP: Acknowledge request
+    BP-->>-ICB: Acknowledge request
+    MYA->>T: Create Task for Patient to Book Appointment
+    T-->>MYA: Return Task id
+    MYA->>NHSN: Inform patient of referral and need to book appt
+    NHSN->>NHSA: Notify patient
+    NHSA->>P: Notify patient
+    P->>P: Reads notification
+    P->>NHSA: Launches NHS App
+    activate NHSA
+    NHSA<<->>T: Reads and shows patient outstanding tasks
+    P->>NHSA: Clicks "Book Vaccine Appt" generated from Task
+    NHSA->>+BP: Uses Task metadata to query Slots for HealthcareService
+    BP->>MYA: Query Slots
+    MYA-->>BP: Return Slots
+    BP-->>-NHSA: Return Slots
+    P->>NHSA: Choose Appointment Slot
+    NHSA->>+BP: Create Appt w/ Slot Details
+    BP->>MYA: Create Appt w/ Slot Details
+    MYA-->>BP: Confirm Appt Booked
+    BP-->>-NHSA: Confirm Appt Booked
+    deactivate NHSA
+    MYA->>+BP: Create Appt Pointer with Datetime and Status
+    BP->>-NRL: Create Appt Pointer with Datetime and Status
