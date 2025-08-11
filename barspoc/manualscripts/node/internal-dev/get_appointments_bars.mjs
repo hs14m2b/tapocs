@@ -137,3 +137,4 @@ if (dosServiceId && appointmentIds.length > 0) {
   console.log(JSON.stringify(result, null, 4));
 }
 //console.log(JSON.stringify(result, null, 4));
+ 

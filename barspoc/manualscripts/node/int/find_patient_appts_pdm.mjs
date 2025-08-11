@@ -53,3 +53,4 @@ let accessToken = await getAccessToken();
 
 let result = await findPatient(accessToken);
 console.log(JSON.stringify(result));
+ 

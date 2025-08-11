@@ -67,3 +67,4 @@ let accessToken = await getAccessToken();
 console.log("got access token");
 let result = await sendDocRef(docRef, accessToken);
 console.log(result);
+ 

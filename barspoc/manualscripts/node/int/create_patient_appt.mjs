@@ -1,5 +1,4 @@
 import  appointment  from "../appointment-001.json" assert { type: "json" };
-import { NHSNumber } from "./config.mjs";
 
 import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
@@ -34,3 +33,4 @@ async function postAppointment (newAppointment)
 let newAppointment = JSON.parse(JSON.stringify(appointment));
 let result = await postAppointment(newAppointment);
 console.log(JSON.stringify(result));
+ 

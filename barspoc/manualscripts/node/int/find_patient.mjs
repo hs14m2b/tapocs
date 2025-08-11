@@ -35,3 +35,4 @@ async function findPatient ()
 
 let result = await findPatient();
 console.log(JSON.stringify(result));
+ 

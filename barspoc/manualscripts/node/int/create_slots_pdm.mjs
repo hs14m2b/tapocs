@@ -72,3 +72,4 @@ newSlot.end = endDate.toISOString();
 newSlot.status = "free";
 let result = await postSlot(newSlot, accessToken);
 console.log(result);
+ 

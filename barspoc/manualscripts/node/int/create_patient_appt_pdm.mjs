@@ -1,4 +1,4 @@
-import  appointment  from "../appointment-001.json" assert { type: "json" };
+import  appointment  from "../appointment-001.json" assert { type: "json" }; 
 import { createSignedJwtForAuth, getOAuth2AccessToken } from '../../../lambdas/api_common_functions.mjs';
 import { NHSNumber, OAuthAPIKey, OAuthAPIKeyName, APIDomain } from "./config.mjs";
 
@@ -62,3 +62,4 @@ for (let i = 0; i < newAppointment.participant.length; i++) {
 
 let result = await postAppointment(newAppointment, accessToken);
 console.log(JSON.stringify(result));
+ 

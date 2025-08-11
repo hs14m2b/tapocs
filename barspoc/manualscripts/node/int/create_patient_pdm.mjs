@@ -1,4 +1,4 @@
-import  patient  from "../patient.json" assert { type: "json" };
+import  patient  from "../patient.json" assert { type: "json" }; 
 import { createSignedJwtForAuth, getOAuth2AccessToken } from '../../../lambdas/api_common_functions.mjs';
 import { NHSNumber, OAuthAPIKey, OAuthAPIKeyName, APIDomain } from "./config.mjs";
 
@@ -51,3 +51,4 @@ let newPatient = JSON.parse(JSON.stringify(patient));
 newPatient.identifier[0].value = NHSNumber;
 let result = await postPatient(newPatient, accessToken);
 console.log(result);
+ 

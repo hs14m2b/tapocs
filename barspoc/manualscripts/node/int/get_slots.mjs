@@ -29,3 +29,4 @@ async function getSlots ()
 
 let result = await getSlots();
 console.log(JSON.stringify(result, null, 4)); 
+ 

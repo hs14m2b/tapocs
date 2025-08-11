@@ -51,3 +51,4 @@ let accessToken = await getAccessToken();
 let newHealthcareService = JSON.parse(JSON.stringify(healthcareService));
 let result = await postHealthcareService(newHealthcareService, accessToken);
 console.log(result);
+ 

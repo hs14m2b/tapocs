@@ -87,3 +87,4 @@ console.log("versionId is " + versionId);
 //delete the appointment
 result = await deleteAppointment(versionId, accessToken);
 console.log(JSON.stringify(result));
+ 

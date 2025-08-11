@@ -49,3 +49,4 @@ let accessToken = await getAccessToken();
 
 let result = await searchSlots(accessToken);
 console.log(JSON.stringify(result, null , 2));
+ 

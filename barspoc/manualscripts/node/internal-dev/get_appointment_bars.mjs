@@ -58,3 +58,4 @@ let appointmentId = "4bce6e44-e49d-4d6f-b742-7c9630432e43";
 let access_token = await getAccessToken();
 let result = await fetchAppointment(appointmentId, access_token);
 console.log(JSON.stringify(result, null, 4));
+ 

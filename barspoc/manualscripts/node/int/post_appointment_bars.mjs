@@ -74,3 +74,4 @@ let accessToken = await getAccessToken();
 console.log("got access token");
 let result = await sendAppointment(appointment, accessToken);
 console.log(result);
+ 

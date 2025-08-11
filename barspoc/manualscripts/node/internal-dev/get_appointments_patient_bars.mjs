@@ -56,3 +56,4 @@ import { APIDomain, OAuthAPIKey, OAuthAPIKeyName, ODSCode, NHSDEndUserOrganisati
 let access_token = await getAccessToken();
 let result = await fetchAppointments(access_token);
 console.log(JSON.stringify(result, null, 4));
+ 
