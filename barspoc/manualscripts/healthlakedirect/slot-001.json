@@ -1,0 +1,48 @@
+{
+    "resourceType": "Slot",
+    "meta": {
+      "profile": [
+        "http://hl7.org/fhir/StructureDefinition/Slot",
+        "https://fhir.hl7.org.uk/StructureDefinition/UKCore-Slot"
+      ]
+    },
+    "extension": [
+      {
+        "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-DeliveryChannel",
+        "valueCode": "In-person"
+      }
+    ],
+    "serviceCategory": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/service-category",
+            "code": "35",
+            "display": "Hospital"
+          }
+        ]
+      }
+    ],
+    "appointmentType": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/v2-0276",
+          "code": "ROUTINE",
+          "display": "Routine appointment"
+        }
+      ]
+    },
+    "schedule": {
+      "reference": "Schedule/bc5fa28f-88f1-467d-b021-921446be32e4",
+      "type": "Schedule",
+      "display": "Opthalmology Clinic",
+      "identifier": 
+      {
+          "system": "https://system.supplier.co.uk/Diary/id",
+          "value": "8622dfdb-dc6a-47b6-b3a7-2eb2829db287"
+      }
+    },
+    "status": "free",
+    "start": "2025-10-06T09:00:00.000+00:00",
+    "end": "2025-10-06T10:00:00.000+00:00"
+  }

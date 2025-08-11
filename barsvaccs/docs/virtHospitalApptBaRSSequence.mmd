@@ -1,0 +1,59 @@
+---
+title: BaRS Virtual Hospital Appointment Booking Sequence
+description: Sequence diagram showing the process of booking a virtual hospital appointment using the BaRS system.
+author: Matthew Brown
+date: 2025-08-01
+tags: [BaRS, Virtual Hospital, Appointment Booking, Sequence Diagram]
+displayMode: sequence
+config:
+  theme: default
+  look: handdrawn
+---
+
+
+sequenceDiagram
+    actor VH as Virtual Hospital Clinician
+    actor P as Patient
+    participant NHSA as NHS App
+    participant BP as BaRS Proxy
+    participant MYA as Manage Your Appt
+    participant NRL as National Record Locator
+    participant NHSN as NHS Notify
+    participant T as Tasking Service (PDM)
+    note over VH: Clinician requires patient<br />to attend a diagnostic appointment<br />in a local care setting
+    VH->>+BP: Request diagnostic test using BaRS ServiceRequest
+    %% see https://simplifier.net/nhsbookingandreferrals/~resources?category=Example&exampletype=Bundle&sortBy=DisplayName for example messages
+    note over MYA: MYA is used by the diagnostic<br />clinic to manage schedules & appointments
+    BP->>MYA: Request diagnostic test using BaRS ServiceRequest
+    MYA-->>BP: Acknowledge request
+    BP-->>-VH: Acknowledge request
+    MYA->>T: Create Task for Patient to Book Appointment
+    T-->>MYA: Return Task id
+    MYA->>+NHSN: Inform patient of referral and need to book appt
+    NHSN->>-NHSA: Notify patient
+    NHSA->>P: Notify patient
+    P->>P: Reads notification
+    P->>NHSA: Launches NHS App
+    activate NHSA
+    NHSA<<->>T: Reads and shows patient outstanding tasks
+    P->>NHSA: Clicks "Book Diagnostic Appt" generated from Task
+    NHSA->>+BP: Uses Task metadata to query Slots for HealthcareService
+    BP->>MYA: Query Slots
+    MYA-->>BP: Return Slots
+    BP-->>-NHSA: Return Slots
+    P->>NHSA: Choose Appointment Slot
+    NHSA->>+BP: Create Appt w/ Slot Details
+    BP->>MYA: Create Appt w/ Slot Details
+    MYA-->>MYA: Check ServiceRequest for patient eligibility
+    MYA--)T: Mark Task as Complete
+    MYA-->>BP: Confirm Appt Booked
+    Note over MYA:   Details on how <br /> Appointment is matched <br /> to ServiceRequest to be defined
+    BP-->>-NHSA: Confirm Appt Booked
+    NHSA-->>P: Show Appointment Confirmation
+    opt
+    MYA->>NHSN: Confirm Appointment Booked via message
+    end
+    deactivate NHSA
+    Note over MYA:  Inform NRL of Appointment<br />in background 
+    MYA->>+BP: Create Appt Pointer with Datetime and Status
+    BP->>-NRL: Create Appt Pointer with Datetime and Status

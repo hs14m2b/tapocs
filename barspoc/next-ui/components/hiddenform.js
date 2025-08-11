@@ -1,0 +1,12 @@
+
+export default function Hiddenform() {
+    return (
+      <span className="nhsuk-hidden">
+        <form action="/confirmdata" method="post" className="form" id="completesubmission">
+          <input id="postcodehdn" name="postcodehdn" type="hidden" />
+          <input id="nhsnumberhdn" name="nhsnumberhdn" type="hidden" />
+          <input id="favcolourhdn" name="favcolourhdn" type="hidden" />
+        </form>
+    </span>
+  )
+}

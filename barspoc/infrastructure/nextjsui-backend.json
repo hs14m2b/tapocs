@@ -1,0 +1,421 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Parameters": {
+    "APIENVIRONMENT": {
+      "Type": "String",
+      "Description": "The API-M environment the deployment supports - values are internal-dev, internal-dev-sandbox, internal-qa, internal-qa-sandbox, ref (all previous are non-prod), sandbox, dev, int, prod"
+    },
+    "AWSREGIONNAME": {
+      "Type": "String",
+      "Default": "eu-west-2",
+      "Description": "The AWS region name"
+    },
+    "BEDOMAIN": {
+      "Type": "String",
+      "Default": "nextjsuibe",
+      "Description": "Back end domain identifier"
+    },
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "The branchname to derive fqdn"
+    },
+    "CFCERTARN": {
+      "Type": "String",
+      "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/6736e423-7278-444e-aa34-7d849d896d4f"
+    },
+    "CERTIFICATEARN": {
+      "Type": "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/c4bf4fbf-7440-4345-8720-eff73b19bcce",
+      "Description": "The certificate ARN for the nhsdta.com domain"
+    },
+    "DEPLOYMENTSTAGENAME": {
+      "Type": "String",
+      "Default": "prod",
+      "Description": "The stage deployment name"
+    },
+    "FEDOMAIN": {
+      "Type": "String",
+      "Default": "nextjsuife",
+      "Description": "The frontend domain identifier"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Default": "Z1075FNTZPAM5I",
+      "Description": "The ID of the Route53 hosted zone"
+    },
+    "NHSLOGINCLIENTID": {
+      "Type": "String",
+      "Default": "tsassolarchbarsdemoclient",
+      "Description": "The client ID for the NHS login"
+    },
+    "NRLENABLED": {
+      "Type": "String",
+      "Default": "false",
+      "Description": "Flag to indicate if NRL is enabled"
+    },
+    "PROJECTNAME": {
+      "Type": "String",
+      "Default": "barspocui",
+      "Description": "Project name for the deployment"
+    },
+    "BARSMOCKEPRPROJECTNAME": {
+      "Type": "String",
+      "Default": "barspoc",
+      "Description": "Project name for the deployment of the mock EPR (BaRS receiver)"
+    },
+    "ROOTDOMAIN": {
+      "Type": "String",
+      "Default": "nhsdta.com",
+      "Description": "The root domain name"
+    },
+    "SHORTCODE": {
+      "Type": "String",
+      "Default": "mabr8",
+      "Description": "The shortcode for tags"
+    }
+  },
+  "Globals": {
+    "Function": {
+      "Tags": {
+        "shortcode": { "Ref": "SHORTCODE" }
+      },
+      "Environment": {
+        "Variables": {
+          "ROOTDOMAIN": { "Ref": "ROOTDOMAIN" },
+          "BRANCHNAME": { "Ref": "BRANCHNAME" },
+          "FEDOMAIN": { "Ref": "FEDOMAIN" },
+          "APIENVIRONMENT": {"Ref": "APIENVIRONMENT"},
+          "APIKNAMEPARAM": {"Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "BARSMOCKEPRPROJECTNAME" }, { "Ref": "SHORTCODE" }, "apimkeyname"]]},
+          "APIKEYSECRET": {"Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "BARSMOCKEPRPROJECTNAME" }, { "Ref": "SHORTCODE" }, "apimclientcertkey"]]},
+          "NRLENABLED": { "Ref": "NRLENABLED" }
+        }
+      },
+      "Timeout": 300
+    }
+  },
+  "Resources": {
+    "nextjsuibeLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess",
+          "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+          "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+          "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB"
+        ],
+        "Path": "/service-role/",
+        "RoleName": {
+          "Fn::Join": [
+            "-",
+            [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "nextjsuibeLambdaRole-001"]
+          ]
+        }
+      }
+    },
+    "nextjsuibeLambdaSSMPolicy":{
+      "Type" : "AWS::IAM::Policy",
+      "Properties" : {
+          "PolicyDocument" : {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "Stmt1709827347702",
+                "Action": [
+                  "secretsmanager:GetSecretValue",
+                  "ssm:GetParameter",
+                  "kms:*"
+                ],
+                "Effect": "Allow",
+                "Resource": "*"
+              }
+            ]
+          },
+          "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "nextjsuibeLambdaSSMPolicy"]]},
+          "Roles": [{"Ref": "nextjsuibeLambdaRole"}]
+        },
+        "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "nextjsServerFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "code.zip",
+        "Description": "The lambda function that starts the nextjs server and handles requests from the API gateway",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsuiHttpApi" },
+              "Method": "ANY",
+              "Path": "$default",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "nextjsServer"]]
+        },
+        "Handler": "index.handler",
+        "Layers": [{ "Ref": "nextjsServerFunctionLayer" }],
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "nextjsServerFunctionLayer": {
+      "Type": "AWS::Serverless::LayerVersion",
+      "Properties": {
+        "ContentUri": "dependenciesLayer.zip",
+        "Description": "The lambda layer containing the dependencies for the Lambda",
+        "LayerName": {
+          "Fn::Join": [
+            "-",
+            [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "nextjsServerDependencies"]
+          ]
+        },
+        "RetentionPolicy": "Delete"
+      }
+    },
+    "getAppointmentsFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjsuiapilambdas.zip",
+        "Description": "The lambda function that calls BaRS to find appointments for a patient",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsuiHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/getappointments",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "getAppointmentsFunction"]]
+        },
+        "Handler": "GetAppointmentsFactory.handler",
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "getAppointmentFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjsuiapilambdas.zip",
+        "Description": "The lambda function that calls BaRS to retrieve a specific appointment for a patient",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsuiHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/getappointment",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "getAppointmentFunction"]]
+        },
+        "Handler": "GetAppointmentFactory.handler",
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "getSlotsFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjsuiapilambdas.zip",
+        "Description": "The lambda function that calls BaRS to find slots for an appointment",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsuiHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/getslots",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "getSlotsFunction"]]
+        },
+        "Handler": "GetSlotsFactory.handler",
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "rescheduleAppointmentFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjsuiapilambdas.zip",
+        "Description": "The lambda function that calls BaRS to find slots for an appointment",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsuiHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/rescheduleappointment",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "rescheduleAppointmentFunction"]]
+        },
+        "Handler": "RescheduleAppointmentFactory.handler",
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "oidcresponseFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjsuiapilambdas.zip",
+        "Description": "The lambda function that receives the OIDC response from NHSmail",
+        "Environment": {
+          "Variables":{
+            "NHSLOGINCLIENTKEY": { "Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "BARSMOCKEPRPROJECTNAME" }, { "Ref": "SHORTCODE" }, "nhsloginclientkey"]]
+            },
+            "NHSLOGINCLIENTID": {"Ref": "NHSLOGINCLIENTID"}
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsuiHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/oidcresponse",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "oidcresponseFunction"]]
+        },
+        "Handler": "oidcresponse.handler",
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "oidcrefreshFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjsuiapilambdas.zip",
+        "Description": "The lambda function that receives the OIDC response from NHSmail",
+        "Environment": {
+          "Variables":{
+            "NHSLOGINCLIENTKEY": { "Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "BARSMOCKEPRPROJECTNAME" }, { "Ref": "SHORTCODE" }, "nhsloginclientkey"]]
+            },
+            "NHSLOGINCLIENTID": {"Ref": "NHSLOGINCLIENTID"}
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsuiHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/oidcrefresh",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "oidcrefreshFunction"]]
+        },
+        "Handler": "oidcrefresh.handler",
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "oidcrequestFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjsuiapilambdas.zip",
+        "Description": "The lambda function that redirects the client to NHSmail for authentication",
+        "Environment": {
+          "Variables":{
+            "NHSLOGINCLIENTID": {"Ref": "NHSLOGINCLIENTID"}
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsuiHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/oidcrequest",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "oidcrequestFunction"]]
+        },
+        "Handler": "oidcrequest.handler",
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "nextjsuiHttpApi": {
+      "Type": "AWS::Serverless::HttpApi",
+      "Properties": {
+        "CorsConfiguration": {
+          "AllowMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+          "AllowOrigins": ["*"],
+          "MaxAge": 86400
+        },
+        "Description": "HTTP API for the nextjs server requests",
+        "Name": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "nextjsuiHttpApi"]]
+        },
+        "StageName": "$default"
+      }
+    }
+  }
+}

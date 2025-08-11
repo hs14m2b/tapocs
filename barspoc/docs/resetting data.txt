@@ -1,0 +1,9 @@
+PDM underlying data reset.
+
+1 - create a new Healthcare Service - note the id from PDM (e.g. f597f28b-5149-3942-99f4-db669b41cfe1) and update in the "config" file
+2 - update reference to HealthcareService in Schedule
+3 - create a new Schedule - note the id from PDM (e.g. 6eae6de9-cd7c-3a61-9f78-400ae9885dfe)
+4 - update reference to Schedule in Slot
+5 - create one or more slot(s) - note the ids - can check these by calling get_slots_pdm
+6 - create the patient placeholder and note the Id
+

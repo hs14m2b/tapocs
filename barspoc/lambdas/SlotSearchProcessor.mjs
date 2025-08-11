@@ -1,5 +1,5 @@
 
-async function searchHealthlake(event, healthlakeSearchHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM){
+async function searchFhirServer(event, healthlakeSearchHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM){
   let maxDuration=25000;
   try {
     console.log("searching healthlake")
@@ -14,34 +14,34 @@ async function searchHealthlake(event, healthlakeSearchHelper, APIKEYSECRET, API
   }
 }
 
-export const handler = async (event, healthlakeSearchHelper, getParameterCaseInsensitive, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM) => {
+export const handler = async (event, fhirSearchHelper, getParameterCaseInsensitive, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM) => {
 
   console.log(JSON.stringify(event));
     try {
         //try healthlake
         try {
-          let searchsetBundle = await searchHealthlake(event, healthlakeSearchHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+          let searchsetBundle = await searchFhirServer(event, fhirSearchHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
           if (searchsetBundle){
             //return the searchset
-            let healthlakeResponse = {
+            let fhirServerResponse = {
               statusCode: 200,
               "headers": {
                   "Content-Type": "application/fhir+json",
-                  "X-Response-Source": "Healthlake"
+                  "X-Response-Source": "FHIR Server"
               },
               body: JSON.stringify(searchsetBundle)
             };
-            console.log(JSON.stringify(healthlakeResponse));
-            return healthlakeResponse;
+            console.log(JSON.stringify(fhirServerResponse));
+            return fhirServerResponse;
           }
           else {
-            console.log("searchHealthlake failed");
+            console.log("searchFhirServer failed");
             let response = {
               statusCode: 500,
               "headers": {
                   "Content-Type": "application/json"
               },
-              body: JSON.stringify({ "result": "searchHealthlake failed" })
+              body: JSON.stringify({ "result": "searchFhirServer failed" })
             }
             return response;
           }

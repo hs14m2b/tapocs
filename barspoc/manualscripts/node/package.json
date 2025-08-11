@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "scripts": {},
+  "dependencies": {
+    "cookie": "^0.7.2",
+    "jsonwebtoken": "^9.0.2",
+    "uuid": "^9.0.0",
+    "rsa-pem-to-jwk": "^1.0.0"
+  },
+  "devDependencies": {
+    "jasmine":"^5.4.0"
+  }
+}

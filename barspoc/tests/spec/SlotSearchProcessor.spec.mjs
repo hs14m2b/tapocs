@@ -32,7 +32,7 @@ describe("Slot Query Processor", function() {
     expect(response.statusCode).toEqual(200);
   });
 
-  it("returns 500 if searchHealthlake throws an error", async function() {
+  it("returns 500 if searchFhirServer throws an error", async function() {
     let event = {
       "queryStrings": {
         "qs1": "qsvalue1"
@@ -50,7 +50,7 @@ describe("Slot Query Processor", function() {
     };
     let response = await handler(event, search_resource_healthlake_instance, getParameterCaseInsensitive, search_nrl_instance.searchDocRef,  process.env['APIKEYSECRET'], process.env['APIENVIRONMENT'], process.env['APIKNAMEPARAM']);
     expect(response.statusCode).toEqual(500);
-    expect(JSON.parse(response.body).result).toEqual("searchHealthlake failed");
+    expect(JSON.parse(response.body).result).toEqual("searchFhirServer failed");
   });
 
   it("returns 500 if an unexpected error occurs", async function() {
@@ -71,6 +71,6 @@ describe("Slot Query Processor", function() {
     };
     let response = await handler(event, search_resource_healthlake_instance, getParameterCaseInsensitive, search_nrl_instance.searchDocRef,  process.env['APIKEYSECRET'], process.env['APIENVIRONMENT'], process.env['APIKNAMEPARAM']);
     expect(response.statusCode).toEqual(500);
-    expect(JSON.parse(response.body).result).toEqual("searchHealthlake failed");
+    expect(JSON.parse(response.body).result).toEqual("searchFhirServer failed");
   });
 });
