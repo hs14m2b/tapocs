@@ -21,3 +21,4 @@ export const sendDocRef = async (docRef, APIENVIRONMENT, APIKEYSECRET, APIKNAMEP
   })
 
 }
+ 

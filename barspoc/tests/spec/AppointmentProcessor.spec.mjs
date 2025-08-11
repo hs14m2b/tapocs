@@ -134,3 +134,4 @@ describe("Appointment Retrieve Processor", function() {
     expect(JSON.parse(response.body).result).toEqual("searchFhirServer failed");
   });
 });
+ 

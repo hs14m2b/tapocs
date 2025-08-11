@@ -74,3 +74,4 @@ describe("Appointment Search Processor", function() {
     expect(JSON.parse(response.body).result).toEqual("searchFhirServer failed");
   });
 });
+ 

@@ -1,4 +1,4 @@
-import Cookies from 'cookies';
+import Cookies from 'cookies'; 
 import { serialize } from "cookie";
 
 const FORMDATACOOKIENAME = "formdata";

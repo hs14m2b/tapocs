@@ -47,3 +47,4 @@ describe("Slot Query Processor", function() {
     expect(JSON.parse(response.body).result).toEqual("find slots from BaRS failed");
   });
 });
+ 

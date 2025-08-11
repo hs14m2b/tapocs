@@ -50,3 +50,4 @@ describe("Appointments Search Processor", function() {
     expect(JSON.parse(response.body).result).toEqual("find appointments from BaRS failed");
   });
 });
+ 

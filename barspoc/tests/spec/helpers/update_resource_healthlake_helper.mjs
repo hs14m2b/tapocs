@@ -55,3 +55,4 @@ export class update_resource_healthlake{
   }
 }
 
+ 

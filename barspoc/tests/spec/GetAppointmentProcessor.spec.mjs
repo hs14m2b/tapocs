@@ -47,3 +47,4 @@ describe("GetAppointment Processor", function() {
     expect(JSON.parse(response.body).result).toEqual("get appointment from BaRS failed");
   });
 });
+ 

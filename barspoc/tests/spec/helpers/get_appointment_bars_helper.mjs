@@ -55,3 +55,4 @@ export class get_appointment_bars_helper{
   }
 }
 
+ 

@@ -96,3 +96,4 @@ describe("Appointment Create Processor", function() {
     expect(JSON.parse(response.body).result).toEqual("createFhirServer failed");
   });
 });
+ 
