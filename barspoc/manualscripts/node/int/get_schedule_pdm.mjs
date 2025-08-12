@@ -11,7 +11,7 @@ const scheduleId = "6eae6de9-cd7c-3a61-9f78-400ae9885dfe"; // Example schedule I
 async function searchSlots (accessToken)
   {
     //let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Schedule?_id=" + scheduleId + "&_include=Schedule:actor:HealthcareService";
-    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Schedule?actor=HealthcareService/f597f28b-5149-3942-99f4-db669b41cfe1";
+    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Schedule?actor=HealthcareService/9f00342d-70de-38d5-9176-af97f1ba1b3d";
     let options = {
     method: 'GET',
     headers: {

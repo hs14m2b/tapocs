@@ -7,18 +7,41 @@ const HTTPS = "https://";
 const apiClientPrivateKey = readFileSync('../../../certs/mhdtest001.key', 'utf8');
 import { readFileSync } from 'node:fs';
 
-async function postHealthcareService (newHealthcareService, accessToken)
+async function getETag(newHealthcareService, accessToken) {
+  let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/HealthcareService/" + newHealthcareService.id;
+  let options = {
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+      'accept': 'application/fhir+json;version=1',
+      'X-Request-ID': uuidv4(),
+      'X-Correlation-ID': uuidv4()
+    }
+  };
+  let fetchResponse = await fetch(url, options);
+  if (!fetchResponse.ok) {
+    console.log(fetchResponse.status);
+    return await fetchResponse.text();
+  } else {
+    console.log(fetchResponse.status);
+    return fetchResponse.headers.get('ETag');
+  }
+}
+
+async function postHealthcareService (newHealthcareService, accessToken, eTag)
   {
     console.log("newHealthcareService is " + JSON.stringify(newHealthcareService));
-    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/HealthcareService";
+    let id = newHealthcareService.id;
+    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/HealthcareService/" + id;
     let options = {
-    method: 'POST',
+    method: 'PUT',
     headers: {
       'Authorization': 'Bearer ' + accessToken,
       'accept': 'application/fhir+json;version=1',
       'X-Request-ID': uuidv4(),
       'X-Correlation-ID': uuidv4(),
-      'content-type': 'application/fhir+json'
+      'content-type': 'application/fhir+json',
+      'If-Match': eTag // Use the ETag from the GET request
     },
     body: JSON.stringify(newHealthcareService)
   }
@@ -49,6 +72,9 @@ async function getAccessToken(){
 let accessToken = await getAccessToken();
 
 let newHealthcareService = JSON.parse(JSON.stringify(healthcareService));
-let result = await postHealthcareService(newHealthcareService, accessToken);
+let eTag = await getETag(newHealthcareService, accessToken);
+console.log("eTag is " + eTag);
+
+let result = await postHealthcareService(newHealthcareService, accessToken, eTag);
 console.log(result);
  

@@ -97,6 +97,12 @@ function Home( props ) {
           Continue to NHS login
       </button>
       </a>
+      <br />
+      <Link href="/createservicerequest">
+        <button className="nhsuk-button" data-module="nhsuk-button" type="submit">
+          ICM - Create Service Request
+        </button>
+      </Link>
       <Spinner message="Finding your appointments"></Spinner>
 
       <Hiddenform></Hiddenform>
