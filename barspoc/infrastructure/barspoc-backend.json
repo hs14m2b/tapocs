@@ -361,6 +361,43 @@
       },
       "DependsOn": ["barspocbeLambdaRole"]
     },
+    "ServiceRequestFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "barspocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint for ServiceRequest resources",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "GET",
+              "Path": "/barspoc/FHIR/R4/ServiceRequest/{servicerequestid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiLowerCase": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "ANY",
+              "Path": "/barspoc/fhir/r4/ServiceRequest/{servicerequestid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-ServiceRequestFunction"]]
+        },
+        "Handler": "ServiceRequestFactory.handler",
+        "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["barspocbeLambdaRole"]
+    },
     "ServiceRequestCreateFunction": {
       "Type": "AWS::Serverless::Function",
       "Properties": {

@@ -8,6 +8,7 @@ import parse from 'urlencoded-body-parser';
 import { serialize } from "cookie";
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
+import Spinner1 from '../components/spinner1';
 const FORMDATACOOKIENAME = "formdata";
 const DEFAULTROUTE = "/confirmdata";
 
@@ -24,6 +25,12 @@ function Home( props ) {
   function checkForm1Data(e) {
     //nhsuk-form-group--error
     //nhsuk-input--error
+    console.log("about to debug");
+    console.log(e);
+    console.log(e.nativeEvent.submitter.name);
+    console.log(e.nativeEvent.submitter.value);
+    //retrieve the action
+    let action = e.nativeEvent.submitter.value;
     resetForm();
     e.preventDefault();
     let formdata = {};
@@ -45,17 +52,17 @@ function Home( props ) {
     if (result)
     {
       //enable the spinner
-      document.getElementById("pageTransitionMessage").classList.remove("nhsuk-hidden");
+      document.getElementById("pageTransitionMessage" + action).classList.remove("nhsuk-hidden");
       let confirmScreenShown = formFunctions.confirmScreenShown();
       if (confirmScreenShown && confirmScreenShown != "")
       {
         console.log("sending to confirm screen");
         //router.push("/confirmdata");
-        router.push("/getappointments");
+        router.push("/"+action);
         //formFunctions.populateHiddenForm();
       }
       else {
-        router.push("/getappointments");
+        router.push("/"+action);
       }
     }
     return false;
@@ -83,12 +90,24 @@ function Home( props ) {
             <span className={(props.gnerror)? "nhsuk-error-message": "nhsuk-hidden nhsuk-error-message"} id="nhsnumber-error">
                 <span className="nhsuk-hidden nhsuk-input--error">Error:</span> Enter your NHS Number
             </span>
-            <input className="nhsuk-input" id="nhsnumber" name="nhsnumber" type="text" minLength="10"  defaultValue={ props.nhsnumber } placeholder="9693893123"/>
+            <input className="nhsuk-input" id="nhsnumber" name="nhsnumber" type="text" minLength="10"  defaultValue={ props.nhsnumber } placeholder="9661034524"/>
           </div>
         </fieldset>
         <input className="nhsuk-hidden" type="hidden" id="nextpage" name="nextpage" value="/getappointments" />
-        <button className="nhsuk-button" data-module="nhsuk-button" type="submit">
+        <button className="nhsuk-button" data-module="nhsuk-button" type="submit" name="action" value="getappointments">
           Find Appointments
+        </button>
+        <br />
+        <button className="nhsuk-button" data-module="nhsuk-button" type="submit" name="action" value="getservicerequests">
+          Find Outstanding Service Requests
+        </button>
+        <br />
+        <button className="nhsuk-button" data-module="nhsuk-button" type="submit" name="action" value="gettasks">
+          Find Outstanding Tasks
+        </button>
+        <br />
+        <button className="nhsuk-button" data-module="nhsuk-button" type="submit" name="action" value="getslots">
+          Find Slots
         </button>
       </form>
       <br />
@@ -103,7 +122,9 @@ function Home( props ) {
           ICM - Create Service Request
         </button>
       </Link>
-      <Spinner message="Finding your appointments"></Spinner>
+      <Spinner1 message="Finding your appointments" id="pageTransitionMessagegetappointments"></Spinner1>
+      <Spinner1 message="Finding your service requests" id="pageTransitionMessagegetservicerequests"></Spinner1>
+      <Spinner1 message="Finding your outstanding tasks" id="pageTransitionMessagegettasks"></Spinner1>
 
       <Hiddenform></Hiddenform>
     </>

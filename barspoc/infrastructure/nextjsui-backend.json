@@ -248,6 +248,60 @@
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
     },
+    "getServiceRequestFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjsuiapilambdas.zip",
+        "Description": "The lambda function that calls BaRS to get a single ServiceRequest for a patient",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsuiHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/getservicerequest",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "getServiceRequestFunction"]]
+        },
+        "Handler": "GetServiceRequestFactory.handler",
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "getServiceRequestsFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjsuiapilambdas.zip",
+        "Description": "The lambda function that calls BaRS to find ServiceRequests for a patient",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsuiHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/getservicerequests",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "getServiceRequestsFunction"]]
+        },
+        "Handler": "GetServiceRequestsFactory.handler",
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
     "getSlotsFunction": {
       "Type": "AWS::Serverless::Function",
       "Properties": {
@@ -269,6 +323,33 @@
           "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "getSlotsFunction"]]
         },
         "Handler": "GetSlotsFactory.handler",
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "getTasksFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjsuiapilambdas.zip",
+        "Description": "The lambda function that calls BaRS to find Tasks for a patient",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsuiHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/gettasks",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "getTasksFunction"]]
+        },
+        "Handler": "GetTasksFactory.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
         "Runtime": "nodejs20.x",
         "Timeout": 300

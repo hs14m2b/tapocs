@@ -1,5 +1,5 @@
-import  slot  from "../slot-001.json" with { type: "json" };
-import  schedule  from "../schedule-001.json" with { type: "json" };
+import  slot  from "../slot-002.json" with { type: "json" };
+import  schedule  from "../schedule-002.json" with { type: "json" };
 import { createSignedJwtForAuth, getOAuth2AccessToken } from '../../../lambdas/api_common_functions.mjs';
 import { NHSNumber, OAuthAPIKey, OAuthAPIKeyName, APIDomain } from "./config.mjs";
 

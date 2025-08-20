@@ -95,7 +95,7 @@
             "https://fhir.nhs.uk/StructureDefinition/BARSServiceRequest-request-referral"
           ]
         },
-        "status": "active",
+        "status": "draft",
         "intent": "order",
         "category": [
           {

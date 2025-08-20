@@ -27,8 +27,9 @@ describe("ServiceRequest Create Processor", function() {
       body: JSON.stringify(processMessageBundle)
     };
     let hlr1 = { "body": JSON.stringify(serviceRequest) };
-    let create_resource_fhir_instance = new create_resource_fhir([serviceRequest], []);
-    let update_resource_healthlake_instance = new update_resource_healthlake([serviceRequest], []);
+    let pdmTask = { resourceType:"Task", id: "task-1" };
+    let create_resource_fhir_instance = new create_resource_fhir([serviceRequest, pdmTask], []);
+    let update_resource_healthlake_instance = new update_resource_healthlake([serviceRequest, pdmTask], []);
     console.log("helper object is " + JSON.stringify(create_resource_fhir_instance));
     let response = await handler(event, create_resource_fhir_instance, update_resource_healthlake_instance, getParameterCaseInsensitive, process.env['APIKEYSECRET'], process.env['APIENVIRONMENT'], process.env['APIKNAMEPARAM'], true);
     console.log(JSON.stringify(response));

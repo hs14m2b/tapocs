@@ -1,12 +1,13 @@
 // Filename: AppointmentCreateProcessor.mjs
-import documentReference from './docref-bars.json' assert { type: "json" };
+import documentReference from './docref-bars.json' with { type: "json" };
+import task from './task.json' with { type: "json" };
 
 async function createResourceFhirServer(resourceJson, event, fhirCreateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM){
     let maxDuration=25000;
     try {
       let headersJson = event.headers;
       console.log("posting to pdm")
-      let healthlakeresponse = await fhirCreateHelper.createResource(resourceJson, "ServiceRequest", headersJson, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+      let healthlakeresponse = await fhirCreateHelper.createResource(resourceJson, resourceJson.resourceType, headersJson, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
       console.log("pdm response is " + JSON.stringify(healthlakeresponse));
       return healthlakeresponse;
     } catch (error) {
@@ -21,7 +22,7 @@ async function updateResourceFhirServer(resourceJson, event, fhirUpdateHelper, A
       //get the posted resource
       let headersJson = event.headers;
       console.log("putting to pdm")
-      let healthlakeresponse = await fhirUpdateHelper.updateResource(resourceJson, "Appointment", headersJson, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+      let healthlakeresponse = await fhirUpdateHelper.updateResource(resourceJson, resourceJson.resourceType, headersJson, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
       console.log("pdm response is " + JSON.stringify(healthlakeresponse));
       return healthlakeresponse;
     } catch (error) {
@@ -90,6 +91,28 @@ export const handler = async (event, fhirServerCreateHelperObject, fhirServerUpd
             //get the id of the resource
             let servicerequestid = resourceResponse.id;
             console.log("servicerequestid is " + servicerequestid);
+            //create a Task within PDM to give Patient and Clinicians visibility of the ServiceRequest
+            let newTask = JSON.parse(JSON.stringify(task));
+            console.log(JSON.stringify(resourceResponse, null, 4));
+            newTask.focus.reference = "ServiceRequest/" + servicerequestid;
+            newTask.basedOn = [
+              {
+                "reference": "ServiceRequest/" + servicerequestid
+              }
+            ];
+            newTask['for']['identifier'] = resourceResponse.subject.identifier;
+            newTask['for']['type'] = "Patient";
+            newTask['executionPeriod'] = resourceResponse['occurrencePeriod'];
+            newTask['status'] = "ready";
+            //set the identifier to reference the BaRS/DoS Service Id
+            newTask['identifier'].push(
+              {
+                "system": "https://fhir.nhs.uk/Id/dos-service-id",
+                "value": "matthewbrown"
+              }
+            );
+            console.log("newTask is " + JSON.stringify(newTask, null, 4));
+            let taskResponse = await createResourceFhirServer(newTask, event, fhirServerCreateHelperObject, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
             //return the resource
             let healthlakeResponse = {
               statusCode: 201,
