@@ -5,16 +5,13 @@ import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
 const apiClientPrivateKey = readFileSync('../../../certs/mhdtest001.key', 'utf8');
 import { readFileSync } from 'node:fs';
+let servicerequestid = "14873ff3-1353-315b-b531-0a67ca7a6894";
 
 async function findTasks (accessToken)
   {
-    let patientIdentifier = new URLSearchParams({
-      "patient" : "1337ed2e-8f7e-30e9-beca-7febdf23f423"}).toString();
-    //patientIdentifier = new URLSearchParams({
-    //    "actor:Patient.identifier" : NHSNumber}).toString();
-    patientIdentifier = new URLSearchParams({
-        "patient:identifier" : "https://fhir.nhs.uk/Id/nhs-number|" + NHSNumber}).toString();
-    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Task?" + patientIdentifier;
+    let serviceRequestIdentifier = new URLSearchParams({
+        "focus" : "ServiceRequest/" + servicerequestid}).toString();
+    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Task?" + serviceRequestIdentifier;
     let options = {
     method: 'GET',
     headers: {

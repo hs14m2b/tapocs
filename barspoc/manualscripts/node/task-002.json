@@ -17,7 +17,7 @@
   ],
   "basedOn": [
     {
-      "reference": "ServiceRequest/labreq-12345"
+      "reference": "ServiceRequest/vaccination-12345"
     }
   ],
   "status": "ready",
@@ -44,13 +44,13 @@
   },
   "description": "Task for patient to book appointment at the vaccination clinic.",
   "focus": {
-    "reference": "ServiceRequest/labreq-12345"
+    "reference": "ServiceRequest/vaccination-12345"
   },
   "for": {
     "type": "Patient",
     "identifier": {
         "system": "https://fhir.nhs.uk/Id/nhs-number",
-        "value": "6700028191"
+        "value": "9661034524"
     }
   },
   "executionPeriod": {

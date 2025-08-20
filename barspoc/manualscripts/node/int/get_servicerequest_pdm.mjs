@@ -1,20 +1,17 @@
 import { createSignedJwtForAuth, getOAuth2AccessToken } from '../../../lambdas/api_common_functions.mjs';
-import { NHSNumber, OAuthAPIKey, OAuthAPIKeyName, APIDomain } from "./config.mjs";
+import  patient  from "../patient.json" assert { type: "json" };
+import { NHSNumber, OAuthAPIKey, OAuthAPIKeyName, APIDomain, HealthcareServiceId } from "./config.mjs";
 
 import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
 const apiClientPrivateKey = readFileSync('../../../certs/mhdtest001.key', 'utf8');
 import { readFileSync } from 'node:fs';
+const servicerequestid = "14873ff3-1353-315b-b531-0a67ca7a6894"; // Example service request ID, replace with actual ID if needed
 
-async function findTasks (accessToken)
+async function getServiceRequest (accessToken)
   {
-    let patientIdentifier = new URLSearchParams({
-      "patient" : "1337ed2e-8f7e-30e9-beca-7febdf23f423"}).toString();
-    //patientIdentifier = new URLSearchParams({
-    //    "actor:Patient.identifier" : NHSNumber}).toString();
-    patientIdentifier = new URLSearchParams({
-        "patient:identifier" : "https://fhir.nhs.uk/Id/nhs-number|" + NHSNumber}).toString();
-    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Task?" + patientIdentifier;
+    //let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Schedule?_id=" + scheduleId + "&_include=Schedule:actor:HealthcareService";
+    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/ServiceRequest/" + servicerequestid;
     let options = {
     method: 'GET',
     headers: {
@@ -22,7 +19,7 @@ async function findTasks (accessToken)
       'accept': 'application/fhir+json;version=1',
       'X-Request-ID': uuidv4(),
       'X-Correlation-ID': uuidv4(),
-    }
+      "product-id" : "test-product-full-access"    }
   }
   console.log("request options are  " + JSON.stringify(options));
   console.log("url is " + url);
@@ -51,6 +48,6 @@ async function getAccessToken(){
 }
 let accessToken = await getAccessToken();
 
-let result = await findTasks(accessToken);
-console.log(JSON.stringify(result, null, 4));
-
+let result = await getServiceRequest(accessToken);
+console.log(JSON.stringify(result, null , 2));
+ 

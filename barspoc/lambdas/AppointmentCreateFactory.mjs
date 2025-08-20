@@ -4,6 +4,7 @@ import { handler as processor } from './AppointmentCreateProcessor.mjs';
 import { getParameterCaseInsensitive } from './api_common_functions.mjs';
 import { post_document_ref_nrl } from './post_document_ref_nrl_object.mjs';
 import { post_document_ref_pdm } from './post_document_ref_pdm_object.mjs';
+import { search_resource_pdm } from './search_resource_pdm_object.mjs';
 
 //const get_document_ref_object_instance = new get_document_ref_object();
 
@@ -19,7 +20,13 @@ export const handler = async (event) => {
         let fhirServerUpdateHelperObject = new update_resource_pdm();
         let postDocumentRefBarsObject = new post_document_ref_nrl();
         let postDocumentRefPDMObject = new post_document_ref_pdm();
-        return await processor(event, fhirServerCreateHelperObject, fhirServerUpdateHelperObject, postDocumentRefBarsObject, postDocumentRefPDMObject, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED)
+        let searchResourcePDMObject = new search_resource_pdm();
+        return await processor(event, fhirServerCreateHelperObject, 
+            fhirServerUpdateHelperObject, postDocumentRefBarsObject, 
+            postDocumentRefPDMObject, searchResourcePDMObject, 
+            getParameterCaseInsensitive, 
+            APIENVIRONMENT, APIKEYSECRET, 
+            APIKNAMEPARAM, NRLENABLED);
     } catch (error) {
         console.log("caught error " + error.message);
         let response = {

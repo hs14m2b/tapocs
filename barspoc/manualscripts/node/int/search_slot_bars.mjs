@@ -11,7 +11,7 @@ const HTTPS = "https://";
 async function searchSlots (accessToken)
   {
     let slotSearchParams = new URLSearchParams({
-      "schedule.actor" : "HealthcareService/63bf8f0c-3902-4a2a-a4ec-3393d22ae658", "status": "free" }).toString();
+      "schedule.actor" : "HealthcareService/9f00342d-70de-38d5-9176-af97f1ba1b3d", "status": "free" }).toString();
     let url = HTTPS + APIDomain + "/booking-and-referral/FHIR/R4/Slot?" + slotSearchParams;
     let XRequestID = uuidv4();
     // request option

@@ -12,7 +12,8 @@ import { APIDomain, OAuthAPIKey, OAuthAPIKeyName, ODSCode, NHSDEndUserOrganisati
 async function getServiceRequests (accessToken)
   {
     let subjectIdentifier = new URLSearchParams({
-      "subject:identifier" : "https://fhir.nhs.uk/Id/nhs-number|" + NHSNumber
+      "subject:identifier" : "https://fhir.nhs.uk/Id/nhs-number|" + NHSNumber,
+      "status": "draft"
     }).toString();
     let url = HTTPS + APIDomain + "/booking-and-referral/FHIR/R4/ServiceRequest?" + subjectIdentifier;
     let XRequestID = uuidv4();

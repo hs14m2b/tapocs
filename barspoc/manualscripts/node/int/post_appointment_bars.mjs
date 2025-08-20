@@ -3,7 +3,7 @@ import { createSignedJwtForAuth, getOAuth2AccessToken } from '../../../lambdas/a
 import { readFileSync } from 'node:fs';
 
 const apiClientPrivateKey = readFileSync('../../../certs/mhdtest001.key', 'utf8');
-const appointment = readFileSync('../appointment-001.json', 'utf8'); //load the appointment from a file as a string
+const appointment = readFileSync('../appointment-002.json', 'utf8'); //load the appointment from a file as a string
 
 import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
