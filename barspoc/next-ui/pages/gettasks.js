@@ -122,25 +122,74 @@ function Home(props) {
                 Status
               </th>
               <th role="columnheader" class=" nhsuk-table__header--numeric" scope="col">
+                Description
+              </th>
+              <th role="columnheader" class=" nhsuk-table__header--numeric" scope="col">
                 Actions
               </th>
             </tr>
           </thead>
           <tbody class="nhsuk-table__body">
-            {props.barsResponse && props.barsResponse.entry && props.barsResponse.entry.map((task) => (
+            {props.barsResponse && props.barsResponse.entry && props.barsResponse.entry.map((task) => ( (task.resource.status !== "completed") ?
               <tr role="row" class="nhsuk-table__row">
               <th class="nhsuk-table__header" scope="row">{task.resource.id}</th>
               <td class="nhsuk-table__cell">Between { new Date(task.resource.executionPeriod.start).toLocaleDateString() } and { new Date(task.resource.executionPeriod.end).toLocaleDateString() }</td>
               <td class="nhsuk-table__cell">{task.resource.status} | {task.resource.intent} | {task.resource.priority}</td>
+              <td class="nhsuk-table__cell">{task.resource.description}</td>
               <td class="nhsuk-table__cell">
               <button className="nhsuk-button" data-module="nhsuk-button" type="submit" onClick={()=>{checkData(task.resource)}}>
                   View Service Request Details
               </button>
               </td>
             </tr>
-            ))}
+            : ""))}
           </tbody>
         </table>
+
+        <details class="nhsuk-details nhsuk-expander">
+          <summary class="nhsuk-details__summary">
+            <span class="nhsuk-details__summary-text">
+              Show details of your completed tasks
+            </span>
+          </summary>
+          <table class="nhsuk-table">
+            <caption class="nhsuk-table__caption">Completed Tasks</caption>
+            <thead role="rowgroup" class="nhsuk-table__head">
+              <tr role="row">
+                <th role="columnheader" class="" scope="col">
+                  Task ID
+                </th>
+                <th role="columnheader" class=" nhsuk-table__header--numeric" scope="col">
+                  Service Dates
+                </th>
+                <th role="columnheader" class=" nhsuk-table__header--numeric" scope="col">
+                  Status
+                </th>
+                <th role="columnheader" class=" nhsuk-table__header--numeric" scope="col">
+                  Description
+                </th>
+                <th role="columnheader" class=" nhsuk-table__header--numeric" scope="col">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody class="nhsuk-table__body">
+              {props.barsResponse && props.barsResponse.entry && props.barsResponse.entry.map((task) => ( (task.resource.status == "completed") ?
+                <tr role="row" class="nhsuk-table__row">
+                <th class="nhsuk-table__header" scope="row">{task.resource.id}</th>
+                <td class="nhsuk-table__cell">Between { new Date(task.resource.executionPeriod.start).toLocaleDateString() } and { new Date(task.resource.executionPeriod.end).toLocaleDateString() }</td>
+                <td class="nhsuk-table__cell">{task.resource.status} | {task.resource.intent} | {task.resource.priority}</td>
+                <td class="nhsuk-table__cell">{task.resource.description}</td>
+                <td class="nhsuk-table__cell">
+                <button className="nhsuk-button" data-module="nhsuk-button" type="submit" onClick={()=>{checkData(task.resource)}}>
+                    View Service Request Details
+                </button>
+                </td>
+              </tr>
+              : ""))}
+            </tbody>
+          </table>
+        </details>
 
       </div>
       <div id="checkingMessage" className={(! props.retrievedResult) ? "" : "nhsuk-hidden"}>

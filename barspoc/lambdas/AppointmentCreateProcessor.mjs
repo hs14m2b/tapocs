@@ -20,6 +20,21 @@ async function createResourceFhirServer(event, fhirCreateHelper, APIKEYSECRET, A
     }
   }
 
+async function createAppointmentFhirServer(appointmentJson, event, fhirCreateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM){
+    let maxDuration=25000;
+    try {
+      let resourceJson = appointmentJson;
+      let headersJson = event.headers;
+      console.log("posting to pdm")
+      let healthlakeresponse = await fhirCreateHelper.createResource(resourceJson, resourceJson.resourceType, headersJson, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+      console.log("pdm response is " + JSON.stringify(healthlakeresponse));
+      return healthlakeresponse;
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
+  }
+
 async function updateResourceFhirServer(resourceJson, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM){
     let maxDuration=25000;
     try {
@@ -35,7 +50,7 @@ async function updateResourceFhirServer(resourceJson, event, fhirUpdateHelper, A
     }
   }
   
-async function createDocumentRefBars(appointment, event, postDocumentRefBarsObject, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM) {
+async function createDocumentRefBars(appointment, serviceRequestBody, event, postDocumentRefBarsObject, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM) {
   let newDocRef = documentReference;
   let { id, description, start, end, participant } = appointment;
   let patientParticipant = getPatientParticipant(participant);
@@ -61,6 +76,8 @@ async function createDocumentRefBars(appointment, event, postDocumentRefBarsObje
   newDocRef.date = new Date().toISOString();
   newDocRef.content[0].attachment.url = "https://bars-int-x26.tsassolarch.thirdparty.nhs.uk/barspoc/FHIR/R4/Appointment/" + id;
   //need to work out how to set the context.practiceSetting
+  //add description from service request code text.
+  newDocRef.description = "Appointment for " + serviceRequestBody.code.text;
   console.log(JSON.stringify(newDocRef, null, 4));
   //returns a json object with "body" and "headers" - the headers contain the "location" of the new resource
   let barsResponse = await postDocumentRefBarsObject.sendDocRef(newDocRef, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
@@ -70,6 +87,34 @@ async function createDocumentRefBars(appointment, event, postDocumentRefBarsObje
 
 function getPatientParticipant(participants){
   return participants.find(k => k.actor.type.toLowerCase() === "patient");
+}
+
+async function getSlot(appointment, event, searchResourcePDMObject, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM) {
+  let slotId = appointment.slot[0].reference.split("/").pop();
+  let slotGetResult = await searchResourcePDMObject.getResource(slotId, "Slot", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+  if (slotGetResult.status !== 200) {
+    throw new Error("Failed to retrieve Slot");
+  }
+  let slotResource = JSON.parse(slotGetResult.body);
+  console.log("slot is " + JSON.stringify(slotResource));
+  return slotResource;
+}
+
+async function getHealthcareService(slot, event, searchResourcePDMObject, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM) {
+  let scheduleId = slot.schedule.reference.split("/").pop();
+  let scheduleGetResult = await searchResourcePDMObject.getResource(scheduleId, "Schedule", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+  if (scheduleGetResult.status !== 200) {
+    throw new Error("Failed to retrieve Schedule");
+  }
+  let scheduleResource = JSON.parse(scheduleGetResult.body);
+  let healthcareServiceId = scheduleResource.actor.find(a => a.type === "HealthcareService").reference.split("/").pop();
+  let healthcareServiceGetResult = await searchResourcePDMObject.getResource(healthcareServiceId, "HealthcareService", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+  if (healthcareServiceGetResult.status !== 200) {
+    throw new Error("Failed to retrieve HealthcareService");
+  }
+  let healthcareServiceResource = JSON.parse(healthcareServiceGetResult.body);
+  console.log("healthcare service is " + JSON.stringify(healthcareServiceResource));
+  return healthcareServiceResource;
 }
 
 export const handler = async (event, fhirCreateHelper, fhirUpdateHelper, postDocumentRefBarsObject, postDocumentRefPDMObject, searchResourcePDMObject, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED) => {
@@ -85,7 +130,7 @@ export const handler = async (event, fhirCreateHelper, fhirUpdateHelper, postDoc
       }
       event.isBase64Encoded = false;
       let appointmentJson = JSON.parse(event.body);
-      let nhsnumber = appointmentJson.participant.find(p => p.actor.type === "Patient").actor.identifier.value;
+      let nhsnumber = getPatientParticipant(appointmentJson.participant).actor.identifier.value;
       console.log("NHS Number is " + nhsnumber);
       //check if the patient has an outstanding ServiceRequest
       let queryParams = {
@@ -104,13 +149,26 @@ export const handler = async (event, fhirCreateHelper, fhirUpdateHelper, postDoc
       if (!Array.isArray(queryResponse.entry) || queryResponse.entry.length === 0) {
         throw new Error("ServiceRequest not found");
       }
-      let healthcareServiceReference = appointmentJson.participant.find(p => p.actor.type === "HealthcareService").actor.reference;
+      let slot = {};
+      let slotRetrieved = false;
+      let healthcareService = {};
+      let healthcareServiceRetrieved = false;
+      let healthcareServiceParticipant = appointmentJson.participant.find(p => p.actor.type === "HealthcareService");
+      let healthcareServiceReference = healthcareServiceParticipant ? healthcareServiceParticipant.actor.reference : null;
       if (!healthcareServiceReference) {
-        throw new Error("No HealthcareService reference found in appointment");
+        console.log("No HealthcareService reference found in appointment");
+        console.log("Retrieving HealthcareService details via slot and schedule");
+        slot = await getSlot(appointmentJson, event, searchResourcePDMObject, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+        slotRetrieved = true;
+        if (slot.schedule && slot.schedule.reference) {
+          healthcareService = await getHealthcareService(slot, event, searchResourcePDMObject, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+          healthcareServiceRetrieved = true;
+          healthcareServiceReference = healthcareService.id ? "HealthcareService/" + healthcareService.id : "";
+        }
       }
       let serviceRequestBody = {};
       let validServiceRequest = true;
-      //loop through each entry
+      //loop through each ServiceRequest entry
       for (let entry of queryResponse.entry) {
         if (entry.resource && entry.resource.resourceType === "ServiceRequest") {
           serviceRequestBody = entry.resource;
@@ -138,6 +196,25 @@ export const handler = async (event, fhirCreateHelper, fhirUpdateHelper, postDoc
             console.log("ServiceRequest validation failed for this entry");
           }
           if (validServiceRequest) {
+            //add reference to service request into Appointment
+            appointmentJson['basedOn'] = [{
+              "type": "ServiceRequest",
+              "reference": "ServiceRequest/" + serviceRequestBody.id
+            }];
+            //add reference to location into appointment participant if not present.
+            let apptLocation = appointmentJson.participant.find(p => p.actor.type === "Location");
+            if (!apptLocation) {
+              console.log("No Location reference found in Appointment, adding location from HealthcareService");
+              if (healthcareServiceRetrieved) {
+                let hsLocation = healthcareService.location[0];
+                if (!hsLocation.type) hsLocation['type'] = "Location";
+                appointmentJson.participant.push({
+                  "actor": hsLocation,
+                  "status": "accepted"
+                });
+              }
+            }
+            console.log("ServiceRequest validation passed for this entry");
             break; // exit loop after finding the first ServiceRequest
           }
         }
@@ -148,7 +225,7 @@ export const handler = async (event, fhirCreateHelper, fhirUpdateHelper, postDoc
       console.log("permissions checks passed - creating appointment");
       try {
         //try pdm
-        let resourceResponse = await createResourceFhirServer(event, fhirCreateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+        let resourceResponse = await createAppointmentFhirServer(appointmentJson, event, fhirCreateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
         if (resourceResponse){
           //get the id of the resource
           let appointmentid = resourceResponse.id;
@@ -156,7 +233,7 @@ export const handler = async (event, fhirCreateHelper, fhirUpdateHelper, postDoc
             try {
                 //create DocumentReference entry in BaRS/NRL
                 //returns a json object with "body" and "headers" - header location contains the id of the new resource
-                let barsResponse = await createDocumentRefBars(resourceResponse, event, postDocumentRefBarsObject, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+                let barsResponse = await createDocumentRefBars(resourceResponse, serviceRequestBody, event, postDocumentRefBarsObject, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
                 console.log("bars response is " + JSON.stringify(barsResponse));
                 let location = getParameterCaseInsensitive(barsResponse.headers, "location");
                 console.log("location is " + location);
@@ -179,7 +256,7 @@ export const handler = async (event, fhirCreateHelper, fhirUpdateHelper, postDoc
           try {
             //create DocumentReference entry in PDM
             //returns a json object with "body" and "headers" 
-            let pdmDocRefResponse = await createDocumentRefBars(resourceResponse, event, postDocumentRefPDMObject, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+            let pdmDocRefResponse = await createDocumentRefBars(resourceResponse, serviceRequestBody, event, postDocumentRefPDMObject, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
             console.log("pdm response is " + JSON.stringify(pdmDocRefResponse));
             let id = pdmDocRefResponse.body.id;
             //update the appointment to hold a reference to the DocumentReference in PDM
@@ -237,7 +314,20 @@ export const handler = async (event, fhirCreateHelper, fhirUpdateHelper, postDoc
             console.log(error.message);
             console.log("failed to update the task in PDM --- but continuing anyway and logging for manual resolution");
           }
-
+          // set the slot status to "busy"
+          try {
+            if (!slotRetrieved) {
+              console.log("Slot not retrieved");
+              slot = await getSlot(appointmentJson, event, searchResourcePDMObject, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+              slotRetrieved = true;
+            }
+            slot.status = "busy";
+            let updatedResource = await updateResourceFhirServer(slot, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+            console.log("updated pdm slot is " + JSON.stringify(updatedResource));
+          } catch (error) {
+            console.log(error.message);
+            console.log("failed to retrieve the slot --- but continuing anyway and logging for manual resolution");
+          }
           //return the resource
           let healthlakeResponse = {
             statusCode: 201,

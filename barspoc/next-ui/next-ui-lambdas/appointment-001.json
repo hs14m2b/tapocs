@@ -30,27 +30,6 @@
   "start": "2026-04-10T09:05:00.000Z",
   "end": "2026-04-10T10:05:00.000Z",
   "participant": [
-    {
-    "actor": {
-      "type": "Patient",
-      "identifier": {
-        "system": "https://fhir.nhs.uk/Id/nhs-number",
-        "value": "6700028191"
-      }
-    },
-    "status": "accepted"
-  },
-  {
-    "actor": {
-      "type": "Location",
-      "identifier": {
-        "system" : "https://fhir.nhs.uk/Id/ods-organization-code",
-        "value" : "RX809"
-      },
-      "display": "Grantham Hospital Outpatients"
-    },
-    "status": "accepted"
-  }
   ],
   "slot": [{
     "reference": "Slot/4a3836f5-2d42-4d3e-87c1-680173b7fa5c"}]

@@ -12,11 +12,22 @@ var apikeykeyLastRetrieved = 0;
 var ACCESSTOKEN;
 var ACCESSTOKENLASTRETRIEVED = 0;
 
+const postAppointment = async (appointment, barsserviceid, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM) =>
+{
+  return await sendAppointment(appointment, barsserviceid, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, 'POST');
+}
+
 //returns a json object with headers and body properties
 const putAppointment = async (appointment, barsserviceid, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM) =>
 {
+  return await sendAppointment(appointment, barsserviceid, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, 'PUT');
+}
+
+const sendAppointment = async (appointment, barsserviceid, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, method) =>
+{
   let XRequestID = uuidv4();
-  let url = HTTPS + APIENVIRONMENT + ".api.service.nhs.uk" + "/booking-and-referral/FHIR/R4/Appointment/" + appointment.id;
+  let url = HTTPS + APIENVIRONMENT + ".api.service.nhs.uk" + "/booking-and-referral/FHIR/R4/Appointment";
+  url += (appointment.id) ? "/" + appointment.id : "";
   //convert dosServiceId from json to a base64 string
   let dosServiceIdBase64 = Buffer.from(JSON.stringify({
     "system": "https://fhir.nhs.uk/Id/dos-service-id",
@@ -35,7 +46,7 @@ const putAppointment = async (appointment, barsserviceid, odscode, APIENVIRONMEN
   let endUserOrganisation = Buffer.from(JSON.stringify(orgJson)).toString('base64');
     // request option
   let options = {
-    method: 'PUT',
+    method: method,
     rejectUnauthorized: false,
     headers: {
       'accept': 'application/fhir+json;version=1.1.0',
@@ -105,5 +116,6 @@ const putAppointment = async (appointment, barsserviceid, odscode, APIENVIRONMEN
 export class put_appointment_bars{
   constructor(){
     this.putAppointment = putAppointment;
+    this.postAppointment = postAppointment;
   }
 }

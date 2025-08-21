@@ -194,6 +194,33 @@
         "RetentionPolicy": "Delete"
       }
     },
+    "bookNewAppointmentFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjsuiapilambdas.zip",
+        "Description": "The lambda function that calls BaRS to find slots for an appointment",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsuiHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/booknewappointment",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "bookNewAppointmentFunction"]]
+        },
+        "Handler": "BookNewAppointmentFactory.handler",
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
     "getAppointmentsFunction": {
       "Type": "AWS::Serverless::Function",
       "Properties": {

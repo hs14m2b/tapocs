@@ -98,16 +98,8 @@ function Home( props ) {
           Find Appointments
         </button>
         <br />
-        <button className="nhsuk-button" data-module="nhsuk-button" type="submit" name="action" value="getservicerequests">
-          Find Outstanding Service Requests
-        </button>
-        <br />
         <button className="nhsuk-button" data-module="nhsuk-button" type="submit" name="action" value="gettasks">
           Find Outstanding Tasks
-        </button>
-        <br />
-        <button className="nhsuk-button" data-module="nhsuk-button" type="submit" name="action" value="getslots">
-          Find Slots
         </button>
       </form>
       <br />

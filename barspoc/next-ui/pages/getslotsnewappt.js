@@ -43,6 +43,7 @@ function Home(props) {
     document.getElementById("pageTransitionMessage").classList.remove("nhsuk-hidden");
     let slotb64=encodeURIComponent(Buffer.from(JSON.stringify(propsandslot.slot.resource)).toString('base64'));
     let servicerequestb64=encodeURIComponent(propsandslot.props.servicerequestb64);
+    let servicerequestId=propsandslot.props.servicerequestId;
     let barsidentifier=propsandslot.props.barsidentifier;
     let barsserviceid=propsandslot.props.barsserviceid;
     router.push("/booknewappointment?barsidentifier=" + barsidentifier + 
