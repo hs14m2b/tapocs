@@ -3,12 +3,14 @@ erDiagram
     SCHEDULE ||--o{ SLOT : "contains"
     APPOINTMENT ||--|| SLOT : "books"
     HEALTHCARESERVICE ||--o{ APPOINTMENT : "satisfies"
+    LOCATION ||--o{  HEALTHCARESERVICE : "located at"
     
 
     HEALTHCARESERVICE {
         id id PK
         string name
         string category
+        reference location
     }
     SCHEDULE {
         id id
@@ -30,4 +32,12 @@ erDiagram
         date end
         reference SLOT FK
         reference participant[actor[HEALTHCARESERVICE]] FK
+        reference participant[actor[LOCATION]]
+        reference participant[actor[PATIENT]]
+    }
+    LOCATION {
+        id id
+        identifier odscode
+        string display
+        object address
     }

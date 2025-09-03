@@ -150,7 +150,8 @@ function Home(props) {
     document.getElementById("pageTransitionMessage").classList.remove("nhsuk-hidden");
     let barsidentifier=props.barsidentifier
     let barsserviceid=props.barsserviceid
-    let healthcareServiceId=props.barsResponse.participant.find((participant) => participant.actor.type == "HealthcareService").actor.reference
+    let healthcareService=props.barsResponse.participant.find((participant) => participant.actor.type == "HealthcareService");
+    let healthcareServiceId=healthcareService ? healthcareService.actor.reference : "unknown";
     let appointmentId=props.barsResponse.id
     let appointmentb64=encodeURIComponent(Buffer.from(JSON.stringify(props.barsResponse)).toString('base64'))
     router.push("/getslots?barsidentifier=" + barsidentifier + "&barsserviceid=" + barsserviceid + "&healthcareServiceId=" + healthcareServiceId + "&appointmentId=" + appointmentId + "&appointmentb64=" + appointmentb64);
@@ -272,6 +273,7 @@ function Home(props) {
           </dd>
           </div> : ""}
 
+          { (new Date(props.barsResponse.start) > new Date()) ? 
           <div class="nhsuk-summary-list__row">
           <dt class="nhsuk-summary-list__key">
             Cancel Appointment
@@ -282,7 +284,7 @@ function Home(props) {
             Cancel Appointment
           </button>
           </dd>
-          </div>
+          </div> : ""}
 
         </dl>
 

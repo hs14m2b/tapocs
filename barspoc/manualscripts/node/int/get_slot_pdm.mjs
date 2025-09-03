@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
 const apiClientPrivateKey = readFileSync('../../../certs/mhdtest001.key', 'utf8');
 import { readFileSync } from 'node:fs';
-const slotId = "1b6c3adc-cc0b-389e-8f50-6440b9fadddd"; // Example slot ID, replace with actual ID if needed
+const slotId = "08ae7c24-76eb-3f74-b906-0d7c0bcfb9cc"; // Example slot ID, replace with actual ID if needed
 
 async function searchSlots (accessToken)
   {

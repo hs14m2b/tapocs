@@ -9,9 +9,9 @@ const HTTPS = "https://";
 import { APIDomain, OAuthAPIKey, OAuthAPIKeyName, ODSCode, NHSDEndUserOrganisation, NHSDTargetIdentifier, NHSNumber } from './config.mjs';
 //const NHSNumber = "6700028191"; // 6700028191 // 9876543210
 
-async function getDocRef (accessToken)
+async function getAppointment (accessToken)
   {
-    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Appointment/12345";
+    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Appointment/bebed083-20f7-38a3-84fa-6d65bc70ffcb";
     let XRequestID = uuidv4();
     // request option
     let options = {
@@ -65,6 +65,6 @@ async function getAccessToken(){
 }
 let accessToken = await getAccessToken();
 console.log("got access token");
-let result = await getDocRef(accessToken);
-console.log(result);
- 
+let result = await getAppointment(accessToken);
+console.log(JSON.stringify(result, null, 4));
+

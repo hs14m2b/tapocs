@@ -6,12 +6,12 @@ import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
 const apiClientPrivateKey = readFileSync('../../../certs/mhdtest001.key', 'utf8');
 import { readFileSync } from 'node:fs';
-const scheduleId = "6eae6de9-cd7c-3a61-9f78-400ae9885dfe"; // Example schedule ID, replace with actual ID if needed
+const scheduleId = "5f172cd8-c2d1-309b-9f0b-07227348610f"; // Example schedule ID, replace with actual ID if needed
 
 async function searchSlots (accessToken)
   {
-    //let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Schedule?_id=" + scheduleId + "&_include=Schedule:actor:HealthcareService";
-    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Schedule?actor=HealthcareService/9f00342d-70de-38d5-9176-af97f1ba1b3d";
+    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Schedule?_id=" + scheduleId + "&_include=Schedule:actor:HealthcareService";
+    //let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Schedule?actor=HealthcareService/9f00342d-70de-38d5-9176-af97f1ba1b3d";
     let options = {
     method: 'GET',
     headers: {
