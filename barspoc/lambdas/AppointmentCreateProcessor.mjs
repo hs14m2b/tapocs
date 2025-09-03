@@ -164,6 +164,20 @@ export const handler = async (event, fhirCreateHelper, fhirUpdateHelper, postDoc
           healthcareService = await getHealthcareService(slot, event, searchResourcePDMObject, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
           healthcareServiceRetrieved = true;
           healthcareServiceReference = healthcareService.id ? "HealthcareService/" + healthcareService.id : "";
+          //add HealthcareService as participant actor
+          let dosidentifier = healthcareService.identifier ? healthcareService.identifier.find(i => i.system === "https://fhir.nhs.uk/Id/dos-service-id") : null;
+          let actor = {
+            "type": "HealthcareService",
+            "reference": healthcareServiceReference,
+            "display": healthcareService.name
+          };
+          if (dosidentifier) {
+            actor.identifier = dosidentifier;
+          }
+          appointmentJson.participant.push({
+            "actor": actor,
+            "status": "accepted"
+          });
         }
       }
       let serviceRequestBody = {};

@@ -35,10 +35,14 @@ describe("Appointment Update Processor", function() {
     let hlr3 = { "body": JSON.stringify(appointment3) };
     let hlr4 = { "body": JSON.stringify({"resourceType": "Slot", "status": "free", "meta": {"versionId": "2", "lastUpdated": "2025-01-01T00:00:00Z"}}) };
     let hlr5 = { "body": JSON.stringify({"resourceType": "DocumentReference", "id": "4a3836f5-2d42-4d3e-87c1-680173b7fa5c", "meta": {"versionId": "1", "lastUpdated": "2021-01-01T00:00:00Z"}}) };
+    let hlr6 = { "body": JSON.stringify({"resourceType": "ServiceRequest", "id": "4a3836f5-2d42-4d3e-87c1-680173b7fa5c", "status": "completed", "meta": {"versionId": "1", "lastUpdated": "2021-01-01T00:00:00Z"}}) };
+    let hlr7 = { "body": JSON.stringify({"resourceType": "ServiceRequest", "id": "4a3836f5-2d42-4d3e-87c1-680173b7fa5c", "status": "draft", "meta": {"versionId": "1", "lastUpdated": "2021-01-01T00:00:00Z"}}) };
+    let hlr8 = { "body": JSON.stringify({"resourceType": "Bundle", "entry": [{"resource":{"resourceType": "Task", "status": "completed"}}]}) };
+    let hlr9 = { "body": JSON.stringify({"resourceType": "Task", "status": "ready"}) };
     let barsresponse1 = { "body": {"resourceType": "DocumentReference", "id": "1234567890", "meta": {"versionId": "1", "lastUpdated": "2021-01-01T00:00:00Z"}} };
     //calls to search are for appointment2 - get, slot - get, documentreference - get, documentreference - search
-    let search_resource_healthlake_instance = new search_resource_healthlake([], [], [hlr1, hlr2, hlr5], []);
-    let update_resource_healthlake_instance = new update_resource_healthlake([hlr4, hlr3], []);
+    let search_resource_healthlake_instance = new search_resource_healthlake([hlr8], [], [hlr1, hlr2, hlr5, hlr6], []);
+    let update_resource_healthlake_instance = new update_resource_healthlake([hlr4, hlr3, hlr7, hlr9], []);
     let get_document_ref_object_instance = new get_document_ref_object([barsresponse1], []);
     let delete_resource_pdm_instance = new delete_resource_pdm([204], []);
     //event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED

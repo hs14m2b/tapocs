@@ -75,5 +75,11 @@
       },
       "status": "accepted"
     }
+  ],
+  "basedOn": [
+    {
+      "type": "ServiceRequest",
+      "reference": "ServiceRequest/1234567890"
+    }
   ]
 }

@@ -77,7 +77,6 @@ async function processCancellation(odscode, appointment, event, fhirCreateHelper
           console.log(error);
         }
       }
-
       console.log("Upodating the DocumentReference in PDM if required");
       try {
         let documentReference = {};
@@ -115,6 +114,52 @@ async function processCancellation(odscode, appointment, event, fhirCreateHelper
       } catch (error) {
         console.log("deleting DocumentReference in PDM failed");
         console.log(error);
+      }
+      try {
+        //find and update the ServiceRequest related to the appointment
+        console.log("finding and updating the ServiceRequest related to the appointment");
+        let serviceRequest = appointment.basedOn.find(ref => ref.type == "ServiceRequest");
+        let serviceRequestResource;
+        if (serviceRequest) {
+          console.log("updating ServiceRequest " + serviceRequest.reference);
+          serviceRequestResource = JSON.parse((await fhirSearchHelper.getResource(serviceRequest.reference.split("/").pop(), "ServiceRequest", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)).body);
+          //update the ServiceRequest status to draft
+          serviceRequestResource.status = "draft";
+          let fhirServerUpdateResponse = await fhirUpdateHelper.updateResource(serviceRequestResource, serviceRequestResource.resourceType, event.headers, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+          console.log("ServiceRequest update response is " + JSON.stringify(fhirServerUpdateResponse));
+        }
+        else {
+          console.log("No ServiceRequest found in appointment.basedOn");
+        }
+        if (serviceRequest) {
+           // find and update the outstanding Task related to the ServiceRequest
+          try {
+            let taskQueryStrings ={
+              "focus" : "ServiceRequest/" + serviceRequestResource.id
+            };
+            let taskPDMResponse =  await fhirSearchHelper.searchResource(taskQueryStrings, "Task", odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+            console.log("taskPDMResponse is " + JSON.stringify(taskPDMResponse));
+            //expect only a single entry
+            let taskPDMJson = JSON.parse(taskPDMResponse.body);
+            if (taskPDMJson.entry.length === 1) {
+              let task = taskPDMJson.entry[0].resource;
+              //update the task status to "ready"
+              task.status = "ready";
+              console.log("updated task is " + JSON.stringify(task));
+              let updatedResource = await updateResourceFhirServer(task, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+              console.log("updated pdm task is " + JSON.stringify(updatedResource));
+            } else {
+              console.log("unexpected number of tasks found: " + taskPDMResponse.total);
+            }
+          } catch (error) {
+            console.log(error.message);
+            console.log("failed to update the task in PDM --- but continuing anyway and logging for manual resolution");
+          }
+        }
+      } catch (error) {
+        console.log("updating the ServiceRequest in PDM failed");
+        console.log(error);
+        throw(error);
       }
       //return the resource
       let healthlakeResponse = {
