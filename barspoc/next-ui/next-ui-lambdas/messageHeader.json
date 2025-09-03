@@ -1,0 +1,68 @@
+{
+    "resourceType": "MessageHeader",
+    "meta": {
+        "lastUpdated": "2023-06-26T11:30:00.8185338+00:00",
+        "profile": [
+        "https://fhir.nhs.uk/StructureDefinition/BARSMessageHeader-servicerequest-request"
+        ]
+    },
+    "extension": [
+        {
+        "url": "https://fhir.nhs.uk/StructureDefinition/CDSSExtension",
+        "extension": [
+            {
+            "url": "RequesterCDSSsoftware",
+            "valueString": "CDSS Assessment Tool"
+            },
+            {
+            "url": "RequesterCDSSversion",
+            "valueString": "1.2.0"
+            }
+        ]
+        }
+    ],
+    "eventCoding": {
+        "system": "https://fhir.nhs.uk/CodeSystem/message-events-bars",
+        "code": "servicerequest-request"
+    },
+    "destination": [
+        {
+        "endpoint": "https://fhir.nhs.uk/Id/dos-service-id/matthewbrown",
+        "receiver": {
+            "identifier": {
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                "value": "X26"
+            },
+            "display": "NHS ENGLAND - X26"
+        }
+        }
+    ],
+    "sender": {
+        "identifier": {
+        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+        "value": "QWO"
+        },
+        "display": "South West Yorkshire Partnership NHS Foundation Trust"
+    },
+    "source": {
+        "name": "Emergency service",
+        "software": "Anon Patient Manager",
+        "version": "2.1.45",
+        "contact": {
+        "system": "phone",
+        "value": "+44 (0113) 123 4567"
+        },
+    "endpoint": "https://fhir.nhs.uk/Id/dos-service-id|2222222222"
+    },
+    "reason": {
+        "coding": [
+        {
+            "system": "https://fhir.nhs.uk/CodeSystem/message-reason-bars",
+            "code": "new"
+        }
+        ]
+    },
+    "focus": [
+    ],
+    "definition": "https://fhir.nhs.uk/MessageDefinition/bars-message-servicerequest-request-referral"
+}

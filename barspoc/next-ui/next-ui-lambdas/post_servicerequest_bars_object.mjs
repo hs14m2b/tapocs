@@ -13,7 +13,7 @@ var ACCESSTOKEN;
 var ACCESSTOKENLASTRETRIEVED = 0;
 
 //returns a json object with headers and body properties
-const postServiceRequest = async (appointment, barsserviceid, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM) =>
+const postServiceRequest = async (servicerequestbundle, barsserviceid, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM) =>
 {
   let XRequestID = uuidv4();
   let url = HTTPS + APIENVIRONMENT + ".api.service.nhs.uk" + "/booking-and-referral/FHIR/R4/$process-message";
@@ -46,7 +46,7 @@ const postServiceRequest = async (appointment, barsserviceid, odscode, APIENVIRO
       'NHSD-Target-Identifier': dosServiceIdBase64,
       'content-type': 'application/fhir+json',
     },
-    body: JSON.stringify(appointment)
+    body: JSON.stringify(servicerequestbundle)
   };
 
   if (environmentNeedsAuth(APIENVIRONMENT)){

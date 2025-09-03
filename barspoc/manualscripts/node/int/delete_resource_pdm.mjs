@@ -6,14 +6,18 @@ const HTTPS = "https://";
 const apiClientPrivateKey = readFileSync('../../../certs/mhdtest001.key', 'utf8');
 import { readFileSync } from 'node:fs';
 
-let id = "9c7ef8a3-0df2-30ed-9c94-4d424e3ecc03"; // replace with the actual ID
+//let id = "9c7ef8a3-0df2-30ed-9c94-4d424e3ecc03"; // replace with the actual ID
 let resourceType = "Task";
-async function deleteResource (versionId, accessToken)
+async function deleteResource (accessToken, resourceType, resourceId)
   {
+    let result = await getResource(accessToken, resourceType, resourceId);
+    //get the meta versionId from the resource
+    let versionId = result.meta.versionId;
+    console.log("versionId is " + versionId);
     //format http header value of If-Match to be "W/\"1\""
     let ifMatch = "W/\"" + versionId + "\"";
     console.log("ifMatch is " + ifMatch);
-    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/" + resourceType + "/" + id;
+    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/" + resourceType + "/" + resourceId;
     let options = {
     method: 'DELETE',
     headers: {
@@ -39,9 +43,9 @@ async function deleteResource (versionId, accessToken)
   }
 }
 
-async function getResource (accessToken)
+async function getResource (accessToken, resourceType, resourceId)
   {
-    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/" + resourceType + "/" + id;
+    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/" + resourceType + "/" + resourceId;
     let options = {
     method: 'GET',
     headers: {
@@ -80,13 +84,11 @@ async function getAccessToken(){
   let blah3 = JSON.parse(blah2);
   return blah3.access_token;
 }
-let accessToken = await getAccessToken();
+//let accessToken = await getAccessToken();
 
-let result = await getResource(accessToken);
-//get the meta versionId from the resource
-let versionId = result.meta.versionId;
-console.log("versionId is " + versionId);
+//let result = await getResource(accessToken);
 //delete the resource
-result = await deleteResource(versionId, accessToken);
-console.log(JSON.stringify(result));
- 
+//result = await deleteResource(accessToken, resourceType, id);
+//console.log(JSON.stringify(result));
+
+export { deleteResource };

@@ -37,7 +37,13 @@ function Home( props ) {
     console.log("saving answers in state");
     let nhsnumber = document.getElementById('nhsnumber');
     console.log(nhsnumber.value);
-    formdata["nhsnumber"] = nhsnumber.value;
+    //check if populated
+    if (nhsnumber.value && nhsnumber.value !== "") {
+      formdata["nhsnumber"] = nhsnumber.value;
+    }
+    else {
+      formdata["nhsnumber"] = "9661034524"; //set to default value
+    }
     formFunctions.saveDataLocally(formdata);
     //check if both populated
     let result = true;
@@ -101,6 +107,10 @@ function Home( props ) {
         <button className="nhsuk-button" data-module="nhsuk-button" type="submit" name="action" value="gettasks">
           Find Outstanding Tasks
         </button>
+        <br />
+        <button className="nhsuk-button" data-module="nhsuk-button" type="submit" name="action" value="createservicerequest">
+          Create Service Request
+        </button>
       </form>
       <br />
       <a href="https://main-mabr8-barspocui-nextjsfe.nhsdta.com/extapi/oidcrequest" className="nhsuk-link">
@@ -109,14 +119,10 @@ function Home( props ) {
       </button>
       </a>
       <br />
-      <Link href="/createservicerequest">
-        <button className="nhsuk-button" data-module="nhsuk-button" type="submit">
-          ICM - Create Service Request
-        </button>
-      </Link>
       <Spinner1 message="Finding your appointments" id="pageTransitionMessagegetappointments"></Spinner1>
       <Spinner1 message="Finding your service requests" id="pageTransitionMessagegetservicerequests"></Spinner1>
       <Spinner1 message="Finding your outstanding tasks" id="pageTransitionMessagegettasks"></Spinner1>
+      <Spinner1 message="Creating new referral/service request" id="pageTransitionMessagecreateservicerequest"></Spinner1>
 
       <Hiddenform></Hiddenform>
     </>

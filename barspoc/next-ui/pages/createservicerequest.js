@@ -231,6 +231,7 @@ Home.getInitialProps = async (ctx) => {
     "retrievedResult": false,
     ...ctx.query
   };
+  // ctx.query has nhsnumber
   if (ctx.req) {
     console.log("running on server");
     console.log(ctx.req.method);
@@ -239,27 +240,20 @@ Home.getInitialProps = async (ctx) => {
   else {
     console.log("running on client");
     props["execlocation"] = "client";
-    props["addresspostcode"] = formFunctions.getSavedItem('addresspostcode');
     props["nhsnumber"] = formFunctions.getSavedItem('nhsnumber');
-    props["favcolour"] = formFunctions.getSavedItem('favcolour');
     props['confirmScreenShown'] = true;
-    let { barsidentifier, barsserviceid } = ctx.query;
-    props['barsidentifier'] = barsidentifier;
     props = formFunctions.checkData(props);
-    console.log(JSON.stringify(ctx.query));
     console.log("I am here");
     //call the API to get the result
     try {
-      let apiResult = await getResult("https://main-mabr8-barspocui-nextjsfe.nhsdta.com/extapi/getappointment", new URLSearchParams(ctx.query).toString(),20000);
+      let apiResult = await getResult("https://main-mabr8-barspocui-nextjsfe.nhsdta.com/extapi/createservicerequest", new URLSearchParams(props).toString(),20000);
       props.retrievedResult = true;
       props['barsResponse'] = apiResult;
-      //check that barsResponse.resourceType is Appointment
-      props['result'] = (apiResult.resourceType == "Appointment") ? true : false;
+      //check that barsResponse.resourceType is ServiceRequest
+      props['result'] = (apiResult.resourceType == "ServiceRequest") ? true : false;
       console.log("result is " + props.result);
       if (!props.result) {
-        //set barsResponse to a default value
-        props['barsResponse'] = defaultAppt;
-        console.log("setting default value for the appointment");
+        console.log("Failed to create Service Request");
       }
     } catch (error) {
       console.log("caught error in calling API xxxx");
@@ -278,26 +272,20 @@ Home.getInitialProps = async (ctx) => {
   if (ctx.req.method == "GET") {
     const { nhsnumber, addresspostcode, favcolour } = formdataCookie;
     props["nhsnumber"] = nhsnumber;
-    props["addresspostcode"] = addresspostcode;
-    props["favcolour"] = favcolour;
   }
   else if (ctx.req.method == "POST")
   {
     //no situation in which this will be triggered - all requests are redirects or client side
     const data = await parse(ctx.req);
     console.log('BODY', data);
-    const { nhsnumber, postcode, favcolour } = data;
+    const { nhsnumber } = data;
     props["nhsnumber"] = nhsnumber;
-    props["addresspostcode"] = postcode;
-    props["favcolour"] = favcolour;
   }
   else {
     //unanticipated method - just return
     return props;
   }
-  let { barsidentifier, barsserviceid } = ctx.query;
-  props['barsidentifier'] = barsidentifier;
-//call the API to get the result
+  //call the API to get the result
   let retrievedResult = false;
   let loopNo = 1;
   props.retrievedResult = false;
@@ -305,7 +293,7 @@ Home.getInitialProps = async (ctx) => {
   {
     console.log("in loop number " + loopNo);
     try {
-      let apiResult = await getResult("https://main-mabr8-barspocui-nextjsfe.nhsdta.com/extapi/getappointment", new URLSearchParams(ctx.query).toString(), 10000 + (loopNo * 1000));
+      let apiResult = await getResult("https://main-mabr8-barspocui-nextjsfe.nhsdta.com/extapi/createservicerequest", new URLSearchParams(props).toString(), 10000 + (loopNo * 1000));
       retrievedResult = true;
       props.retrievedResult = true;
       props['barsResponse'] = apiResult;
@@ -314,8 +302,7 @@ Home.getInitialProps = async (ctx) => {
       console.log("result is " + props.result);
       if (!props.result) {
         //set barsResponse to a default value
-        props['barsResponse'] = defaultAppt;
-        console.log("setting default value for the appointment");
+        console.log("Failed to create Service Request");
       }
     } catch (error) {
       console.log("caught error - incrementing loop number");

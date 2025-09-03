@@ -221,6 +221,60 @@
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
     },
+    "cancelAppointmentFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjsuiapilambdas.zip",
+        "Description": "The lambda function that calls BaRS to cancel an appointment",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsuiHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/cancelappointment",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "cancelAppointmentFunction"]]
+        },
+        "Handler": "CancelAppointmentFactory.handler",
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "createServiceRequestFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjsuiapilambdas.zip",
+        "Description": "The lambda function that calls BaRS to create a service request",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsuiHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/createservicerequest",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "createServiceRequestFunction"]]
+        },
+        "Handler": "CreateServiceRequestFactory.handler",
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
     "getAppointmentsFunction": {
       "Type": "AWS::Serverless::Function",
       "Properties": {

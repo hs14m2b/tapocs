@@ -1,0 +1,65 @@
+{
+  "resourceType": "ServiceRequest",
+  "id": "vaccination-12345",
+  "meta": {
+    "lastUpdated": "2023-06-26T11:30:00.8185338+00:00",
+    "profile": [
+      "https://fhir.nhs.uk/StructureDefinition/BARSServiceRequest-request-referral"
+    ]
+  },
+  "status": "draft",
+  "intent": "order",
+  "category": [
+    {
+      "coding": [
+        {
+          "system": "https://fhir.nhs.uk/CodeSystem/message-category-servicerequest",
+          "code": "request",
+          "display": "Request for service"
+        },
+        {
+          "system": "https://fhir.nhs.uk/CodeSystem/usecases-categories-bars",
+          "code": "a99t1",
+          "display": "ICB Referral to Vaccination Clinic"
+        },
+        {
+          "system": "http://snomed.info/sct",
+          "code": "1303503001",
+          "display": "RSV (respiratory syncytial virus) vaccination"
+        }
+      ]
+    }
+  ],
+  "priority": "routine",
+  "code": {
+    "coding": [
+      {
+        "system": "http://snomed.info/sct",
+        "code": "1303503001",
+        "display": "RSV (respiratory syncytial virus) vaccination"
+      }
+    ],
+    "text": "RSV (respiratory syncytial virus) vaccination"
+  },
+  "subject": {
+      "identifier": {
+          "system": "https://fhir.nhs.uk/Id/nhs-number",
+          "value": "9661034524"
+      }
+  },
+  "occurrencePeriod": {
+    "start": "2025-09-03T00:00:00+00:00",
+    "end": "2025-10-03T00:00:00+00:00"
+  },
+  "authoredOn": "2025-08-11T14:30:00+00:00",
+  "requester": {
+      "identifier": {
+      "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+      "value": "QWO"
+      },
+      "display": "South West Yorkshire Partnership NHS Foundation Trust"
+  },
+  "performer": [
+      
+  ]
+}

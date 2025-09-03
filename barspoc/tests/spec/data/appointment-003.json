@@ -1,0 +1,79 @@
+{
+  "resourceType": "Appointment",
+  "id": "4a3836f5-2d42-4d3e-87c1-680173b7fa5c",
+  "status": "cancelled",
+  "meta": {
+    "versionId": "1",
+    "tag": [
+      {
+        "display": "DocumentReference|1234567890"
+      },
+      {
+        "display": "PDMDocumentReference|4a3836f5-2d42-4d3e-87c1-680173b7fa5c"
+      }
+    ]
+  },
+  "extension": [
+    {
+      "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Portal-Link",
+      "valueUrl": "https://my.portal.com/Appointment/4a3836f5-2d42-4d3e-87c1-680173b7fa5c"
+    },
+    {
+      "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Client-id",
+      "valueCode": "myportal-01"
+    },
+    {
+      "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Appointment-Status",
+      "valueCoding": {
+        "system": "http://hl7.org/fhir/appointmentstatus",
+        "code": "cancelled"
+      }
+    },
+    {
+      "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Consultation-Medium",
+      "valueCode": "FACE_TO_FACE"
+    },
+    {
+      "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Encounter-Class",
+      "valueCode": "outpatient"
+    }
+  ],
+  "description": "Dermatology",
+  "patientInstruction": "Please arrive 10 minutes before your appointment. We are located in the Outpatients Department.",
+  "participant": [
+    {
+      "actor": {
+        "type": "Patient",
+        "reference": "1337ed2e-8f7e-30e9-beca-7febdf23f423",
+        "identifier": {
+          "system": "https://fhir.nhs.uk/Id/nhs-number",
+          "value": "9661034524"
+        }
+      },
+      "status": "accepted"
+    },
+    {
+      "actor": {
+        "type": "Location",
+        "identifier": {
+          "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+          "value": "RX809"
+        },
+        "display": "Grantham Hospital Outpatients"
+      },
+      "status": "accepted"
+    },
+    {
+      "actor": {
+        "type": "HealthcareService",
+        "reference": "HealthcareService/9f00342d-70de-38d5-9176-af97f1ba1b3d",
+        "display": "Opthalmology Clinic",
+        "identifier": {
+          "system": "https://fhir.nhs.uk/Id/dos-service-id",
+          "value": "matthewbrown"
+        }
+      },
+      "status": "accepted"
+    }
+  ]
+}

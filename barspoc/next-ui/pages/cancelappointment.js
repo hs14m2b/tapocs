@@ -9,84 +9,8 @@ import parse from 'urlencoded-body-parser';
 import { serialize } from "cookie";
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Spinner1 from '../components/spinner1';
 const FORMDATACOOKIENAME = "formdata";
 const DEFAULTROUTE = "/confirmdata";
-const defaultAppt = {
-  "resourceType": "Appointment",
-  "id": "4a3836f5-2d42-4d3e-87c1-680173b7fa5c",
-  "status": "booked",
-  "extension": [
-    {
-      "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Portal-Link",
-      "valueUrl": "https://my.portal.com/Appointment/4a3836f5-2d42-4d3e-87c1-680173b7fa5c"
-    },
-    {
-      "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Client-id",
-      "valueCode": "myportal-01"
-    },
-    {
-      "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Appointment-Status",
-      "valueCoding": {
-        "system": "http://hl7.org/fhir/appointmentstatus",
-        "code": "booked"
-      }
-    },
-    {
-      "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Consultation-Medium",
-      "valueCode": "FACE_TO_FACE"
-    },
-    {
-      "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Encounter-Class",
-      "valueCode": "outpatient"
-    }
-  ],
-  "description": "Dermatology",
-  "start": "2025-07-10T09:05:00.000Z",
-  "end": "2025-07-10T10:05:00.000Z",
-  "patientInstruction": "Please arrive 10 minutes before your appointment. We are located in the Outpatients Department.",
-  "participant": [
-    {
-      "actor": {
-        "type": "Patient",
-        "reference": "981d8bc9-cf32-4a05-9e48-8d7f49074e9e",
-        "identifier": {
-          "system": "https://fhir.nhs.uk/Id/nhs-number",
-          "value": "9661034524"
-        }
-      },
-      "status": "accepted"
-    },
-    {
-      "actor": {
-        "type": "Location",
-        "identifier": {
-          "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-          "value": "RX809"
-        },
-        "display": "Grantham Hospital Outpatients"
-      },
-      "status": "accepted"
-    },
-    {
-      "actor": {
-        "type": "HealthcareService",
-        "reference": "HealthcareService/3f712376-662b-41ae-b216-eb5f95e6acab",
-        "display": "Opthalmology Clinic",
-        "identifier": {
-          "system": "https://fhir.nhs.uk/Id/dos-service-id",
-          "value": "matthewbrown"
-        }
-      },
-      "status": "accepted"
-    }
-  ],
-  "slot": [
-    {
-      "reference": "Slot/4a3836f5-2d42-4d3e-87c1-680173b7fa5c"
-    }
-  ]
-};
 
 async function getResult(url, body = {}, apitimeout = 1000) {
   const timeout = apitimeout;
@@ -142,8 +66,18 @@ function Home(props) {
   const router = useRouter();
   useEffect(() => { 
     console.log("in useEffect");
-    //setTimeout(checkResultLoop, 1000);
+    document.getElementById("pageTransitionMessage").classList.remove("nhsuk-hidden");
+    setTimeout(gotoAppointment, 1000);
   });
+
+  const staticProps = props;
+
+  function gotoAppointment() {
+    console.log("here");
+    let barsidentifier=staticProps.barsidentifier;
+    let barsserviceid=staticProps.barsserviceid;
+    router.push("/getappointment?barsidentifier=" + barsidentifier + "&barsserviceid=" + barsserviceid);
+  }
 
   function checkData(props) {
     //enable the spinner
@@ -154,17 +88,6 @@ function Home(props) {
     let appointmentId=props.barsResponse.id
     let appointmentb64=encodeURIComponent(Buffer.from(JSON.stringify(props.barsResponse)).toString('base64'))
     router.push("/getslots?barsidentifier=" + barsidentifier + "&barsserviceid=" + barsserviceid + "&healthcareServiceId=" + healthcareServiceId + "&appointmentId=" + appointmentId + "&appointmentb64=" + appointmentb64);
-  }
-
-  function cancelAppt(props) {
-    //enable the spinner
-    document.getElementById("pageTransitionMessage" + "cancelappointment").classList.remove("nhsuk-hidden");
-    let barsidentifier=props.barsidentifier
-    let barsserviceid=props.barsserviceid
-    let healthcareServiceId=props.barsResponse.participant.find((participant) => participant.actor.type == "HealthcareService").actor.reference
-    let appointmentId=props.barsResponse.id
-    let appointmentb64=encodeURIComponent(Buffer.from(JSON.stringify(props.barsResponse)).toString('base64'))
-    router.push("/cancelappointment?barsidentifier=" + barsidentifier + "&barsserviceid=" + barsserviceid + "&healthcareServiceId=" + healthcareServiceId + "&appointmentId=" + appointmentId + "&appointmentb64=" + appointmentb64);
   }
 
   return (
@@ -192,11 +115,9 @@ function Home(props) {
           </ul>
         </div>
       </div>
-      { (props.retrievedResult && props.result) ? 
-
       <div id="yesMessage" className={(props.retrievedResult && props.result) ? "" : "nhsuk-hidden"}>
         <p className="nhsuk-u-font-size-32">
-          Yes, retrieved appointment details for {props.nhsnumber}!
+          Yes, rescheduled appointment details for {props.nhsnumber}!
         </p>
 
         <dl class="nhsuk-summary-list">
@@ -234,7 +155,7 @@ function Home(props) {
               Appointment Location
             </dt>
             <dd class="nhsuk-summary-list__value">
-              { (props.barsResponse.participant.find((participant) => participant.actor.type == "Location")) ? props.barsResponse.participant.find((participant) => participant.actor.type == "Location").actor.display : "Unknown Location"}
+              {props.barsResponse.participant.find((participant) => participant.actor.type == "Location").actor.display}
             </dd>
 
           </div>
@@ -265,28 +186,15 @@ function Home(props) {
             Reschedule Appointment
           </dt>
           <dd class="nhsuk-summary-list__value">
-
           <button className="nhsuk-button" data-module="nhsuk-button" type="submit" onClick={()=>{checkData(props)}}>
             Reschedule Appointment
           </button>
           </dd>
-          </div> : ""}
-
-          <div class="nhsuk-summary-list__row">
-          <dt class="nhsuk-summary-list__key">
-            Cancel Appointment
-          </dt>
-          <dd class="nhsuk-summary-list__value">
-
-          <button className="nhsuk-button" data-module="nhsuk-button" type="submit" onClick={()=>{cancelAppt(props)}}>
-            Cancel Appointment
-          </button>
-          </dd>
-          </div>
+        </div> : "BLAHHHHHH"}
 
         </dl>
 
-      </div> : ""}
+      </div>
       <div id="checkingMessage" className={(! props.retrievedResult) ? "" : "nhsuk-hidden"}>
         <p className="nhsuk-u-font-size-32">
           Checking for appointments for {props.nhsnumber}...
@@ -294,8 +202,8 @@ function Home(props) {
         </p>
       </div>
       <Link href="/form1">Back to start</Link>
-      <Spinner message="Retrieving Available Appointment Slots"></Spinner>
-      <Spinner1 message="Cancelling Appointment" id="pageTransitionMessagecancelappointment"></Spinner1>
+      <Spinner message="Retrieving Updated Appointment Details"></Spinner>
+
       <Hiddenform></Hiddenform>
     </>
   )
@@ -329,24 +237,22 @@ Home.getInitialProps = async (ctx) => {
     props["nhsnumber"] = formFunctions.getSavedItem('nhsnumber');
     props["favcolour"] = formFunctions.getSavedItem('favcolour');
     props['confirmScreenShown'] = true;
-    let { barsidentifier, barsserviceid } = ctx.query;
+    //"/cancelappointment?barsidentifier=" + barsidentifier + "&barsserviceid=" + barsserviceid + "&healthcareServiceId=" + healthcareServiceId + "&appointmentId=" + appointmentId + "&appointmentb64=" + appointmentb64);
+    let { barsidentifier, barsserviceid, healthcareServiceId, appointmentId, appointmentb64 } = ctx.query;
     props['barsidentifier'] = barsidentifier;
+    props['barsserviceid'] = barsserviceid;
+    props['healthcareServiceId'] = healthcareServiceId;
+    props['appointmentId'] = appointmentId;
+    props['appointmentb64'] = appointmentb64;
     props = formFunctions.checkData(props);
     console.log(JSON.stringify(ctx.query));
     console.log("I am here");
     //call the API to get the result
     try {
-      let apiResult = await getResult("https://main-mabr8-barspocui-nextjsfe.nhsdta.com/extapi/getappointment", new URLSearchParams(ctx.query).toString(),20000);
+      let apiResult = await getResult("https://main-mabr8-barspocui-nextjsfe.nhsdta.com/extapi/cancelappointment", new URLSearchParams(ctx.query).toString(),29000);
+      props['result'] = (apiResult) ? true: false;
       props.retrievedResult = true;
       props['barsResponse'] = apiResult;
-      //check that barsResponse.resourceType is Appointment
-      props['result'] = (apiResult.resourceType == "Appointment") ? true : false;
-      console.log("result is " + props.result);
-      if (!props.result) {
-        //set barsResponse to a default value
-        props['barsResponse'] = defaultAppt;
-        console.log("setting default value for the appointment");
-      }
     } catch (error) {
       console.log("caught error in calling API xxxx");
       props.retrievedResult = true;
@@ -381,9 +287,13 @@ Home.getInitialProps = async (ctx) => {
     //unanticipated method - just return
     return props;
   }
-  let { barsidentifier, barsserviceid } = ctx.query;
+  let { barsidentifier, barsserviceid, healthcareServiceId, appointmentId, appointmentb64 } = ctx.query;
   props['barsidentifier'] = barsidentifier;
-//call the API to get the result
+  props['barsserviceid'] = barsserviceid;
+  props['healthcareServiceId'] = healthcareServiceId;
+  props['appointmentId'] = appointmentId;
+  props['appointmentb64'] = appointmentb64;
+  //call the API to get the result
   let retrievedResult = false;
   let loopNo = 1;
   props.retrievedResult = false;
@@ -391,21 +301,13 @@ Home.getInitialProps = async (ctx) => {
   {
     console.log("in loop number " + loopNo);
     try {
-      let apiResult = await getResult("https://main-mabr8-barspocui-nextjsfe.nhsdta.com/extapi/getappointment", new URLSearchParams(ctx.query).toString(), 10000 + (loopNo * 1000));
+      let apiResult = await getResult("https://main-mabr8-barspocui-nextjsfe.nhsdta.com/extapi/cancelappointment", new URLSearchParams(ctx.query).toString(), 20000 + (loopNo * 1000));
       retrievedResult = true;
+      props['result'] = (apiResult) ? true: false;
       props.retrievedResult = true;
       props['barsResponse'] = apiResult;
-      //check that barsResponse.resourceType is Appointment
-      props['result'] = (apiResult.resourceType == "Appointment") ? true : false;
-      console.log("result is " + props.result);
-      if (!props.result) {
-        //set barsResponse to a default value
-        props['barsResponse'] = defaultAppt;
-        console.log("setting default value for the appointment");
-      }
     } catch (error) {
       console.log("caught error - incrementing loop number");
-      console.log(error);
       loopNo++;
       if (loopNo > 10) {
         retrievedResult=true;
