@@ -115,6 +115,9 @@ function Home(props) {
               <th role="columnheader" class="" scope="col">
                 Appointment ID
               </th>
+              <th role="columnheader" class="" scope="col">
+                DorRef ID
+              </th>
               <th role="columnheader" class=" nhsuk-table__header--numeric" scope="col">
                 Appointment Date
               </th>
@@ -130,6 +133,7 @@ function Home(props) {
             {props.futureAppts && props.futureAppts.map((docRef) => (
               <tr role="row" class="nhsuk-table__row">
               <th class="nhsuk-table__header" scope="row">{docRef.resource.identifier.find(identifier => identifier.system == "https://fhir.nhs.uk/Id/BaRS-Identifier").value}</th>
+              <td class="nhsuk-table__cell">{docRef.resource.id}</td>
               <td class="nhsuk-table__cell">{docRef.resource.context.period.start}</td>
               <td class="nhsuk-table__cell nhsuk-table__cell--numeric">{ (docRef.resource.description) ? docRef.resource.description : (docRef.resource.context.practiceSetting.coding[0].display) ? docRef.resource.context.practiceSetting.coding[0].display : ""}</td>
               <td class="nhsuk-table__cell">
@@ -156,6 +160,9 @@ function Home(props) {
                 <th role="columnheader" class="" scope="col">
                   Appointment ID
                 </th>
+                <th role="columnheader" class="" scope="col">
+                  DocRef ID
+                </th>
                 <th role="columnheader" class=" nhsuk-table__header--numeric" scope="col">
                   Appointment Date
                 </th>
@@ -171,6 +178,7 @@ function Home(props) {
               {props.pastAppts && props.pastAppts.map((docRef) => (
                 <tr role="row" class="nhsuk-table__row">
                 <th class="nhsuk-table__header" scope="row">{docRef.resource.identifier.find(identifier => identifier.system == "https://fhir.nhs.uk/Id/BaRS-Identifier").value}</th>
+                <td class="nhsuk-table__cell">{docRef.resource.id}</td>
                 <td class="nhsuk-table__cell">{docRef.resource.context.period.start}</td>
                 <td class="nhsuk-table__cell nhsuk-table__cell--numeric">{ (docRef.resource.description) ? docRef.resource.description : (docRef.resource.context.practiceSetting.coding[0].display) ? docRef.resource.context.practiceSetting.coding[0].display : ""}</td>
                 <td class="nhsuk-table__cell">

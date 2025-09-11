@@ -19,9 +19,6 @@ class getDocRef_promise_obj{
 
 function getDocRef(documentid, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)
 {
-  console.log("got here");
-
-  console.log(JSON.stringify(this));
   return this.getDocRef_promise_obj.promise();
 }
 

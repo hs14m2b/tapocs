@@ -91,4 +91,4 @@ async function getAccessToken(){
 //result = await deleteResource(accessToken, resourceType, id);
 //console.log(JSON.stringify(result));
 
-export { deleteResource };
+export { deleteResource, getResource };

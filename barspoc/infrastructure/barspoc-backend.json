@@ -150,6 +150,14 @@
                             "ssm:GetParameter"
                         ],
                         "Resource": "*"
+                    },
+                    {
+                        "Sid": "KMSAccess",
+                        "Effect": "Allow",
+                        "Action": [
+                            "kms:*"
+                        ],
+                        "Resource": "*"
                     }
                 ]
             }
@@ -185,6 +193,64 @@
           "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-", "barspocbeCWRole"]]
         }
       }
+    },
+    "barspocKey":{
+      "Type" : "AWS::KMS::Key",
+      "Properties" : {
+          "BypassPolicyLockoutSafetyCheck" : false,
+          "Description" : "Key for managing encryption in AWS barspoc SNS topics etc",
+          "Enabled" : true,
+          "EnableKeyRotation" : true,
+          "KeyPolicy" : {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Action": "kms:*",
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":iam::", { "Ref": "AWS::AccountId" }, ":root"]]}
+                },
+                "Resource": "*"
+              },
+              {
+                "Principal": {
+                  "AWS": { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":iam::", { "Ref": "AWS::AccountId" }, ":root"]]},
+                  "Service": [
+                    { "Fn::Join": ["", ["logs.",{ "Ref": "AWS::URLSuffix" }]]},
+                    { "Fn::Join": ["", ["lambda.",{ "Ref": "AWS::URLSuffix" }]]},
+                    { "Fn::Join": ["", ["cloudtrail.",{ "Ref": "AWS::URLSuffix" }]]},
+                    { "Fn::Join": ["", ["sns.",{ "Ref": "AWS::URLSuffix" }]]},
+                    { "Fn::Join": ["", ["s3.",{ "Ref": "AWS::URLSuffix" }]]}
+                  ]
+                },
+                "Action": [
+                  "kms:CreateGrant", 
+                  "kms:Decrypt", 
+                  "kms:DescribeKey", 
+                  "kms:Encrypt", 
+                  "kms:GenerateDataKey*", 
+                  "kms:ReEncrypt*", 
+                  "kms:ListGrants"
+                ],
+                "Effect": "Allow",
+                "Resource": "*"
+              }
+            ]
+          },
+          "KeySpec" : "SYMMETRIC_DEFAULT",
+          "KeyUsage" : "ENCRYPT_DECRYPT",
+          "MultiRegion" : false,
+          "Origin" : "AWS_KMS",
+          "PendingWindowInDays" : 7,
+          "Tags" : [ {"Key": "shortcode", "Value": {"Ref": "SHORTCODE"}} ]
+        }
+    },
+    "barspocKeyAlias": {
+      "Type" : "AWS::KMS::Alias",
+      "Properties" : {
+          "AliasName" : "alias/barspoc",
+          "TargetKeyId" : {"Ref": "barspocKey"}
+        }
     },
     "DefaultRouteFunction": {
       "Type": "AWS::Serverless::Function",
@@ -329,6 +395,11 @@
       "Properties": {
         "CodeUri": "barspocapilambdas.zip",
         "Description": "The lambda function that acts as a dummy FHIR endpoint to update Appointment resources",
+        "Environment": {
+          "Variables":{
+            "APPTREBOOKTOPICARN": { "Ref": "AppontmentRebookTopic" }
+          }
+        },
         "Events": {
           "Api": {
             "Type": "HttpApi",
@@ -355,6 +426,44 @@
           "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-AppointmentUpdateFunction"]]
         },
         "Handler": "AppointmentUpdateFactory.handler",
+        "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["barspocbeLambdaRole"]
+    },
+    "AppontmentRebookTopic": {
+      "Type" : "AWS::SNS::Topic",
+      "Properties" : {
+          "DisplayName" : "Topic for Appointment Rebook events to allow background processing",
+          "FifoTopic" : false,
+          "KmsMasterKeyId" : {"Ref" : "barspocKey"},
+          "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }],
+          "TopicName" : {"Fn::Join": ["-", [{ "Ref": "PROJECTNAME" },{ "Ref": "BRANCHNAME" }, "rebookevents"]]}
+      }
+    },
+    "AppointmentUpdateEventFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "barspocapilambdas.zip",
+        "Description": "The lambda function that receives SNS triggered events to process Appointment updates that can be processed in the background",
+        "Environment": {
+          "Variables":{
+            "APPTREBOOKTOPICARN": { "Ref": "AppontmentRebookTopic" }
+          }
+        },
+        "Events": {
+          "AppointmentUpdateSNSTrigger":{
+            "Type": "SNS",
+            "Properties": {
+              "Topic": {"Ref": "AppontmentRebookTopic"}
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-AppointmentUpdateEventFunction"]]
+        },
+        "Handler": "AppointmentUpdateEventFactory.handler",
         "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
         "Runtime": "nodejs20.x",
         "Timeout": 300

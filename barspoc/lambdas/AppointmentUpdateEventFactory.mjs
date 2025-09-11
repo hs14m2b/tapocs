@@ -2,7 +2,7 @@ import { create_resource_pdm } from './create_resource_pdm_object.mjs';
 import { update_resource_pdm } from './update_resource_pdm_object.mjs';
 import { search_resource_pdm } from './search_resource_pdm_object.mjs';
 import { delete_resource_pdm } from './delete_resource_pdm_object.mjs'
-import { handler as processor } from './AppointmentUpdateProcessor.mjs';
+import { handler as processor } from './AppointmentUpdateEventProcessor.mjs';
 import { getParameterCaseInsensitive } from './api_common_functions.mjs';
 import { put_document_ref_bars } from './put_document_ref_bars_object.mjs';
 import { get_document_ref_bars } from './get_document_ref_bars_object.mjs';

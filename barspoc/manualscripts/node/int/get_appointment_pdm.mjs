@@ -11,7 +11,7 @@ import { APIDomain, OAuthAPIKey, OAuthAPIKeyName, ODSCode, NHSDEndUserOrganisati
 
 async function getAppointment (accessToken)
   {
-    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Appointment/bebed083-20f7-38a3-84fa-6d65bc70ffcb";
+    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Appointment/d6f4d219-5765-3160-b850-78a4d11f9ce7";
     let XRequestID = uuidv4();
     // request option
     let options = {

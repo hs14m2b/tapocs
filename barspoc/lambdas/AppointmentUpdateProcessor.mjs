@@ -15,7 +15,7 @@ async function updateResourceFhirServer(resourceJson, event, fhirUpdateHelper, A
     }
   }
 
-async function processCancellation(odscode, appointment, event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED) {
+async function processCancellation(odscode, appointment, event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN) {
   console.log("processing cancellation for appointment " + JSON.stringify(appointment));
   try {
       //update the appointment status to cancelled
@@ -39,6 +39,19 @@ async function processCancellation(odscode, appointment, event, fhirCreateHelper
       console.log("updating appointment details in healthlake");
       let updatedResource = await updateResourceFhirServer(appointment, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
       console.log("updated appointment resource is " + JSON.stringify(updatedResource));
+      console.log("publishing event and appointment to SNS topic " + APPTREBOOKTOPICARN);
+      try {
+        await snsCommonFunctionObjectInstance.publishEvent(JSON.stringify({
+          event: event,
+          appointment: updatedResource,
+          eventType: "AppointmentCancellation"
+        }), APPTREBOOKTOPICARN);
+      } catch (error) {
+        console.log("publishing event to SNS failed");
+        console.log(error);
+      }
+      ///remainder of logic now performed asynchronously by the AppointmentUpdateEventProcessor triggered by the SNS event
+      /*
       if (NRLENABLED) {
         //try updating the BaRS/NRL DocumentReference
         console.log("updating DocumentReference in BaRS");
@@ -161,6 +174,7 @@ async function processCancellation(odscode, appointment, event, fhirCreateHelper
         console.log(error);
         throw(error);
       }
+        */
       //return the resource
       let healthlakeResponse = {
         statusCode: 200,
@@ -182,7 +196,7 @@ async function processCancellation(odscode, appointment, event, fhirCreateHelper
 
 }
 
-export const handler = async (event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED) => {
+export const handler = async (event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN) => {
   console.log(JSON.stringify(event));
   //PUT handler for updating an appointment
     try {
@@ -195,7 +209,7 @@ export const handler = async (event, fhirCreateHelper, fhirUpdateHelper, fhirSea
       console.log("appointment to be updated is " + JSON.stringify(appointment));
       //check if appointment status is now cancelled
       if (appointment.status && appointment.status == "cancelled") {
-        return await processCancellation(odscode, appointment, event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED);
+        return await processCancellation(odscode, appointment, event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN);
       }
       //find old slot and set to free
       let getResult = await fhirSearchHelper.getResource(appointment.id, "Appointment", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);

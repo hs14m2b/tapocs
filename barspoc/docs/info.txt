@@ -97,3 +97,11 @@ curl --location --request GET 'https://identity.ptl.api.platform.nhs.uk/realms/N
 
 URL for mock UI - https://main-mabr8-barspocui-nextjsfe.nhsdta.com
 
+Wayfinder definition for appointment on simplifier
+https://simplifier.net/wayfinder-patient-care-aggregator/wayfinderukcoreappointment
+
+BaRS definition is
+https://simplifier.net/HL7FHIRUKCoreR4/UKCore-Appointment
+
+see also
+https://github.com/NHSDigital/nhse-epr-integration

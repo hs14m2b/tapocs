@@ -5,13 +5,14 @@ import { v4 as uuidv4 } from 'uuid';
 const HTTPS = "https://";
 const apiClientPrivateKey = readFileSync('../../../certs/mhdtest001.key', 'utf8');
 import { readFileSync } from 'node:fs';
+const AppointmentId = "6e23169b-35c2-3360-9cda-45bcc9f7c005"; // replace with the actual ID
 
 async function deleteAppointment (versionId, accessToken)
   {
     //format http header value of If-Match to be "W/\"1\""
     let ifMatch = "W/\"" + versionId + "\"";
     console.log("ifMatch is " + ifMatch);
-    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Appointment/" + "c4140094-8539-3ff0-8c62-a29722c1ea74";
+    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Appointment/" + AppointmentId;
     let options = {
     method: 'DELETE',
     headers: {
@@ -39,7 +40,7 @@ async function deleteAppointment (versionId, accessToken)
 
 async function getAppointment (accessToken)
   {
-    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Appointment/" + "c4140094-8539-3ff0-8c62-a29722c1ea74";
+    let url = HTTPS + APIDomain + "/patient-data-manager/FHIR/R4/Appointment/" + AppointmentId;
     let options = {
     method: 'GET',
     headers: {
@@ -81,6 +82,7 @@ async function getAccessToken(){
 let accessToken = await getAccessToken();
 
 let result = await getAppointment(accessToken);
+console.log("got appointment " + JSON.stringify(result, null, 4));
 //get the meta versionId from the appointment
 let versionId = result.meta.versionId;
 console.log("versionId is " + versionId);
