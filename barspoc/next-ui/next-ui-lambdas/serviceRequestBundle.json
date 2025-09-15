@@ -1,0 +1,23 @@
+{
+  "resourceType": "Bundle",
+  "id": "9ae77bb4-db12-42f3-a90c-733fe232f26c",
+  "meta": {
+    "versionId": "1.0.0-beta",
+    "lastUpdated": "2023-06-26T11:30:00.8185338+00:00",
+    "profile": [
+      "https://fhir.nhs.uk/StructureDefinition/BARSBundleMessage"
+    ]
+  },
+  "type": "message",
+  "timestamp": "2023-06-26T11:30:00+00:00",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:c89a8895-56fe-41de-b20b-fab6efa99c99",
+      "resource": {}
+    },
+    {
+      "fullUrl": "urn:uuid:236bb75d-90ef-461f-b71e-fde7f899802c",
+      "resource": {}
+    }
+  ]
+}

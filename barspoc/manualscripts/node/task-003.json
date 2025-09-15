@@ -1,0 +1,81 @@
+{
+    "resourceType": "Task",
+    "meta": {
+        "profile": [
+            "http://hl7.org/fhir/StructureDefinition/Task"
+        ]
+    },
+    "text": {
+        "status": "generated",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Task for patient to book appointment at the vaccination clinic.</div>"
+    },
+    "identifier": [
+        {
+            "system": "http://hospital.smarthealth.org/tasks",
+            "value": "LABREQ-20250820-01"
+        },
+        {
+            "system": "https://fhir.nhs.uk/Id/dos-service-id",
+            "value": "matthewbrown"
+        }
+    ],
+    "basedOn": [
+        {
+            "reference": "ServiceRequest/29f507ec-cbcc-3895-a2a0-23cee18f60b2"
+        }
+    ],
+    "status": "ready",
+    "statusReason": {
+        "coding": [
+            {
+                "system": "http://terminology.hl7.org/CodeSystem/task-status-reason",
+                "code": "waiting-input",
+                "display": "Waiting for input from requester"
+            }
+        ]
+    },
+    "intent": "order",
+    "priority": "routine",
+    "code": {
+        "coding": [
+            {
+                "system": "http://terminology.hl7.org/CodeSystem/task-code",
+                "code": "fulfill",
+                "display": "Fulfill the task"
+            }
+        ],
+        "text": "Book appointment with Vaccination Clinic"
+    },
+    "description": "Task for patient to book appointment at the vaccination clinic.",
+    "focus": {
+        "reference": "ServiceRequest/29f507ec-cbcc-3895-a2a0-23cee18f60b2"
+    },
+    "for": {
+        "type": "Patient",
+        "identifier": {
+            "system": "https://fhir.nhs.uk/Id/nhs-number",
+            "value": "9661034524"
+        }
+    },
+    "executionPeriod": {
+        "start": "2025-09-03T00:00:00+00:00",
+        "end": "2025-10-03T00:00:00+00:00"
+    },
+    "authoredOn": "2025-08-20T08:50:00Z",
+    "requester": {
+        "identifier": {
+            "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+            "value": "X26"
+        },
+        "display": "NHS ENGLAND - X26"
+    },
+    "note": [
+        {
+            "authorReference": {
+                "reference": "Practitioner/example-requester"
+            },
+            "time": "2025-08-20T08:55:00Z",
+            "text": "Patient was fasting overnight."
+        }
+    ]
+}

@@ -1,0 +1,431 @@
+// Filename: AppointmentUpdateProcessor.mjs
+import transactionBundleTemplate from './transactionBundleTemplate.json' with { type: 'json' };
+
+async function updateResourceFhirServer(resourceJson, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM){
+    let maxDuration=25000;
+    try {
+      //get the posted resource
+      let headersJson = event.headers;
+      console.log("putting to FHIR Server")
+      let fhirServerResponse = await fhirUpdateHelper.updateResource(resourceJson, resourceJson.resourceType, headersJson, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+      console.log("FHIR Server response is " + JSON.stringify(fhirServerResponse));
+      return fhirServerResponse;
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
+  }
+
+async function processCancellation(odscode, appointment, event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN, PDMRESOURCETOPICARN) {
+  console.log("processing cancellation for appointment " + JSON.stringify(appointment));
+  try {
+      //update the appointment status to cancelled
+      //find old slot and set to free
+      let getResult = await fhirSearchHelper.getResource(appointment.id, "Appointment", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+      let originalAppointment = JSON.parse(getResult.body);
+      console.log("original appointment is " + JSON.stringify(originalAppointment));
+      try {
+        let originalSlot = originalAppointment.slot[0];
+        let originalSlotId = originalSlot.reference.split("/").pop();
+        let originalSlotGetResult = await fhirSearchHelper.getResource(originalSlotId, "Slot", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+        let originalSlotResource = JSON.parse(originalSlotGetResult.body);
+        console.log("original slot is " + JSON.stringify(originalSlotResource));
+        originalSlotResource.status = "free";
+        let updatedOriginalSlot = await updateResourceFhirServer(originalSlotResource, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+      } catch (error) {
+        console.log("updating original slot failed");
+        console.log(error);
+      }
+      //update the appointment
+      console.log("updating appointment details in healthlake");
+      let updatedResource = await updateResourceFhirServer(appointment, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+      console.log("updated appointment resource is " + JSON.stringify(updatedResource));
+      console.log("publishing event and appointment to SNS topic " + APPTREBOOKTOPICARN);
+      try {
+        await snsCommonFunctionObjectInstance.publishEvent(JSON.stringify({
+          event: event,
+          appointment: updatedResource,
+          eventType: "AppointmentCancellation"
+        }), APPTREBOOKTOPICARN);
+      } catch (error) {
+        console.log("publishing event to SNS failed");
+        console.log(error);
+      }
+      ///remainder of logic now performed asynchronously by the AppointmentUpdateEventProcessor triggered by the SNS event
+      /*
+      if (NRLENABLED) {
+        //try updating the BaRS/NRL DocumentReference
+        console.log("updating DocumentReference in BaRS");
+        try {
+          let documentReference = {};
+          try {
+            //get the id of the DocumentReference from the appointment neta tag
+            let barsTag = appointment.meta.tag.find(k => k.display.startsWith("DocumentReference"));
+            let documentReferenceId = barsTag.display.split("|").pop();
+            //retrieve the DocumentReference from BaRS
+            console.log("getting the Document Reference from BaRS");
+            documentReference = (await getDocumentRefBarsObject.getDocRef(documentReferenceId, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)).body;
+            console.log("documentReference is " + JSON.stringify(documentReference));
+          } catch (error) {
+            console.log(error);
+            console.log("get Document Reference failed - searching instead");
+            //find the participant.actor of type Patient in the appointment
+            let patientReference = appointment.participant.find(k => k.actor.type == "Patient");
+            console.log("patient reference is " + JSON.stringify(patientReference));
+            let nhsNumber = patientReference.actor.identifier.value;
+            console.log("nhsNumber is " + nhsNumber);
+            console.log("searching  Document References from BaRS");
+            let documentReferences = (await findDocumentRefBarsObject.findDocRef(nhsNumber, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)).body;
+            console.log("documentReferences are " + JSON.stringify(documentReferences));
+            //find the DocumentReference with the docRef.resource.identifier.find(identifier => identifier.system == "https://fhir.nhs.uk/Id/BaRS-Identifier").value == appointment.id
+            documentReference = documentReferences.entry.find(entry => entry.resource.identifier.find(identifier => identifier.system == "https://fhir.nhs.uk/Id/BaRS-Identifier").value == appointment.id).resource;
+            console.log("documentReference is " + JSON.stringify(documentReference));
+          }
+          //delete the DocumentReference in BaRS
+          //TO BE IMPLEMENTED
+          //let barsResponse = await putDocumentRefBarsObject.updateDocRef(documentReference, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+          //console.log("bars response to updating the Document Reference is " + JSON.stringify(barsResponse));
+          console.log("deleting DocumentReference in BaRS to be implemented");
+        } catch (error) {
+          console.log("updating DocumentReference failed");
+          console.log(error);
+        }
+      }
+      console.log("Upodating the DocumentReference in PDM if required");
+      try {
+        let documentReference = {};
+        try {
+          //get the id of the DocumentReference from the appointment neta tag
+          let barsTag = appointment.meta.tag.find(k => k.display.startsWith("PDMDocumentReference"));
+          let documentReferenceId = barsTag.display.split("|").pop();
+          //retrieve the DocumentReference from PDM
+          console.log("getting the Document Reference from PDM");
+          documentReference = JSON.parse((await fhirSearchHelper.getResource( documentReferenceId, "DocumentReference", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)).body);
+          console.log("documentReference is " + JSON.stringify(documentReference));
+        } catch (error) {
+          console.log(error);
+          console.log("get Document Reference failed - searching instead");
+          //find the participant.actor of type Patient in the appointment
+          let patientReference = appointment.participant.find(k => k.actor.type == "Patient");
+          console.log("patient reference is " + JSON.stringify(patientReference));
+          let nhsNumber = patientReference.actor.identifier.value;
+          console.log("nhsNumber is " + nhsNumber);
+          console.log("searching  Document References from PDM");
+          let searchObject = {"patient:identifier" : "https://fhir.nhs.uk/Id/nhs-number|" + nhsNumber};
+
+          let documentReferences = JSON.parse((await fhirSearchHelper.searchResource(searchObject, "DocumentReference", odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)).body);
+          console.log("documentReferences are " + JSON.stringify(documentReferences));
+          //find the DocumentReference with the docRef.resource.identifier.find(identifier => identifier.system == "https://fhir.nhs.uk/Id/BaRS-Identifier").value == appointment.id
+          documentReference = documentReferences.entry.find(entry => entry.resource.identifier.find(identifier => identifier.system == "https://fhir.nhs.uk/Id/BaRS-Identifier").value == appointment.id).resource;
+          console.log("documentReference is " + JSON.stringify(documentReference));
+        }
+        //delete the DocumentReference in PDM
+        let documentReferenceId = documentReference.id;
+        let documentReferenceVersionId = documentReference.meta.versionId;
+        //(id, versionId, resourceType, headersJson, org, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)
+        let pdmResponse = await fhirDeleteHelper.deleteResource(documentReferenceId, documentReferenceVersionId, "DocumentReference", event.headers, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+        console.log("PDM response to deleting the Document Reference is " + pdmResponse);
+      } catch (error) {
+        console.log("deleting DocumentReference in PDM failed");
+        console.log(error);
+      }
+      try {
+        //find and update the ServiceRequest related to the appointment
+        console.log("finding and updating the ServiceRequest related to the appointment");
+        let serviceRequest = appointment.basedOn.find(ref => ref.type == "ServiceRequest");
+        let serviceRequestResource;
+        if (serviceRequest) {
+          console.log("updating ServiceRequest " + serviceRequest.reference);
+          serviceRequestResource = JSON.parse((await fhirSearchHelper.getResource(serviceRequest.reference.split("/").pop(), "ServiceRequest", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)).body);
+          //update the ServiceRequest status to draft
+          serviceRequestResource.status = "draft";
+          let fhirServerUpdateResponse = await fhirUpdateHelper.updateResource(serviceRequestResource, serviceRequestResource.resourceType, event.headers, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+          console.log("ServiceRequest update response is " + JSON.stringify(fhirServerUpdateResponse));
+        }
+        else {
+          console.log("No ServiceRequest found in appointment.basedOn");
+        }
+        if (serviceRequest) {
+           // find and update the outstanding Task related to the ServiceRequest
+          try {
+            let taskQueryStrings ={
+              "focus" : "ServiceRequest/" + serviceRequestResource.id
+            };
+            let taskPDMResponse =  await fhirSearchHelper.searchResource(taskQueryStrings, "Task", odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+            console.log("taskPDMResponse is " + JSON.stringify(taskPDMResponse));
+            //expect only a single entry
+            let taskPDMJson = JSON.parse(taskPDMResponse.body);
+            if (taskPDMJson.entry.length === 1) {
+              let task = taskPDMJson.entry[0].resource;
+              //update the task status to "ready"
+              task.status = "ready";
+              console.log("updated task is " + JSON.stringify(task));
+              let updatedResource = await updateResourceFhirServer(task, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+              console.log("updated pdm task is " + JSON.stringify(updatedResource));
+            } else {
+              console.log("unexpected number of tasks found: " + taskPDMResponse.total);
+            }
+          } catch (error) {
+            console.log(error.message);
+            console.log("failed to update the task in PDM --- but continuing anyway and logging for manual resolution");
+          }
+        }
+      } catch (error) {
+        console.log("updating the ServiceRequest in PDM failed");
+        console.log(error);
+        throw(error);
+      }
+        */
+      //return the resource
+      let healthlakeResponse = {
+        statusCode: 200,
+        "headers": {
+            "Content-Type": "application/fhir+json",
+            "X-Response-Source": "Healthlake",
+            "Location": "Appointment/" + appointment.id
+        },
+        body: JSON.stringify(appointment)
+      };
+      console.log(JSON.stringify(healthlakeResponse));
+      return healthlakeResponse;
+      
+    } catch (error) {
+    console.log("updating appointment failed");
+    console.log(error);
+  }
+
+
+}
+
+async function processReschedule(odscode, appointment, event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN, PDMRESOURCETOPICARN) {
+  console.log("Processing reschedule for appointment: " + JSON.stringify(appointment));
+  let transactionBundle = JSON.parse(JSON.stringify(transactionBundleTemplate));
+  transactionBundle.timestamp = new Date().toISOString();
+  //find old slot and set to free
+  let getResult = await fhirSearchHelper.getResource(appointment.id, "Appointment", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+  let originalAppointment = JSON.parse(getResult.body);
+  let originalSlotResource;
+  console.log("original appointment is " + JSON.stringify(originalAppointment));
+  try {
+    let originalSlot = originalAppointment.slot[0];
+    let originalSlotId = originalSlot.reference.split("/").pop();
+    let originalSlotGetResult = await fhirSearchHelper.getResource(originalSlotId, "Slot", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+    originalSlotResource = JSON.parse(originalSlotGetResult.body);
+    console.log("original slot is " + JSON.stringify(originalSlotResource));
+    originalSlotResource.status = "free";
+    let oldSlotTransactionEntry = {
+      "fullUrl": "urn:uuid:" + crypto.randomUUID(),
+      "request": {
+        "method": "PUT",
+        "ifMatch": "W/\"" + originalSlotResource.meta.versionId + "\"",
+        "url": originalSlotResource.resourceType + "/" + originalSlotResource.id
+      },
+      "resource": originalSlotResource
+    };
+    transactionBundle.entry.push(oldSlotTransactionEntry);
+    //let updatedOriginalSlot = await updateResourceFhirServer(originalSlotResource, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+  } catch (error) {
+    console.log("updating original slot failed");
+    console.log(error);
+  }
+  try {
+    //find new slot and set to busy
+    let newSlotId = appointment.slot[0].reference.split("/").pop();
+    let newSlotGetResult = await fhirSearchHelper.getResource( newSlotId, "Slot", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+    let newSlotResource = JSON.parse(newSlotGetResult.body);
+    console.log("new slot is " + JSON.stringify(newSlotResource));
+    //update the slot status
+    newSlotResource.status = "busy";
+    //let updatedSlot = await updateResourceFhirServer(newSlotResource, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+    //console.log("updated slot is " + JSON.stringify(updatedSlot));
+    let newSlotTransactionEntry = {
+      "fullUrl": "urn:uuid:" + crypto.randomUUID(),
+      "request": {
+        "method": "PUT",
+        "ifMatch": "W/\"" + newSlotResource.meta.versionId + "\"",
+        "url": newSlotResource.resourceType + "/" + newSlotResource.id
+      },
+      "resource": newSlotResource
+    };
+    transactionBundle.entry.push(newSlotTransactionEntry);
+  } catch (error) {
+    console.log("updating new slot failed");
+    console.log(error);
+  }
+  //update the appointment
+  console.log("updating appointment details in PDM");
+  let newApptTransactionEntry = {
+    "fullUrl": "urn:uuid:" + crypto.randomUUID(),
+    "request": {
+      "method": "PUT",
+      "ifMatch": "W/\"" + appointment.meta.versionId + "\"",
+      "url": appointment.resourceType + "/" + appointment.id
+    },
+    "resource": appointment
+  };
+  transactionBundle.entry.push(newApptTransactionEntry);
+  console.log("transaction bundle is " + JSON.stringify(transactionBundle));
+  //submit the transaction bundle to PDM
+  let transactionResponse = await fhirUpdateHelper.postBundle(transactionBundle, event.headers, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+  console.log("transactionResponse is " + JSON.stringify(transactionResponse));
+  let updatedResource = appointment;
+  //expect the 3rd entry in the bundle response to be the appointment
+  console.log("transactionResponse entries are " + transactionResponse.entry.length);
+  if (!transactionResponse.entry || transactionResponse.entry.length < 3) {
+    throw new Error("transaction bundle failed");
+  }
+  let appointmentResponse = transactionResponse.entry.find(entry => entry.response.location.indexOf(appointment.id) > -1);
+  if (!appointmentResponse || !appointmentResponse.response || !appointmentResponse.response.status || appointmentResponse.response.location.indexOf(appointment.id) === -1) {
+    throw new Error("updating appointment in transaction bundle failed - cannot find appointment response");
+  }
+  //expect the location to be of the form Appointment/{id}/_history/{vid}
+  updatedResource.meta.versionId = appointmentResponse.response.location.split("/").pop()
+  console.log("updated appointment is " + JSON.stringify(updatedResource));
+  //let updatedResource = await updateResourceFhirServer(appointment, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+  //console.log("updated appointment resource is " + JSON.stringify(updatedResource));
+  //if (!updatedResource.resourceType || updatedResource.resourceType !== "Appointment"){
+  //    throw new Error("updateResourceFhirServer failed");
+  //}
+  console.log("publishing event and original Slot Update to SNS topic " + APPTREBOOKTOPICARN);
+  try {
+    await snsCommonFunctionObjectInstance.publishEvent(JSON.stringify({
+      event: event,
+      appointment: updatedResource,
+      eventType: "AppointmentReschedule",
+      originalSlot: originalSlotResource
+    }), APPTREBOOKTOPICARN);
+  } catch (error) {
+    console.log("publishing event to SNS failed");
+    console.log(error);
+  }
+  ///remainder of logic now performed asynchronously by the AppointmentUpdateEventProcessor triggered by the SNS event
+  /*
+  /*
+  if (NRLENABLED) {
+    //try updating the BaRS/NRL DocumentReference
+    console.log("updating DocumentReference in BaRS");
+    try {
+      let documentReference = {};
+      try {
+        //get the id of the DocumentReference from the appointment neta tag
+        let barsTag = appointment.meta.tag.find(k => k.display.startsWith("DocumentReference"));
+        let documentReferenceId = barsTag.display.split("|").pop();
+        //retrieve the DocumentReference from BaRS
+        console.log("getting the Document Reference from BaRS");
+        documentReference = (await getDocumentRefBarsObject.getDocRef(documentReferenceId, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)).body;
+        console.log("documentReference is " + JSON.stringify(documentReference));
+      } catch (error) {
+        console.log(error);
+        console.log("get Document Reference failed - searching instead");
+        //find the participant.actor of type Patient in the appointment
+        let patientReference = appointment.participant.find(k => k.actor.type == "Patient");
+        console.log("patient reference is " + JSON.stringify(patientReference));
+        let nhsNumber = patientReference.actor.identifier.value;
+        console.log("nhsNumber is " + nhsNumber);
+        console.log("searching  Document References from BaRS");
+        let documentReferences = (await findDocumentRefBarsObject.findDocRef(nhsNumber, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)).body;
+        console.log("documentReferences are " + JSON.stringify(documentReferences));
+        //find the DocumentReference with the docRef.resource.identifier.find(identifier => identifier.system == "https://fhir.nhs.uk/Id/BaRS-Identifier").value == appointment.id
+        documentReference = documentReferences.entry.find(entry => entry.resource.identifier.find(identifier => identifier.system == "https://fhir.nhs.uk/Id/BaRS-Identifier").value == appointment.id).resource;
+        console.log("documentReference is " + JSON.stringify(documentReference));
+      }
+      //update the DocumentReference context period
+      let { start, end } = appointment;
+      documentReference.context.period.start = start;
+      documentReference.context.period.end = end;
+      //update the DocumentReference in BaRS
+      let barsResponse = await putDocumentRefBarsObject.updateDocRef(documentReference, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+      console.log("bars response to updating the Document Reference is " + JSON.stringify(barsResponse));
+    } catch (error) {
+      console.log("updating DocumentReference failed");
+      console.log(error);
+    }
+  }
+
+  console.log("Upodating the DocumentReference in PDM if required");
+  try {
+    let documentReference = {};
+    try {
+      //get the id of the DocumentReference from the appointment neta tag
+      let barsTag = appointment.meta.tag.find(k => k.display.startsWith("PDMDocumentReference"));
+      let documentReferenceId = barsTag.display.split("|").pop();
+      //retrieve the DocumentReference from PDM
+      console.log("getting the Document Reference from PDM");
+      documentReference = JSON.parse((await fhirSearchHelper.getResource( documentReferenceId, "DocumentReference", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)).body);
+      console.log("documentReference is " + JSON.stringify(documentReference));
+    } catch (error) {
+      console.log(error);
+      console.log("get Document Reference failed - searching instead");
+      //find the participant.actor of type Patient in the appointment
+      let patientReference = appointment.participant.find(k => k.actor.type == "Patient");
+      console.log("patient reference is " + JSON.stringify(patientReference));
+      let nhsNumber = patientReference.actor.identifier.value;
+      console.log("nhsNumber is " + nhsNumber);
+      console.log("searching  Document References from PDM");
+      let searchObject = {"patient:identifier" : "https://fhir.nhs.uk/Id/nhs-number|" + nhsNumber};
+
+      let documentReferences = JSON.parse((await fhirSearchHelper.searchResource(searchObject, "DocumentReference", odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)).body);
+      console.log("documentReferences are " + JSON.stringify(documentReferences));
+      //find the DocumentReference with the docRef.resource.identifier.find(identifier => identifier.system == "https://fhir.nhs.uk/Id/BaRS-Identifier").value == appointment.id
+      documentReference = documentReferences.entry.find(entry => entry.resource.identifier.find(identifier => identifier.system == "https://fhir.nhs.uk/Id/BaRS-Identifier").value == appointment.id).resource;
+      console.log("documentReference is " + JSON.stringify(documentReference));
+    }
+    //update the DocumentReference context period
+    let { start, end } = appointment;
+    documentReference.context.period.start = start;
+    documentReference.context.period.end = end;
+    //update the DocumentReference in PDM
+    let barsResponse = await updateResourceFhirServer(documentReference, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+    console.log("PDM response to updating the Document Reference is " + JSON.stringify(barsResponse));
+  } catch (error) {
+    console.log("updating DocumentReference in PDM failed");
+    console.log(error);
+  }
+  */
+  //return the resource
+  let healthlakeResponse = {
+    statusCode: 200,
+    "headers": {
+        "Content-Type": "application/fhir+json",
+        "X-Response-Source": "Healthlake",
+        "Location": "Appointment/" + appointment.id
+    },
+    body: JSON.stringify(appointment)
+  };
+  console.log(JSON.stringify(healthlakeResponse));
+  return healthlakeResponse;
+}
+
+export const handler = async (event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN, PDMRESOURCETOPICARN) => {
+  console.log(JSON.stringify(event));
+  //PUT handler for updating an appointment
+    try {
+      let odscode = "X26"; //hardcoded for the moment
+      //get the appointment from the event.body which may be base64 encoded
+      if (event.isBase64Encoded) {
+        event.body = Buffer.from(event.body, 'base64').toString('utf8');
+      }
+      let appointment = JSON.parse(event.body);
+      console.log("appointment to be updated is " + JSON.stringify(appointment));
+      //check if appointment status is now cancelled
+      if (appointment.status && appointment.status == "cancelled") {
+        return await processCancellation(odscode, appointment, event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN, PDMRESOURCETOPICARN);
+      }
+      else {
+        return await processReschedule(odscode, appointment, event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN, PDMRESOURCETOPICARN );
+      }
+
+    }
+    catch (error) {
+      console.log(error);
+      console.log("update Appointment failed");
+      let response = {
+        statusCode: 500,
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ "result": "update Appointment failed" })
+      }
+      return response;
+    }
+}

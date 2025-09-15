@@ -1,0 +1,26 @@
+{
+    "resourceType": "HealthcareService",
+    "id": "63bf8f0c-3902-4a2a-a4ec-3393d22ae658",
+    "meta": {
+      "profile": [
+        "http://hl7.org/fhir/StructureDefinition/HealthcareService",
+        "https://fhir.hl7.org.uk/StructureDefinition/UKCore-HealthcareService"
+      ]
+    },
+    "identifier": [
+      {
+        "system": "https://fhir.nhs.uk/Id/dos-service-id",
+        "value": "matthewbrown"
+      }
+    ],
+    "location": [
+      {
+        "identifier": {
+            "system" : "https://fhir.nhs.uk/Id/ods-organization-code",
+            "value" : "RX809"
+          },
+        "display": "Grantham Hospital Outpatients"
+      }
+    ],
+    "name": "Opthalmology Clinic"
+  }

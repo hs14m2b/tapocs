@@ -36,6 +36,11 @@
       "Default": "main",
       "Description": "The branchname to derive fqdn"
     },
+    "NRLENABLED": {
+      "Type": "String",
+      "Default": "false",
+      "Description": "Flag to indicate if NRL is enabled"
+    },
     "PROJECTNAME": {
       "Type": "String",
       "Default": "barspoc",
@@ -94,7 +99,8 @@
           "FEDOMAIN": { "Ref": "FEDOMAIN" },
           "APIENVIRONMENT": {"Ref": "APIENVIRONMENT"},
           "APIKNAMEPARAM": {"Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "apimkeyname"]]},
-          "APIKEYSECRET": {"Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "apimclientcertkey"]]}
+          "APIKEYSECRET": {"Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "apimclientcertkey"]]},
+          "NRLENABLED": { "Ref": "NRLENABLED" }
         }
       },
       "Timeout": 300
@@ -144,6 +150,14 @@
                             "ssm:GetParameter"
                         ],
                         "Resource": "*"
+                    },
+                    {
+                        "Sid": "KMSAccess",
+                        "Effect": "Allow",
+                        "Action": [
+                            "kms:*"
+                        ],
+                        "Resource": "*"
                     }
                 ]
             }
@@ -180,11 +194,74 @@
         }
       }
     },
+    "barspocKey":{
+      "Type" : "AWS::KMS::Key",
+      "Properties" : {
+          "BypassPolicyLockoutSafetyCheck" : false,
+          "Description" : "Key for managing encryption in AWS barspoc SNS topics etc",
+          "Enabled" : true,
+          "EnableKeyRotation" : true,
+          "KeyPolicy" : {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Action": "kms:*",
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":iam::", { "Ref": "AWS::AccountId" }, ":root"]]}
+                },
+                "Resource": "*"
+              },
+              {
+                "Principal": {
+                  "AWS": { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":iam::", { "Ref": "AWS::AccountId" }, ":root"]]},
+                  "Service": [
+                    { "Fn::Join": ["", ["logs.",{ "Ref": "AWS::URLSuffix" }]]},
+                    { "Fn::Join": ["", ["lambda.",{ "Ref": "AWS::URLSuffix" }]]},
+                    { "Fn::Join": ["", ["cloudtrail.",{ "Ref": "AWS::URLSuffix" }]]},
+                    { "Fn::Join": ["", ["sns.",{ "Ref": "AWS::URLSuffix" }]]},
+                    { "Fn::Join": ["", ["s3.",{ "Ref": "AWS::URLSuffix" }]]}
+                  ]
+                },
+                "Action": [
+                  "kms:CreateGrant", 
+                  "kms:Decrypt", 
+                  "kms:DescribeKey", 
+                  "kms:Encrypt", 
+                  "kms:GenerateDataKey*", 
+                  "kms:ReEncrypt*", 
+                  "kms:ListGrants"
+                ],
+                "Effect": "Allow",
+                "Resource": "*"
+              }
+            ]
+          },
+          "KeySpec" : "SYMMETRIC_DEFAULT",
+          "KeyUsage" : "ENCRYPT_DECRYPT",
+          "MultiRegion" : false,
+          "Origin" : "AWS_KMS",
+          "PendingWindowInDays" : 7,
+          "Tags" : [ {"Key": "shortcode", "Value": {"Ref": "SHORTCODE"}} ]
+        }
+    },
+    "barspocKeyAlias": {
+      "Type" : "AWS::KMS::Alias",
+      "Properties" : {
+          "AliasName" : "alias/barspoc",
+          "TargetKeyId" : {"Ref": "barspocKey"}
+        }
+    },
     "DefaultRouteFunction": {
       "Type": "AWS::Serverless::Function",
       "Properties": {
         "CodeUri": "barspocapilambdas.zip",
         "Description": "The lambda function that catches unexpected routes",
+        "Environment": {
+          "Variables":{
+            "PDMRESOURCETOPICARN": { "Ref": "PDMResourceTopic" }
+          }
+        },
         "Events": {
           "Api": {
             "Type": "HttpApi",
@@ -202,7 +279,7 @@
         },
         "Handler": "DefaultRouteFactory.handler",
         "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs18.x",
+        "Runtime": "nodejs20.x",
         "Timeout": 300
       },
       "DependsOn": ["barspocbeLambdaRole"]
@@ -217,7 +294,7 @@
             "Type": "HttpApi",
             "Properties": {
               "ApiId": { "Ref": "barsHttpApi" },
-              "Method": "ANY",
+              "Method": "GET",
               "Path": "/barspoc/FHIR/R4/Appointment/{appointmentid+}",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
@@ -239,7 +316,7 @@
         },
         "Handler": "AppointmentFactory.handler",
         "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs18.x",
+        "Runtime": "nodejs20.x",
         "Timeout": 300
       },
       "DependsOn": ["barspocbeLambdaRole"]
@@ -254,7 +331,7 @@
             "Type": "HttpApi",
             "Properties": {
               "ApiId": { "Ref": "barsHttpApi" },
-              "Method": "ANY",
+              "Method": "GET",
               "Path": "/barspoc/FHIR/R4/Appointment",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
@@ -264,7 +341,7 @@
             "Type": "HttpApi",
             "Properties": {
               "ApiId": { "Ref": "barsHttpApi" },
-              "Method": "ANY",
+              "Method": "GET",
               "Path": "/barspoc/fhir/r4/Appointment",
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
@@ -276,7 +353,316 @@
         },
         "Handler": "AppointmentSearchFactory.handler",
         "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs18.x",
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["barspocbeLambdaRole"]
+    },
+    "AppointmentCreateFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "barspocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint to create Appointment resources",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "POST",
+              "Path": "/barspoc/FHIR/R4/Appointment",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiLowerCase": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "POST",
+              "Path": "/barspoc/fhir/r4/Appointment",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-AppointmentCreateFunction"]]
+        },
+        "Handler": "AppointmentCreateFactory.handler",
+        "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["barspocbeLambdaRole"]
+    },
+    "AppointmentUpdateFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "barspocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint to update Appointment resources",
+        "Environment": {
+          "Variables":{
+            "APPTREBOOKTOPICARN": { "Ref": "AppontmentRebookTopic" },
+            "PDMRESOURCETOPICARN": { "Ref": "PDMResourceTopic" }
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "PUT",
+              "Path": "/barspoc/FHIR/R4/Appointment/{appointmentid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiLowerCase": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "PUT",
+              "Path": "/barspoc/fhir/r4/Appointment/{appointmentid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-AppointmentUpdateFunction"]]
+        },
+        "Handler": "AppointmentUpdateFactory.handler",
+        "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["barspocbeLambdaRole"]
+    },
+    "AppontmentRebookTopic": {
+      "Type" : "AWS::SNS::Topic",
+      "Properties" : {
+          "DisplayName" : "Topic for Appointment Rebook events to allow background processing",
+          "FifoTopic" : false,
+          "KmsMasterKeyId" : {"Ref" : "barspocKey"},
+          "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }],
+          "TopicName" : {"Fn::Join": ["-", [{ "Ref": "PROJECTNAME" },{ "Ref": "BRANCHNAME" }, "rebookevents"]]}
+      }
+    },
+    "AppointmentUpdateEventFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "barspocapilambdas.zip",
+        "Description": "The lambda function that receives SNS triggered events to process Appointment updates that can be processed in the background",
+        "Environment": {
+          "Variables":{
+            "APPTREBOOKTOPICARN": { "Ref": "AppontmentRebookTopic" }
+          }
+        },
+        "Events": {
+          "AppointmentUpdateSNSTrigger":{
+            "Type": "SNS",
+            "Properties": {
+              "Topic": {"Ref": "AppontmentRebookTopic"}
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-AppointmentUpdateEventFunction"]]
+        },
+        "Handler": "AppointmentUpdateEventFactory.handler",
+        "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["barspocbeLambdaRole"]
+    },
+    "ServiceRequestFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "barspocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint for ServiceRequest resources",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "GET",
+              "Path": "/barspoc/FHIR/R4/ServiceRequest/{servicerequestid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiLowerCase": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "ANY",
+              "Path": "/barspoc/fhir/r4/ServiceRequest/{servicerequestid+}",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-ServiceRequestFunction"]]
+        },
+        "Handler": "ServiceRequestFactory.handler",
+        "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["barspocbeLambdaRole"]
+    },
+    "PDMResourceTopic": {
+      "Type" : "AWS::SNS::Topic",
+      "Properties" : {
+          "DisplayName" : "Topic for PDM resources to be created or updated via background processing",
+          "FifoTopic" : false,
+          "KmsMasterKeyId" : {"Ref" : "barspocKey"},
+          "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }],
+          "TopicName" : {"Fn::Join": ["-", [{ "Ref": "PROJECTNAME" },{ "Ref": "BRANCHNAME" }, "pdmresources"]]}
+      }
+    },
+    "PDMResourceEventFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "barspocapilambdas.zip",
+        "Description": "The lambda function that receives SNS triggered events to process Create, Update or Deletion of PDM resources in the background",
+        "Environment": {
+          "Variables":{
+            "PDMRESOURCETOPICARN": { "Ref": "PDMResourceTopic" }
+          }
+        },
+        "Events": {
+          "PDMResourceSNSTrigger":{
+            "Type": "SNS",
+            "Properties": {
+              "Topic": {"Ref": "PDMResourceTopic"}
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-PDMResourceEventFunction"]]
+        },
+        "Handler": "PDMResourceEventFactory.handler",
+        "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["barspocbeLambdaRole"]
+    },
+    "ServiceRequestCreateFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "barspocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint to create ServiceRequest resources",
+        "Environment": {
+          "Variables":{
+            "PDMRESOURCETOPICARN": { "Ref": "PDMResourceTopic" }
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "POST",
+              "Path": "/barspoc/FHIR/R4/process-message",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiLowerCase": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "POST",
+              "Path": "/barspoc/fhir/r4/process-message",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-ServiceRequestCreateFunction"]]
+        },
+        "Handler": "ServiceRequestCreateFactory.handler",
+        "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["barspocbeLambdaRole"]
+    },
+    "ServiceRequestSearchFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "barspocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint to search ServiceRequest resources",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "GET",
+              "Path": "/barspoc/FHIR/R4/ServiceRequest",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiLowerCase": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "GET",
+              "Path": "/barspoc/fhir/r4/ServiceRequest",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-ServiceRequestSearchFunction"]]
+        },
+        "Handler": "ServiceRequestSearchFactory.handler",
+        "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["barspocbeLambdaRole"]
+    },
+    "SlotSearchFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "barspocapilambdas.zip",
+        "Description": "The lambda function that acts as a dummy FHIR endpoint for Slot resources search",
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "GET",
+              "Path": "/barspoc/FHIR/R4/Slot",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "ApiLowerCase": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "barsHttpApi" },
+              "Method": "GET",
+              "Path": "/barspoc/fhir/r4/Slot",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-SlotSearchFunction"]]
+        },
+        "Handler": "SlotSearchFactory.handler",
+        "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
         "Timeout": 300
       },
       "DependsOn": ["barspocbeLambdaRole"]

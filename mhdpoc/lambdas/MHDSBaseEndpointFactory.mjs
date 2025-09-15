@@ -1,6 +1,6 @@
 import { sendDocRef } from './post_document_ref.mjs';
-import { postResource } from './post_resource_healthlake.mjs'
-import { putResource } from './put_resource_healthlake.mjs'
+import { postResource } from './post_resource_pdm.mjs'
+import { putResource } from './put_resource_pdm.mjs'
 import { gunzipSync } from 'zlib';
 import { handler as processor} from './MHDSBaseEndpointProcessor.mjs';
 

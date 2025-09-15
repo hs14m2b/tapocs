@@ -1,0 +1,63 @@
+---
+title: BaRS Vaccination Appointment Booking Sequence
+description: Sequence diagram showing the process of determining eligibility for vaccinations and booking appointments.
+author: Matthew Brown
+date: 2025-08-07
+tags: [BaRS, Vaccination, Appointment Booking, Sequence Diagram]
+displayMode: sequence
+config:
+  theme: default
+  look: handdrawn
+---
+
+
+sequenceDiagram
+    actor VP as Vaccination Provider
+    actor P as Patient
+    participant NHSA as NHS App
+    box Manage Your Appt
+    participant MYAC as Manage Your Appt - Clinic Management
+    participant MYASD as Manage Your Appt - Service Discovery
+    participant MYAB as Manage Your Appt - BaRS Booking
+    end
+    VP->>+MYAC: Create Vaccination Clinic and Slots
+    MYAC-->>-VP: Confirm Clinic and Slots Created
+    note over MYAC: MYAC manages the clinic details and available slots<br />for vaccination
+    note over MYAB: MYAB handles the booking process for patients<br />using the BaRS system
+    P->>NHSA: Launches NHS App
+    activate NHSA
+    P->>NHSA: SSO to "Manage Your Appt - Service Discovery"
+    NHSA->>P: SSO
+    P->>+MYASD: SSO to "Manage Your Appt - Service Discovery"
+    MYASD->>P: Display vaccination eligibility questions
+    P->>MYASD: Answer vaccination eligibility questions
+    MYASD->>P: Display vaccination eligibility results
+    alt Eligible for Vaccination
+      P->>MYASD: Enter search criteria for vaccination clinics
+      MYASD->>+MYAC: Query Vaccination Clinics
+      MYAC-->>-MYASD: Return list of available clinics
+      MYASD->>P: Display list of available clinics
+      P->>MYASD: Select clinic
+      MYASD->>+MYAB: Create ServiceRequest to Clinic for Vaccination Appointment
+      MYAB-->>-MYASD: Return ServiceRequest details (inc HealthcareService)
+      MYASD->>-P: Redirect to generic NHS App Booking Management
+      P->>NHSA: Redirect to generic NHS App Booking Management
+      critical BaRS Booking Process
+        NHSA->>+MYAB: Query for available slots for HealthcareService
+        MYAB->>MYAC: Query Slots for selected clinic
+        MYAC-->>MYAB: Return available slots
+        MYAB-->>NHSA: Return available slots
+        P->>NHSA: Choose Appointment Slot
+        NHSA->>MYAB: Create Appointment with Slot Details
+        MYAB->>MYAC: Create Appointment with Slot Details
+        MYAC-->>MYAC: Check ServiceRequest for patient eligibility
+        MYAC-->>MYAB: Confirm Appointment Booked
+        MYAB-->>-NHSA: Confirm Appointment Booked
+      end
+      NHSA-->>P: Show Appointment Confirmation
+    else Not Eligible for Vaccination
+      break Not Eligible for Vaccination
+        MYASD->>P: Display message indicating ineligibility for vaccination
+      end
+    end
+    deactivate NHSA

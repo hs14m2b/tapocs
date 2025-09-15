@@ -27,6 +27,8 @@ curl -v https://t6tc3zwi42.execute-api.eu-west-2.amazonaws.com/barspoc/fhir/r4/A
 TLSMA
 
 curl -vk https://BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk/barspoc/FHIR/R4/Appointment?patient%3Aidentifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C6700028191 --cert ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.crt --key ../certs/testclient/internal-dev.proxy.nirpoc.nhsesolarch.nhs.uk.key
+curl -vk https://BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk/barspoc/FHIR/R4/Appointment?patient%3Aidentifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C6700028191 --cert ../certs/mhdtest001.key.pub --key ../certs/mhdtest001.key
+curl -vk https://BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk/barspoc/FHIR/R4/Appointment?patient%3Aidentifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9661034524 --cert ../certs/testclient/diagnosticRepProxy.crt --key ../certs/testclient/diagnosticRepProxy.key
 
 #with BaRS certificate
 curl -vk https://bars-int-x26.tsassolarch.thirdparty.nhs.uk/barspoc/FHIR/R4/Appointment/4a3836f5-2d42-4d3e-87c1-680173b7fa5c --cert ../certs/BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.crt --key ../certs/BaRS-INT-X26.TSASSolArch.thirdparty.nhs.uk.key
@@ -64,3 +66,42 @@ https://github.com/NHSDigital/NRLF/tree/develop/resources/fhir
 URL to create API-M client apps in the non-prod instance (e.g. internal-dev etc)
 https://dos-internal.ptl.api.platform.nhs.uk/MyApplications
 https://apigee.com/organizations/nhsd-nonprod/apps
+
+Instructions for NHS login mock in INT environment.
+https://digital.nhs.uk/developer/guides-and-documentation/security-and-authorisation/testing-with-our-mock-authorisation-service-using-nhs-login---separate-authentication
+
+Getting client id
+curl --location --request GET 'https://int.api.service.nhs.uk/mock-jwks/keycloak-client-credentials' --header 'apikey: JE4ESpy5NzFyG5n4U6pKqk8HGXeRjLhZ'
+this returns
+{
+  "cis2": {"client_id":"pytest-nhsd-apim","client_secret":"8af96060-a045-4ccf-9069-aa70cef39a6f","redirect_uri":"https://example.org"}, 
+  "nhs-login": {"client_id":"pytest-nhsd-apim","client_secret":"8332c425-d69e-46ef-9241-69998fa81018","redirect_uri":"https://example.org"} }
+
+Launching authentication
+client_id = pytest-nhsd-apim
+client_secret = 8332c425-d69e-46ef-9241-69998fa81018
+redirect_uri = https://example.org
+
+https://identity.ptl.api.platform.nhs.uk/realms/NHS-Login-mock-int/protocol/openid-connect/auth?scope=openid+profile+email+phone&response_type=code&client_id=pytest-nhsd-apim&redirect_uri=https://example.org
+
+see https://nhsd-confluence.digital.nhs.uk/spaces/APM/pages/373753197/Testing+with+mock+auth#Testingwithmockauth-NHSLogintestusers
+for usernames
+example username is 9912003071
+
+CODE=da357217-c5e5-49a1-b1e1-a963f6d98ca0.58b0daf6-69bd-4fd9-9d10-7904a462dfc0.a22889a8-598c-4df3-84d7-aef718490095
+token endpoint
+curl --location --request POST 'https://identity.ptl.api.platform.nhs.uk/realms/NHS-Login-mock-int/protocol/openid-connect/token'  --header 'Content-Type: application/x-www-form-urlencoded'  --data-urlencode 'scope=openid profile email phone' --data-urlencode 'grant_type=authorization_code'  --data-urlencode 'code=1f70bc6d-ebbd-444c-bb8b-cf65057530c3.58b0daf6-69bd-4fd9-9d10-7904a462dfc0.a22889a8-598c-4df3-84d7-aef718490095'  --data-urlencode 'redirect_uri=https://example.org' --data-urlencode 'client_id=pytest-nhsd-apim' --data-urlencode 'client_secret=8332c425-d69e-46ef-9241-69998fa81018'
+
+userinfo endpoint
+curl --location --request GET 'https://identity.ptl.api.platform.nhs.uk/realms/NHS-Login-mock-int/protocol/openid-connect/userinfo' --header 'Authorization: Bearer eyJhbGciOiJSUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJCODZ6R3JmY29sb08xM3JuaktZRHlBSmNxajJpWkFNclM0OWp5bGVMMEZvIn0.eyJleHAiOjE3NDAxNzI5NjEsImlhdCI6MTc0MDE3MjY2MSwiYXV0aF90aW1lIjoxNzQwMTcyNjI1LCJqdGkiOiI0Yzc4MGI5OC04ZTVlLTQxMTUtYmE4Yi1mYTZhZDExNDRjMGUiLCJpc3MiOiJodHRwczovL2lkZW50aXR5LnB0bC5hcGkucGxhdGZvcm0ubmhzLnVrL3JlYWxtcy9OSFMtTG9naW4tbW9jay1pbnQiLCJzdWIiOiI5YzJiMzVjNi0zMzZkLTQwZGMtOTA4Yi03ZmJkYTJmYmJlOWEiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJweXRlc3QtbmhzZC1hcGltIiwic2Vzc2lvbl9zdGF0ZSI6IjZmZDE2NTczLTQxZmYtNGQ0Zi04NTFkLTZkZDAwYzIxODJiNyIsInNjb3BlIjoicHJvZmlsZSBvcGVuaWQgcGhvbmUgbmhzX251bWJlciBlbWFpbCIsInNpZCI6IjZmZDE2NTczLTQxZmYtNGQ0Zi04NTFkLTZkZDAwYzIxODJiNyIsImlkX3N0YXR1cyI6InZlcmlmaWVkIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm9kc19jb2RlIjoiUkVQQyIsImlkZW50aXR5X3Byb29maW5nX2xldmVsIjoiUDkiLCJ2dG0iOiJodHRwczovL2F1dGguc2FuZHBpdC5zaWduaW4ubmhzLnVrL3RydXN0bWFyay9hdXRoLnNhbmRwaXQuc2lnbmluLm5ocy51ayJ9.J6pY0wTCiSThPBhsuZRwAo2wu3GCewoEhJ-8-1iMau9lO8G8qiGi9ApOkRFxy8Ct13d6HuuEXPpipXN0kxD-SnqWOEMPXG9damMxn5e0CzrlPa_LByQy-owrVW6Twjg5RjC7uWhTtu2ccSDa2VSWZjzOqxZTdH9QVzq05CVxHsCcOje_SkyeGIN9ZndTBnXVT4W0zKOzW7nvhstBLNpMRS3-KctKWfpVQvaGI2D0wIBji5G4g2lwCAd9IlYqNOvV1NLxem4rkVeh9wIY6BzCm5OxdYHD9ArsNo03OUtj9PYCMW3B5_A6J_dXGk8tcFEOXFTBpQEyfuJIShi_VDUgDi2nrVQN5CtGPVZGCtintKY9HccQEMQZlQC7sQWXhvz5hyv6j9DFBgztb3zYD5biblYL7WN2IaOHo0bo2KEyk5P4TDKWHSHVnlXTF7jJ4ycfzUaILyZR5axUU9OX819eQNHNVANq0NVRN982aep1bW5lwXFnqvY25yZkBtETTloZlfBPsjDsJw06SoRyGoEpSN_x_bBzUhbBGWgCCij169F1_Q9DTONcqLTFDqZ8rpWLHoS-CRjfBrGwtbyGy39Mw5eLXVRSxC0B5B6ipGJeoIW5FdVVlXXCoAPIjB6nWkLRkk8XR-HonSMYEF8mqisGYbnuwQnIWLCqXH5moGjJaXs'
+
+URL for mock UI - https://main-mabr8-barspocui-nextjsfe.nhsdta.com
+
+Wayfinder definition for appointment on simplifier
+https://simplifier.net/wayfinder-patient-care-aggregator/wayfinderukcoreappointment
+
+BaRS definition is
+https://simplifier.net/HL7FHIRUKCoreR4/UKCore-Appointment
+
+see also
+https://github.com/NHSDigital/nhse-epr-integration

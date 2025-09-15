@@ -23,15 +23,12 @@ const HEALTHLAKEPATH = "/datastore/8843f629b43390e9c1d633ffb88f04a5/r4/";
 
 const searchResource = async (querystringValues, resourceType, org, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM) =>
   {
-    let nrlEnvironment = nrlEnvironmentMapping(APIENVIRONMENT);
     let queryStrings = new URLSearchParams(querystringValues).toString();
+    let url = HTTPS + HEALTHLAKEFQDN + HEALTHLAKEPATH + resourceType + "?" + queryStrings;
     let XRequestID = uuidv4();
     // request option
     let options = {
-      host: HEALTHLAKEFQDN,
-      port: 443,
       method: 'GET',
-      path: HEALTHLAKEPATH + resourceType + "?" + queryStrings,
       rejectUnauthorized: false,
       headers: {
         'Authorization': 'Bearer THISISTHEOKEN',
@@ -39,65 +36,38 @@ const searchResource = async (querystringValues, resourceType, org, APIENVIRONME
       }
     };
 
-    //disable always get an access token...for now
-    if (false){
-      let currentTime = Date.now();
-      //get the apikey key and key name and access token if not present or last retrieved more than 5 minutes ago
-      if (accessToken=="" || !APIKEYKEY || !APIKEYNAME || ((currentTime - apikeykeyLastRetrieved) > 300000)){
-        //clear the current accessToken
-        accessToken = "";
-        console.log("retrieving certificates from secrets manager");
-        APIKEYKEY = await getSecretValue(APIKEYSECRET);
-        console.log("retrieving API Key Name from Parameter Store");
-        APIKEYNAME = await getParamValue(APIKNAMEPARAM);
-        //set key last retrieve to now
-        apikeykeyLastRetrieved = currentTime;
-        //get api access token
-        //APIKEYKEY is in format KID|KEY
-        let kid = APIKEYKEY.substr(0, APIKEYKEY.indexOf("|"));
-        let key = APIKEYKEY.substr(APIKEYKEY.indexOf("|")+1)
-        let signedJwt = createSignedJwtForAuth(APIKEYNAME, kid, key, APIENVIRONMENT + ".api.service.nhs.uk", "/oauth2/token")
-        let tokenResponse = await getOAuth2AccessToken(signedJwt, APIENVIRONMENT + ".api.service.nhs.uk", "/oauth2/token");
-        //load into JSON object
-        let tokenResponseJson = JSON.parse(tokenResponse);
-        accessToken = tokenResponseJson.access_token;
-      }
-      //add access token to headers
-      options.headers["Authorization"] = "Bearer " + accessToken;
-    }
-
     console.log("request options are  " + JSON.stringify(options));
-    return new Promise(function (resolve, reject) {
-        // request object
-        var req = https.request(options, function (res) {
-            var result = '';
-            console.log("HTTP status code: " + res.statusCode);
-            res.on('data', function (chunk) {
-                result += chunk;
-            });
-            res.on('end', function () {
-                console.log(result);
-                let response = {
-                  "status": res.statusCode,
-                  "headers": res.headers,
-                  "body": result
-                }
-                resolve(response);
-            });
-            res.on('error', function (err) {
-                console.log(err);
-                reject(err);
-            })
-        });
+    console.log("url is " + url);
 
-        // req error
-        req.on('error', function (err) {
-          console.log(err);
-        });
-
-        //send request
-        req.end();
-    });
+    let healthlakeResponse = {
+      "status": 0,
+      "headers": {},
+      "body": {}
+    };
+    let fetchResponse = await fetch(url, options);
+    if (!fetchResponse.ok) {
+      //get the body of the response
+      let responseText = await fetchResponse.text();
+      console.log(responseText);
+      healthlakeResponse['status'] = fetchResponse.status;
+      healthlakeResponse['body'] = responseText;
+      return healthlakeResponse;
+      //throw new Error(`Response status: ${fetchResponse.status}`);
+    }
+    else {  
+      console.log(fetchResponse.status);
+      healthlakeResponse['status'] = fetchResponse.status;
+      // Display the header key/value pairs
+      for (const pair of fetchResponse.headers.entries()) {
+        //console.log(`${pair[0]}: ${pair[1]}`);
+        healthlakeResponse['headers'][pair[0]] = pair[1];
+      }
+      let responseJson = await fetchResponse.text();
+      console.log(JSON.stringify(responseJson, null, 4));
+      healthlakeResponse['body'] = responseJson;
+      //return the created resource
+      return healthlakeResponse;
+    }
   }
 
 function delay(time) {
@@ -142,12 +112,10 @@ const searchResourceWithRetry = async (maxDuration, querystringValues, resourceT
 const getResource = async (id, resourceType, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM) =>
   {
     let XRequestID = uuidv4();
+    let url = HTTPS + HEALTHLAKEFQDN + HEALTHLAKEPATH + resourceType + "/" + id;
     // request option
     let options = {
-      host: HEALTHLAKEFQDN,
-      port: 443,
       method: 'GET',
-      path: HEALTHLAKEPATH + resourceType + "/" + id,
       rejectUnauthorized: false,
       headers: {
         'Authorization': 'Bearer THISISTHEOKEN',
@@ -155,66 +123,40 @@ const getResource = async (id, resourceType, APIENVIRONMENT, APIKEYSECRET, APIKN
       }
     };
 
-    //disabling "always get an access token..." for now
-    if (false){
-      let currentTime = Date.now();
-      //get the apikey key and key name and access token if not present or last retrieved more than 5 minutes ago
-      if (accessToken=="" || !APIKEYKEY || !APIKEYNAME || ((currentTime - apikeykeyLastRetrieved) > 300000)){
-        //clear the current accessToken
-        accessToken = "";
-        console.log("retrieving certificates from secrets manager");
-        APIKEYKEY = await getSecretValue(APIKEYSECRET);
-        console.log("retrieving API Key Name from Parameter Store");
-        APIKEYNAME = await getParamValue(APIKNAMEPARAM);
-        //set key last retrieve to now
-        apikeykeyLastRetrieved = currentTime;
-        //get api access token
-        //APIKEYKEY is in format KID|KEY
-        let kid = APIKEYKEY.substr(0, APIKEYKEY.indexOf("|"));
-        let key = APIKEYKEY.substr(APIKEYKEY.indexOf("|")+1)
-        let signedJwt = createSignedJwtForAuth(APIKEYNAME, kid, key, APIENVIRONMENT + ".api.service.nhs.uk", "/oauth2/token")
-        let tokenResponse = await getOAuth2AccessToken(signedJwt, APIENVIRONMENT + ".api.service.nhs.uk", "/oauth2/token");
-        //load into JSON object
-        let tokenResponseJson = JSON.parse(tokenResponse);
-        accessToken = tokenResponseJson.access_token;
-      }
-      //add access token to headers
-      options.headers["Authorization"] = "Bearer " + accessToken;
-    }
-
     console.log("request options are  " + JSON.stringify(options));
-    return new Promise(function (resolve, reject) {
-        // request object
-        var req = https.request(options, function (res) {
-            var result = '';
-            console.log("HTTP status code: " + res.statusCode);
-            res.on('data', function (chunk) {
-                result += chunk;
-            });
-            res.on('end', function () {
-                console.log(result);
-                let response = {
-                  "status": res.statusCode,
-                  "headers": res.headers,
-                  "body": result
-                }
-                resolve(response);
-            });
-            res.on('error', function (err) {
-                console.log(err);
-                reject(err);
-            })
-        });
+    console.log("url is " + url);
 
-        // req error
-        req.on('error', function (err) {
-          console.log(err);
-        });
-
-        //send request
-        req.end();
-    });
+    let healthlakeResponse = {
+      "status": 0,
+      "headers": {},
+      "body": {}
+    };
+    let fetchResponse = await fetch(url, options);
+    if (!fetchResponse.ok) {
+      //get the body of the response
+      let responseText = await fetchResponse.text();
+      console.log(responseText);
+      healthlakeResponse['status'] = fetchResponse.status;
+      healthlakeResponse['body'] = responseText;
+      return healthlakeResponse;
+      //throw new Error(`Response status: ${fetchResponse.status}`);
+    }
+    else {  
+      console.log(fetchResponse.status);
+      healthlakeResponse['status'] = fetchResponse.status;
+      // Display the header key/value pairs
+      for (const pair of fetchResponse.headers.entries()) {
+        //console.log(`${pair[0]}: ${pair[1]}`);
+        healthlakeResponse['headers'][pair[0]] = pair[1];
+      }
+      let responseJson = await fetchResponse.text();
+      console.log(JSON.stringify(responseJson, null, 4));
+      healthlakeResponse['body'] = responseJson;
+      //return the created resource
+      return healthlakeResponse;
+    }
 }
+
 export class search_resource_healthlake{
   constructor(){
     this.searchResource = searchResource;

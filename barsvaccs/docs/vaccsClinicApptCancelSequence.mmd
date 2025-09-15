@@ -1,0 +1,60 @@
+---
+title: Vaccs Clinic Cancel and Patient Re-Booking Sequence
+description: Sequence diagram showing the process of clinic canceling a vaccination appointment and patient re-booking.
+author: Matthew Brown
+date: 2025-08-07
+tags: [BaRS, Vaccination, Appointment Booking, Sequence Diagram]
+displayMode: sequence
+config:
+  theme: default
+  look: handdrawn
+---
+
+
+sequenceDiagram
+    actor VP as Vaccination Provider
+    actor P as Patient
+    participant NHSA as NHS App
+    box Manage Your Appt
+    participant MYAC as Manage Your Appt - Clinic Management
+    participant MYASD as Manage Your Appt - Service Discovery
+    participant MYAB as Manage Your Appt - BaRS Booking
+    end
+    participant NHSN as NHS Notify
+    participant T as Tasking Service (PDM)
+    VP->>+MYAC: Cancel Vaccination Appt for patient
+    par confirm cancellation
+      MYAC-->>-VP: Confirm Appointment Cancelled
+    and notify patient
+      MYAC->>NHSN: Notify Patient of Cancellation
+      NHSN-->>MYAC: Confirmation of Notification Sent
+    and notify tasking service
+      MYAC->>T: Create Task for Patient to Re-Book Appointment
+      T-->>MYAC: Return Task id
+    and reset patient eligibility (ServiceRequest)
+      MYAC->>MYAC: Reset ServiceRequest for patient
+    end
+    NHSN->>NHSA: Notify Patient of Cancellation
+    NHSA->>P: Display Notification of Cancellation
+    P->>NHSA: Launches NHS App
+    activate NHSA
+    NHSA<<->>T: Reads and shows patient outstanding tasks
+    P->>NHSA: Clicks "Book Vaccine Appt" generated from Task
+    critical BaRS Booking Process
+      NHSA->>+MYAB: Query for available slots for HealthcareService
+      MYAB->>MYAC: Query Slots for selected clinic
+      MYAC-->>MYAB: Return available slots
+      MYAB-->>NHSA: Return available slots
+      P->>NHSA: Choose Appointment Slot
+      NHSA->>MYAB: Create Appointment with Slot Details
+      MYAB->>MYAC: Create Appointment with Slot Details
+      MYAC-->>MYAC: Check ServiceRequest for patient eligibility
+      par confirm appointment booking
+        MYAC-->>MYAB: Confirm Appointment Booked
+      and complete task
+        MYAC--)T: Mark Task as Complete
+      end
+      MYAB-->>-NHSA: Confirm Appointment Booked
+    end
+    NHSA-->>P: Show Appointment Confirmation
+

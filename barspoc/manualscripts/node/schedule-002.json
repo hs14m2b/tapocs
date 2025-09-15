@@ -1,0 +1,62 @@
+{
+    "resourceType": "Schedule",
+    "id": "5f172cd8-c2d1-309b-9f0b-07227348610f",
+    "meta": {
+      "lastUpdated": "2021-10-11T15:01:30+00:00",
+      "profile": [
+        "http://hl7.org/fhir/StructureDefinition/Schedule",
+        "https://fhir.hl7.org.uk/StructureDefinition/UKCore-Schedule"
+      ]
+    },
+    "identifier": [
+      {
+        "system": "https://system.supplier.co.uk/Diary/id",
+        "value": "8622dfdb-dc6a-47b6-b3a7-2eb2829db287"
+      },
+      {
+        "system": "https://fhir.nhs.uk/Id/dos-service-id",
+        "value": "matthewbrown"
+      }
+    ],
+    "serviceCategory": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/service-category",
+            "code": "7",
+            "display": "Community Health Care"
+          }
+        ]
+      }
+    ],
+    "serviceType": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/service-type",
+            "code": "57",
+            "display": "Immunization"
+          }
+        ]
+      }
+    ],
+    "actor": [
+        {
+            "reference": "HealthcareService/9f00342d-70de-38d5-9176-af97f1ba1b3d",
+            "type": "HealthcareService",
+            "display": "Vaccination Clinic - RSV, Influenza and COVID-19",
+            "identifier": {
+                    "system": "https://fhir.nhs.uk/Id/dos-service-id",
+                    "value": "matthewbrown"
+            }
+        },
+        {
+          "type": "Location",
+          "identifier": {
+              "system" : "https://fhir.nhs.uk/Id/ods-organization-code",
+              "value" : "FHV40"
+            },
+          "display": "Lloyds Pharmacy - 123 High Street, Leeds, LS1 1AA"
+        }
+    ]
+  }

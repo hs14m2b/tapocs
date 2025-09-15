@@ -14,7 +14,7 @@ try {
   console.log('https support is disabled!');
 }
 let newId = uuidv4();
-let nhsNumber = "4409815415";
+let nhsNumber = "6700028191";//"4409815415";
 let nhsNumberSystem = "https://fhir.nhs.uk/Id/nhs-number";
 
 

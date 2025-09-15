@@ -1,0 +1,24 @@
+{
+    "resourceType": "Patient",
+    "identifier": [
+      {
+        "system": "https://fhir.nhs.uk/Id/nhs-number",
+        "value": "6700028191",
+        "extension": [
+          {
+            "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-NHSNumberVerificationStatus",
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "https://fhir.hl7.org.uk/CodeSystem/UKCore-NHSNumberVerificationStatus",
+                  "version": "1.0.0",
+                  "code": "01",
+                  "display": "Number present and verified"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }

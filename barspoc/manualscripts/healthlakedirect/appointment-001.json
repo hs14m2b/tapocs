@@ -1,0 +1,71 @@
+{
+  "resourceType": "Appointment",
+  "id": "4a3836f5-2d42-4d3e-87c1-680173b7fa5c",
+  "status": "booked",
+  "extension": [
+  {
+  "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Portal-Link",
+  "valueUrl": "https://my.portal.com/Appointment/4a3836f5-2d42-4d3e-87c1-680173b7fa5c"
+  },
+  {
+  "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Client-id",
+  "valueCode": "myportal-01"
+  },
+  {
+  "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Appointment-Status",
+  "valueCoding": {
+  "system": "http://hl7.org/fhir/appointmentstatus",
+  "code": "booked"
+  }
+  },
+  {
+  "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Consultation-Medium",
+  "valueCode": "FACE_TO_FACE"
+  },
+  {
+  "url": "https://fhir.nhs.uk/StructureDefinition/Extension-Encounter-Class",
+  "valueCode": "outpatient"
+  }
+  ],
+  "description": "Dermatology",
+  "start": "2026-04-10T09:05:00.000Z",
+  "end": "2026-04-10T10:05:00.000Z",
+  "participant": [
+    {
+    "actor": {
+      "type": "Patient",
+      "identifier": {
+        "system": "https://fhir.nhs.uk/Id/nhs-number",
+        "value": "6700028191"
+      }
+    },
+    "status": "accepted"
+    },
+    {
+      "actor": {
+        "type": "Location",
+        "identifier": {
+          "system" : "https://fhir.nhs.uk/Id/ods-organization-code",
+          "value" : "RX809"
+      },
+        "display": "Grantham Hospital Outpatients"
+      },
+      "status": "accepted"
+    },
+    {
+      "actor": {
+        "type": "HealthcareService",
+        "reference": "HealthcareService/63bf8f0c-3902-4a2a-a4ec-3393d22ae658",
+        "display": "Opthalmology Clinic",
+        "identifier": {
+          "system": "https://fhir.nhs.uk/Id/dos-service-id",
+          "value": "matthewbrown"
+        }
+      },
+      "status": "accepted"
+    }
+  ],
+  "slot": [{
+    "reference": "Slot/4a3836f5-2d42-4d3e-87c1-680173b7fa5c"}]
+}
+  

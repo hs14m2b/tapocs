@@ -1,0 +1,15 @@
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "timestamp": "2023-06-26T11:30:00+00:00",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:c89a8895-56fe-41de-b20b-fab6efa99c99",
+      "request": {
+        "method": "PUT",
+        "url": "/{resourceType}/{id}"
+      },
+      "resource": {}
+    }
+  ]
+}

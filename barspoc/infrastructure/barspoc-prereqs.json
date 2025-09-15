@@ -91,6 +91,16 @@
         "Type" : "String",
         "Value" : "TOBESET"
       }
+    },
+    "nhsloginCertSecret": {
+      "Type" : "AWS::SecretsManager::Secret",
+      "Properties" : {
+          "Description" : "Client Certificate Private Key for authenticating client to NHS login",
+          "Name" : {
+            "Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "nhsloginclientkey"]]
+          },
+          "Tags" : [ { "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } } ]
+        }
     }
   }
 }

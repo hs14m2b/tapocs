@@ -5,7 +5,7 @@ import { sendDocRef } from './helpers/post_document_ref_helper.mjs'
 import { postResource } from './helpers/post_resource_healthlake_helper.mjs'
 import { putResource } from './helpers/put_resource_healthlake_helper.mjs'
 import mhdsbundle from './data/mhdsbundle.json' assert { type: "json" };
-describe("Slot Query Processor", function() {
+describe("Appointment Search Processor", function() {
   process.env['APIENVIRONMENT'] = "int";
   process.env['APIKEYSECRET'] = "blah";
   process.env['APIKNAMEPARAM'] = "blah2";
@@ -50,7 +50,7 @@ describe("Slot Query Processor", function() {
     };
     let response = await handler(event, search_resource_healthlake_instance, getParameterCaseInsensitive, search_nrl_instance.searchDocRef,  process.env['APIKEYSECRET'], process.env['APIENVIRONMENT'], process.env['APIKNAMEPARAM']);
     expect(response.statusCode).toEqual(500);
-    expect(JSON.parse(response.body).result).toEqual("searchHealthlake failed");
+    expect(JSON.parse(response.body).result).toEqual("searchFhirServer failed");
   });
 
   it("returns 500 if an unexpected error occurs", async function() {
@@ -71,6 +71,7 @@ describe("Slot Query Processor", function() {
     };
     let response = await handler(event, search_resource_healthlake_instance, getParameterCaseInsensitive, search_nrl_instance.searchDocRef,  process.env['APIKEYSECRET'], process.env['APIENVIRONMENT'], process.env['APIKNAMEPARAM']);
     expect(response.statusCode).toEqual(500);
-    expect(JSON.parse(response.body).result).toEqual("searchHealthlake failed");
+    expect(JSON.parse(response.body).result).toEqual("searchFhirServer failed");
   });
 });
+ 
