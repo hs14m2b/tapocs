@@ -1,4 +1,5 @@
 // Filename: AppointmentUpdateProcessor.mjs
+import transactionBundleTemplate from './transactionBundleTemplate.json' with { type: 'json' };
 
 async function updateResourceFhirServer(resourceJson, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM){
     let maxDuration=25000;
@@ -198,6 +199,8 @@ async function processCancellation(odscode, appointment, event, fhirCreateHelper
 
 async function processReschedule(odscode, appointment, event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN, PDMRESOURCETOPICARN) {
   console.log("Processing reschedule for appointment: " + JSON.stringify(appointment));
+  let transactionBundle = JSON.parse(JSON.stringify(transactionBundleTemplate));
+  transactionBundle.timestamp = new Date().toISOString();
   //find old slot and set to free
   let getResult = await fhirSearchHelper.getResource(appointment.id, "Appointment", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
   let originalAppointment = JSON.parse(getResult.body);
@@ -210,6 +213,16 @@ async function processReschedule(odscode, appointment, event, fhirCreateHelper, 
     originalSlotResource = JSON.parse(originalSlotGetResult.body);
     console.log("original slot is " + JSON.stringify(originalSlotResource));
     originalSlotResource.status = "free";
+    let oldSlotTransactionEntry = {
+      "fullUrl": "urn:uuid:" + crypto.randomUUID(),
+      "request": {
+        "method": "PUT",
+        "ifMatch": "W/\"" + originalSlotResource.meta.versionId + "\"",
+        "url": originalSlotResource.resourceType + "/" + originalSlotResource.id
+      },
+      "resource": originalSlotResource
+    };
+    transactionBundle.entry.push(oldSlotTransactionEntry);
     //let updatedOriginalSlot = await updateResourceFhirServer(originalSlotResource, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
   } catch (error) {
     console.log("updating original slot failed");
@@ -223,16 +236,53 @@ async function processReschedule(odscode, appointment, event, fhirCreateHelper, 
     console.log("new slot is " + JSON.stringify(newSlotResource));
     //update the slot status
     newSlotResource.status = "busy";
-    let updatedSlot = await updateResourceFhirServer(newSlotResource, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
-    console.log("updated slot is " + JSON.stringify(updatedSlot));
+    //let updatedSlot = await updateResourceFhirServer(newSlotResource, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+    //console.log("updated slot is " + JSON.stringify(updatedSlot));
+    let newSlotTransactionEntry = {
+      "fullUrl": "urn:uuid:" + crypto.randomUUID(),
+      "request": {
+        "method": "PUT",
+        "ifMatch": "W/\"" + newSlotResource.meta.versionId + "\"",
+        "url": newSlotResource.resourceType + "/" + newSlotResource.id
+      },
+      "resource": newSlotResource
+    };
+    transactionBundle.entry.push(newSlotTransactionEntry);
   } catch (error) {
     console.log("updating new slot failed");
     console.log(error);
   }
   //update the appointment
-  console.log("updating appointment details in healthlake");
-  let updatedResource = await updateResourceFhirServer(appointment, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
-  console.log("updated appointment resource is " + JSON.stringify(updatedResource));
+  console.log("updating appointment details in PDM");
+  let newApptTransactionEntry = {
+    "fullUrl": "urn:uuid:" + crypto.randomUUID(),
+    "request": {
+      "method": "PUT",
+      "ifMatch": "W/\"" + appointment.meta.versionId + "\"",
+      "url": appointment.resourceType + "/" + appointment.id
+    },
+    "resource": appointment
+  };
+  transactionBundle.entry.push(newApptTransactionEntry);
+  console.log("transaction bundle is " + JSON.stringify(transactionBundle));
+  //submit the transaction bundle to PDM
+  let transactionResponse = await fhirUpdateHelper.postBundle(transactionBundle, event.headers, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+  console.log("transactionResponse is " + JSON.stringify(transactionResponse));
+  let updatedResource = appointment;
+  //expect the 3rd entry in the bundle response to be the appointment
+  console.log("transactionResponse entries are " + transactionResponse.entry.length);
+  if (!transactionResponse.entry || transactionResponse.entry.length < 3) {
+    throw new Error("transaction bundle failed");
+  }
+  let appointmentResponse = transactionResponse.entry.find(entry => entry.response.location.indexOf(appointment.id) > -1);
+  if (!appointmentResponse || !appointmentResponse.response || !appointmentResponse.response.status || appointmentResponse.response.location.indexOf(appointment.id) === -1) {
+    throw new Error("updating appointment in transaction bundle failed - cannot find appointment response");
+  }
+  //expect the location to be of the form Appointment/{id}/_history/{vid}
+  updatedResource.meta.versionId = appointmentResponse.response.location.split("/").pop()
+  console.log("updated appointment is " + JSON.stringify(updatedResource));
+  //let updatedResource = await updateResourceFhirServer(appointment, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+  //console.log("updated appointment resource is " + JSON.stringify(updatedResource));
   //if (!updatedResource.resourceType || updatedResource.resourceType !== "Appointment"){
   //    throw new Error("updateResourceFhirServer failed");
   //}

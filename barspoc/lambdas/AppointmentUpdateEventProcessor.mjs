@@ -151,11 +151,11 @@ async function processCancellation(odscode, appointment, event, fhirCreateHelper
 
 }
 
-async function processRebooking(odscode, appointment, originalSlotResource, event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN) {
+async function processRebooking(odscode, appointment, event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN) {
   console.log("processing rebooking for appointment " + JSON.stringify(appointment));
   try {
-    console.log("Updating the original slot to free");
-    let updatedOriginalSlot = await updateResourceFhirServer(originalSlotResource, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+    console.log("NO LONGER Updating the original slot to free");
+    //let updatedOriginalSlot = await updateResourceFhirServer(originalSlotResource, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
   } catch (error) {
     console.log("updating original slot failed");
     console.log(error);
@@ -280,13 +280,7 @@ export const handler = async (event, fhirCreateHelper, fhirUpdateHelper, fhirSea
       return await processCancellation(odscode, appointment, messageJson.event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN);
     }
     if (appointment.status && (appointment.status == "booked" || appointment.status == "fulfilled" || appointment.status == "noshow" || appointment.status == "arrived" || appointment.status == "checked-in" || appointment.status == "waitlist") && messageJson.eventType == "AppointmentReschedule") {
-      let originalSlotResource = messageJson.originalSlot;
-      if (!originalSlotResource) {
-        console.log("No original slot resource found in message - cannot process reschedule");
-      }
-      else {
-        return await processRebooking(odscode, appointment, originalSlotResource, messageJson.event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN);
-      }
+      return await processRebooking(odscode, appointment, messageJson.event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN);
     }
     console.log("No action taken - not a recognised appointment update event");
     let response = {
