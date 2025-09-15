@@ -68,7 +68,7 @@ function getPatientParticipant(participants){
   return participants.find(k => k.actor.type.toLowerCase() === "patient");
 }
 
-export const handler = async (event, fhirServerCreateHelperObject, fhirServerUpdateHelperObject, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED) => {
+export const handler = async (event, fhirServerCreateHelperObject, fhirServerUpdateHelperObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, PDMRESOURCETOPICARN) => {
   console.log(JSON.stringify(event));
   //POST handler for a new ServiceRequest
     try {
@@ -86,57 +86,77 @@ export const handler = async (event, fhirServerCreateHelperObject, fhirServerUpd
         if (!serviceRequestResource) {
           throw new Error("No ServiceRequest resource found in the request");
         }
-          let resourceResponse = await createResourceFhirServer(serviceRequestResource.resource, event, fhirServerCreateHelperObject, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
-          if (resourceResponse){
-            //get the id of the resource
-            let servicerequestid = resourceResponse.id;
-            console.log("servicerequestid is " + servicerequestid);
-            //create a Task within PDM to give Patient and Clinicians visibility of the ServiceRequest
-            let newTask = JSON.parse(JSON.stringify(task));
-            console.log(JSON.stringify(resourceResponse, null, 4));
-            newTask.focus.reference = "ServiceRequest/" + servicerequestid;
-            newTask.basedOn = [
-              {
-                "reference": "ServiceRequest/" + servicerequestid
-              }
-            ];
-            newTask['for']['identifier'] = resourceResponse.subject.identifier;
-            newTask['for']['type'] = "Patient";
-            newTask['executionPeriod'] = resourceResponse['occurrencePeriod'];
-            newTask['status'] = "ready";
-            //set the identifier to reference the BaRS/DoS Service Id
-            newTask['identifier'].push(
-              {
-                "system": "https://fhir.nhs.uk/Id/dos-service-id",
-                "value": "matthewbrown"
-              }
-            );
-            console.log("newTask is " + JSON.stringify(newTask, null, 4));
-            let taskResponse = await createResourceFhirServer(newTask, event, fhirServerCreateHelperObject, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
-            //return the resource
-            let healthlakeResponse = {
-              statusCode: 201,
-              "headers": {
-                  "Content-Type": "application/fhir+json",
-                  "X-Response-Source": "PDM",
-                  "Location": "ServiceRequest/" + servicerequestid
-              },
-              body: JSON.stringify(resourceResponse)
-            };
-            console.log(JSON.stringify(healthlakeResponse));
-            return healthlakeResponse;
-          }
-          else {
-            console.log("createFhirServer failed");
-            let response = {
-              statusCode: 500,
-              "headers": {
-                  "Content-Type": "application/json"
-              },
-              body: JSON.stringify({ "result": "createFhirServer failed" })
+        let resourceResponse = await createResourceFhirServer(serviceRequestResource.resource, event, fhirServerCreateHelperObject, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+        if (resourceResponse){
+          //get the id of the resource
+          let servicerequestid = resourceResponse.id;
+          console.log("servicerequestid is " + servicerequestid);
+          //create a Task within PDM to give Patient and Clinicians visibility of the ServiceRequest
+          let newTask = JSON.parse(JSON.stringify(task));
+          console.log(JSON.stringify(resourceResponse, null, 4));
+          newTask.focus.reference = "ServiceRequest/" + servicerequestid;
+          newTask.basedOn = [
+            {
+              "reference": "ServiceRequest/" + servicerequestid
             }
-            return response;
+          ];
+          newTask['for']['identifier'] = resourceResponse.subject.identifier;
+          newTask['for']['type'] = "Patient";
+          newTask['executionPeriod'] = resourceResponse['occurrencePeriod'];
+          newTask['status'] = "ready";
+          //set the identifier to reference the BaRS/DoS Service Id
+          newTask['identifier'].push(
+            {
+              "system": "https://fhir.nhs.uk/Id/dos-service-id",
+              "value": "matthewbrown"
+            }
+          );
+          console.log("newTask is " + JSON.stringify(newTask, null, 4));
+          let taskResponse;
+          try {
+            //taskResponse = await createResourceFhirServer(newTask, event, fhirServerCreateHelperObject, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+          } catch (error) {
+            console.log("creating Task in PDM failed - creating SNS event to trigger reprocess");
+            console.log(error);
           }
+          if (!taskResponse) {
+            console.log("creating Task in PDM failed - creating SNS event to trigger reprocess");
+            try {
+              await snsCommonFunctionObjectInstance.publishEvent(JSON.stringify({
+                resource: newTask,
+                resourceType: "Task",
+                action: "Create"
+              }), PDMRESOURCETOPICARN);
+              console.log("published event to SNS");
+            } catch (error) {
+              console.log("publishing event to SNS failed");
+              console.log(error);
+            }
+          }
+          //return the resource
+          let healthlakeResponse = {
+            statusCode: 201,
+            "headers": {
+                "Content-Type": "application/fhir+json",
+                "X-Response-Source": "PDM",
+                "Location": "ServiceRequest/" + servicerequestid
+            },
+            body: JSON.stringify(resourceResponse)
+          };
+          console.log(JSON.stringify(healthlakeResponse));
+          return healthlakeResponse;
+        }
+        else {
+          console.log("createFhirServer failed");
+          let response = {
+            statusCode: 500,
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ "result": "createFhirServer failed" })
+          }
+          return response;
+        }
       } catch (error) {
         console.log("caught an unexpected error processing data from healthlake");
         throw error;

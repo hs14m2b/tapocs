@@ -1,4 +1,4 @@
-import { getResource } from './get_resource_healthlake.mjs';
+import { getResource } from './get_resource_pdm.mjs';
 
 const APIENVIRONMENT = process.env['APIENVIRONMENT'];
 const APIKEYSECRET = process.env['APIKEYSECRET'];

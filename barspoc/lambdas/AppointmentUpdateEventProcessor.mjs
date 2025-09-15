@@ -151,9 +151,97 @@ async function processCancellation(odscode, appointment, event, fhirCreateHelper
 
 }
 
-async function processRebooking(odscode, appointment, event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN) {
+async function processRebooking(odscode, appointment, originalSlotResource, event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN) {
   console.log("processing rebooking for appointment " + JSON.stringify(appointment));
-  console.log("NO FUNCTIONALITY IMPLEMENTED YET - TO BE DONE");
+  try {
+    console.log("Updating the original slot to free");
+    let updatedOriginalSlot = await updateResourceFhirServer(originalSlotResource, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+  } catch (error) {
+    console.log("updating original slot failed");
+    console.log(error);
+  }
+  if (NRLENABLED) {
+    //try updating the BaRS/NRL DocumentReference
+    console.log("updating DocumentReference in BaRS");
+    try {
+      let documentReference = {};
+      try {
+        //get the id of the DocumentReference from the appointment neta tag
+        let barsTag = appointment.meta.tag.find(k => k.display.startsWith("DocumentReference"));
+        let documentReferenceId = barsTag.display.split("|").pop();
+        //retrieve the DocumentReference from BaRS
+        console.log("getting the Document Reference from BaRS");
+        documentReference = (await getDocumentRefBarsObject.getDocRef(documentReferenceId, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)).body;
+        console.log("documentReference is " + JSON.stringify(documentReference));
+      } 
+      catch (error) {
+        console.log(error);
+        console.log("get Document Reference failed - searching instead");
+        //find the participant.actor of type Patient in the appointment
+        let patientReference = appointment.participant.find(k => k.actor.type == "Patient");
+        console.log("patient reference is " + JSON.stringify(patientReference));
+        let nhsNumber = patientReference.actor.identifier.value;
+        console.log("nhsNumber is " + nhsNumber);
+        console.log("searching  Document References from BaRS");
+        let documentReferences = (await findDocumentRefBarsObject.findDocRef(nhsNumber, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)).body;
+        console.log("documentReferences are " + JSON.stringify(documentReferences));
+        //find the DocumentReference with the docRef.resource.identifier.find(identifier => identifier.system == "https://fhir.nhs.uk/Id/BaRS-Identifier").value == appointment.id
+        documentReference = documentReferences.entry.find(entry => entry.resource.identifier.find(identifier => identifier.system == "https://fhir.nhs.uk/Id/BaRS-Identifier").value == appointment.id).resource;
+        console.log("documentReference is " + JSON.stringify(documentReference));
+      }
+      //update the DocumentReference context period
+      let { start, end } = appointment;
+      documentReference.context.period.start = start;
+      documentReference.context.period.end = end;
+      //update the DocumentReference in BaRS
+      let barsResponse = await putDocumentRefBarsObject.updateDocRef(documentReference, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+      console.log("bars response to updating the Document Reference is " + JSON.stringify(barsResponse));
+    } catch (error) {
+      console.log("updating DocumentReference failed");
+      console.log(error);
+    }
+  }
+
+  console.log("Updating the DocumentReference in PDM if required");
+  try {
+    let documentReference = {};
+    try {
+      //get the id of the DocumentReference from the appointment neta tag
+      let barsTag = appointment.meta.tag.find(k => k.display.startsWith("PDMDocumentReference"));
+      let documentReferenceId = barsTag.display.split("|").pop();
+      //retrieve the DocumentReference from PDM
+      console.log("getting the Document Reference from PDM");
+      documentReference = JSON.parse((await fhirSearchHelper.getResource( documentReferenceId, "DocumentReference", APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)).body);
+      console.log("documentReference is " + JSON.stringify(documentReference));
+    } catch (error) {
+      console.log(error);
+      console.log("get Document Reference failed - searching instead");
+      //find the participant.actor of type Patient in the appointment
+      let patientReference = appointment.participant.find(k => k.actor.type == "Patient");
+      console.log("patient reference is " + JSON.stringify(patientReference));
+      let nhsNumber = patientReference.actor.identifier.value;
+      console.log("nhsNumber is " + nhsNumber);
+      console.log("searching  Document References from PDM");
+      let searchObject = {"patient:identifier" : "https://fhir.nhs.uk/Id/nhs-number|" + nhsNumber};
+
+      let documentReferences = JSON.parse((await fhirSearchHelper.searchResource(searchObject, "DocumentReference", odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM)).body);
+      console.log("documentReferences are " + JSON.stringify(documentReferences));
+      //find the DocumentReference with the docRef.resource.identifier.find(identifier => identifier.system == "https://fhir.nhs.uk/Id/BaRS-Identifier").value == appointment.id
+      documentReference = documentReferences.entry.find(entry => entry.resource.identifier.find(identifier => identifier.system == "https://fhir.nhs.uk/Id/BaRS-Identifier").value == appointment.id).resource;
+      console.log("documentReference is " + JSON.stringify(documentReference));
+    }
+    //update the DocumentReference context period
+    let { start, end } = appointment;
+    documentReference.context.period.start = start;
+    documentReference.context.period.end = end;
+    //update the DocumentReference in PDM
+    let barsResponse = await updateResourceFhirServer(documentReference, event, fhirUpdateHelper, APIKEYSECRET, APIENVIRONMENT, APIKNAMEPARAM);
+    console.log("PDM response to updating the Document Reference is " + JSON.stringify(barsResponse));
+    return "OK";
+  } catch (error) {
+    console.log("updating DocumentReference in PDM failed");
+    console.log(error);
+  }
 }
 
 export const handler = async (event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN) => {
@@ -189,10 +277,16 @@ export const handler = async (event, fhirCreateHelper, fhirUpdateHelper, fhirSea
     event = messageJson.event;
     //check if we are dealing with a cancellation
     if (appointment.status && appointment.status == "cancelled" && messageJson.eventType == "AppointmentCancellation") {
-      return await processCancellation(odscode, appointment, event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN);
+      return await processCancellation(odscode, appointment, messageJson.event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN);
     }
-    if (appointment.status && (appointment.status == "booked" || appointment.status == "fulfilled" || appointment.status == "noshow" || appointment.status == "arrived" || appointment.status == "checked-in" || appointment.status == "waitlist") && messageJson.eventType == "AppointmentRebooking") {
-      return await processRebooking(odscode, appointment, event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN);
+    if (appointment.status && (appointment.status == "booked" || appointment.status == "fulfilled" || appointment.status == "noshow" || appointment.status == "arrived" || appointment.status == "checked-in" || appointment.status == "waitlist") && messageJson.eventType == "AppointmentReschedule") {
+      let originalSlotResource = messageJson.originalSlot;
+      if (!originalSlotResource) {
+        console.log("No original slot resource found in message - cannot process reschedule");
+      }
+      else {
+        return await processRebooking(odscode, appointment, originalSlotResource, messageJson.event, fhirCreateHelper, fhirUpdateHelper, fhirSearchHelper, fhirDeleteHelper, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN);
+      }
     }
     console.log("No action taken - not a recognised appointment update event");
     let response = {

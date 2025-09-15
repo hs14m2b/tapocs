@@ -257,6 +257,11 @@
       "Properties": {
         "CodeUri": "barspocapilambdas.zip",
         "Description": "The lambda function that catches unexpected routes",
+        "Environment": {
+          "Variables":{
+            "PDMRESOURCETOPICARN": { "Ref": "PDMResourceTopic" }
+          }
+        },
         "Events": {
           "Api": {
             "Type": "HttpApi",
@@ -397,7 +402,8 @@
         "Description": "The lambda function that acts as a dummy FHIR endpoint to update Appointment resources",
         "Environment": {
           "Variables":{
-            "APPTREBOOKTOPICARN": { "Ref": "AppontmentRebookTopic" }
+            "APPTREBOOKTOPICARN": { "Ref": "AppontmentRebookTopic" },
+            "PDMRESOURCETOPICARN": { "Ref": "PDMResourceTopic" }
           }
         },
         "Events": {
@@ -507,11 +513,54 @@
       },
       "DependsOn": ["barspocbeLambdaRole"]
     },
+    "PDMResourceTopic": {
+      "Type" : "AWS::SNS::Topic",
+      "Properties" : {
+          "DisplayName" : "Topic for PDM resources to be created or updated via background processing",
+          "FifoTopic" : false,
+          "KmsMasterKeyId" : {"Ref" : "barspocKey"},
+          "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }],
+          "TopicName" : {"Fn::Join": ["-", [{ "Ref": "PROJECTNAME" },{ "Ref": "BRANCHNAME" }, "pdmresources"]]}
+      }
+    },
+    "PDMResourceEventFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "barspocapilambdas.zip",
+        "Description": "The lambda function that receives SNS triggered events to process Create, Update or Deletion of PDM resources in the background",
+        "Environment": {
+          "Variables":{
+            "PDMRESOURCETOPICARN": { "Ref": "PDMResourceTopic" }
+          }
+        },
+        "Events": {
+          "PDMResourceSNSTrigger":{
+            "Type": "SNS",
+            "Properties": {
+              "Topic": {"Ref": "PDMResourceTopic"}
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-PDMResourceEventFunction"]]
+        },
+        "Handler": "PDMResourceEventFactory.handler",
+        "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["barspocbeLambdaRole"]
+    },
     "ServiceRequestCreateFunction": {
       "Type": "AWS::Serverless::Function",
       "Properties": {
         "CodeUri": "barspocapilambdas.zip",
         "Description": "The lambda function that acts as a dummy FHIR endpoint to create ServiceRequest resources",
+        "Environment": {
+          "Variables":{
+            "PDMRESOURCETOPICARN": { "Ref": "PDMResourceTopic" }
+          }
+        },
         "Events": {
           "Api": {
             "Type": "HttpApi",

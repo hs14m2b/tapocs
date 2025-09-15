@@ -16,6 +16,7 @@ const APIENVIRONMENT = process.env['APIENVIRONMENT'];
 const APIKNAMEPARAM = process.env['APIKNAMEPARAM'];
 const NRLENABLED = (process.env['NRLENABLED'] != "false") ? true : false;
 const APPTREBOOKTOPICARN = process.env['APPTREBOOKTOPICARN'];
+const PDMRESOURCETOPICARN = process.env['PDMRESOURCETOPICARN'];
 
 export const handler = async (event) => {
   console.log(JSON.stringify(event));
@@ -28,7 +29,7 @@ export const handler = async (event) => {
         let getDocumentRefBarsObject = new get_document_ref_bars();
         let findDocumentRefBarsObject = new find_document_ref_bars();
         let snsCommonFunctionObjectInstance = new snsCommonFunctionObject();
-        return await processor(event, fhirServerCreateHelperObject, fhirServerUpdateHelperObject, fhirServerSearchHelperObject, fhirServerDeleteHelperObject, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN);
+        return await processor(event, fhirServerCreateHelperObject, fhirServerUpdateHelperObject, fhirServerSearchHelperObject, fhirServerDeleteHelperObject, putDocumentRefBarsObject, getDocumentRefBarsObject, findDocumentRefBarsObject, snsCommonFunctionObjectInstance, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, APPTREBOOKTOPICARN, PDMRESOURCETOPICARN);
     } catch (error) {
         console.log("caught error " + error.message);
         let response = {

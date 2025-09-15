@@ -21,7 +21,7 @@
     ],
     "basedOn": [
         {
-            "reference": "ServiceRequest/466b8c6e-a11c-3dac-8605-b85e50ebc5f0"
+            "reference": "ServiceRequest/29f507ec-cbcc-3895-a2a0-23cee18f60b2"
         }
     ],
     "status": "ready",
@@ -48,7 +48,7 @@
     },
     "description": "Task for patient to book appointment at the vaccination clinic.",
     "focus": {
-        "reference": "ServiceRequest/466b8c6e-a11c-3dac-8605-b85e50ebc5f0"
+        "reference": "ServiceRequest/29f507ec-cbcc-3895-a2a0-23cee18f60b2"
     },
     "for": {
         "type": "Patient",
