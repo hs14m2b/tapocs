@@ -89,6 +89,10 @@
   },
   "Globals": {
     "Function": {
+      "AutoPublishAlias": "live",
+      "ProvisionedConcurrencyConfig": {
+        "ProvisionedConcurrentExecutions": 0
+      },
       "Tags": {
         "shortcode": { "Ref": "SHORTCODE" }
       },
