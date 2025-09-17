@@ -34,8 +34,18 @@ export const handler = async (event, getAppointmentBarsObject, getParameterCaseI
     } catch (error) {
       barsserviceid = "matthewbrown"; //default for testing
     }
+    //check if nhs number is present in sessionAttributes
+    let nhsnumber;
+    if (event.sessionAttributes && event.sessionAttributes.nhsnumber) {
+      nhsnumber = event.sessionAttributes.nhsnumber;
+    }
+    //check if identitytoken is present in sessionAttributes
+    let idtoken;
+    if (event.sessionAttributes && event.sessionAttributes.idtoken) {
+      idtoken = event.sessionAttributes.idtoken;
+    }
     let odscode = "X26"; //hardcoded for the moment
-    let barsResponse = await getAppointmentBarsObject.getAppointment(appointmentid, null, barsserviceid, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
+    let barsResponse = await getAppointmentBarsObject.getAppointment(appointmentid, idtoken, barsserviceid, odscode, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM);
     console.log("bars response is " + JSON.stringify(barsResponse));
     //return the resource
     response.response.functionResponse["responseBody"]["TEXT"] =  {"body": JSON.stringify(barsResponse.body) };

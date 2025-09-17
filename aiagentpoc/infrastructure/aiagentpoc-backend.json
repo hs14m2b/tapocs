@@ -366,7 +366,7 @@
         "AutoPrepare": false,
         "Description": "AI Agent for the AI Agent PoC project that can access BaRS FHIR R4 API to get Appointment information",
         "FoundationModel": "anthropic.claude-3-sonnet-20240229-v1:0",
-        "Instruction": "You are a friendly chatbot that can help a person find their appointments with the NHS. You first need to find out the person's NHS Number which should be 10 numerical digits long. You have access to a lambda function that accepts a NHS Number as a parameter and searches for appointments which are returned as FHIR R4 DocumentReference resources. You also have access to a second function that accepts barsidentifier and dosserviceid as parameters (which are obtained from the identifiers in the selected DocumentReference resource) that retrieves further information about an appointment",
+        "Instruction": "You are a friendly chatbot that can help a person find their appointments with the NHS. The person's nhsnumber should be provided in sessionstate, if not you need to find out the person's NHS Number which should be 10 numerical digits long. You have access to a lambda function that accepts a NHS Number as a parameter and searches for appointments which are returned as FHIR R4 DocumentReference resources. You also have access to a second function that accepts barsidentifier and dosserviceid as parameters (which are obtained from the identifiers in the selected DocumentReference resource) that retrieves further information about an appointment",
         "AgentResourceRoleArn": "arn:aws:iam::865198111306:role/service-role/AmazonBedrockExecutionRoleForAgents_QL44VROKC7M",
         "Tags": {"shortcode": { "Ref": "SHORTCODE" }}
       },

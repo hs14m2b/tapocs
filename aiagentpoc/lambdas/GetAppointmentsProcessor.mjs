@@ -54,6 +54,12 @@ export const handler = async (event, findDocumentRefBarsObject, findDocumentRefP
     } catch (error) {
       nhsnumber = "9661034524"; //default for testing
     }
+    //check if nhs number is present in sessionAttributes
+    if (event.sessionAttributes && event.sessionAttributes.nhsnumber) {
+      if (nhsnumber !== event.sessionAttributes.nhsnumber) {
+        throw new Error("nhsnumber in parameters does not match nhsnumber in sessionAttributes");
+      }
+    }
     let odscode = "X26"; //hardcoded for the moment
     let barsResponse = {
       "body": {
@@ -89,7 +95,18 @@ export const handler = async (event, findDocumentRefBarsObject, findDocumentRefP
     if (barsResponse.body.entry && barsResponse.body.entry.length > 0) {
       barsResponse.body.entry = barsResponse.body.entry.filter((entry) => {
         return !entry.resource.id.includes("|");
-    });
+      });
+    }
+    //filter out the resources with context period.start in the past
+    let currentDate = new Date();
+    if (barsResponse.body.entry && barsResponse.body.entry.length > 0) {
+      barsResponse.body.entry = barsResponse.body.entry.filter((entry) => {
+        if (entry.resource.context && entry.resource.context.period && entry.resource.context.period.start) {
+          let periodStartDate = new Date(entry.resource.context.period.start);
+          return periodStartDate >= currentDate;
+        }
+        return false; //evict the resource if no context period start
+      });
     }
     let mappedAppointments = [];
     if (barsResponse.body.entry && barsResponse.body.entry.length > 0) {
