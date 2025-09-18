@@ -15,6 +15,8 @@ async function getDocRef (accessToken)
       "subject:identifier" : "https://fhir.nhs.uk/Id/nhs-number|" + NHSNumber, 
       "type" : "http://snomed.info/sct|749001000000101", 
       "category": "http://snomed.info/sct|419891008"}).toString();
+    subjectIdentifier = new URLSearchParams({
+      "subject:identifier" : "https://fhir.nhs.uk/Id/nhs-number|" + NHSNumber}).toString();
     let url = HTTPS + APIDomain + "/record-locator/consumer/FHIR/R4/DocumentReference?" + subjectIdentifier;
     let XRequestID = uuidv4();
     // request option

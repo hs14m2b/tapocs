@@ -15,10 +15,15 @@ export const handler = async (event) => {
     try {
         let findDocumentRefBarsObject = new find_document_ref_bars();
         let findDocumentRefPDMObject = new find_document_ref_pdm();
-        let appointments =  await processor(event, findDocumentRefBarsObject, findDocumentRefPDMObject, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, (new Date()).toISOString());
-        console.log("returning appointments " + JSON.stringify(appointments, null, 2));
+        Date.prototype.addDays = function(days) {
+        var date = new Date(this.valueOf());
+        date.setDate(date.getDate() + days);
+        return date;
+        };
+        let start = (new Date()).addDays(-3650).toISOString();
+        let appointments =  await processor(event, findDocumentRefBarsObject, findDocumentRefPDMObject, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED)
+        //filter out the resources with context period.start in the past
         return appointments;
-        
     } catch (error) {
         console.log("caught error " + error.message);
         let response = {

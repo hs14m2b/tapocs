@@ -119,6 +119,7 @@ function Home( props ) {
       </button>
       </a>
       <br />
+      Start <Link href="/agentchat">AI Agent Chat</Link>
       <Spinner1 message="Finding your appointments" id="pageTransitionMessagegetappointments"></Spinner1>
       <Spinner1 message="Finding your service requests" id="pageTransitionMessagegetservicerequests"></Spinner1>
       <Spinner1 message="Finding your outstanding tasks" id="pageTransitionMessagegettasks"></Spinner1>

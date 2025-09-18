@@ -85,9 +85,6 @@
   "Globals": {
     "Function": {
       "AutoPublishAlias": "live",
-      "ProvisionedConcurrencyConfig": {
-        "ProvisionedConcurrentExecutions": 1
-      },
       "Tags": {
         "shortcode": { "Ref": "SHORTCODE" }
       },
@@ -276,6 +273,56 @@
           "SourceArn": { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":bedrock:",{ "Ref": "AWSREGIONNAME" },":", { "Ref": "AWS::AccountId" }, ":agent/*"]]}
       }
     },
+    "GetPastAppointmentsFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "aiagentpocapilambdas.zip",
+        "Description": "The lambda function that is invoked by the AI Agent to search for Appointments in BaRS FHIR R4 API",
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "GetPastAppointmentsFunction"]]
+        },
+        "Handler": "GetPastAppointmentsFactory.handler",
+        "Role": { "Fn::GetAtt": ["aiagentpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["aiagentpocbeLambdaRole"]
+    },
+    "GetPastAppointmentsFunctionPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+          "Action": "lambda:InvokeFunction",
+          "FunctionName": {"Ref": "GetPastAppointmentsFunction"},
+          "Principal": "bedrock.amazonaws.com",
+          "SourceAccount": { "Ref": "AWS::AccountId" },
+          "SourceArn": { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":bedrock:",{ "Ref": "AWSREGIONNAME" },":", { "Ref": "AWS::AccountId" }, ":agent/*"]]}
+      }
+    },
+    "GetSlotsFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "aiagentpocapilambdas.zip",
+        "Description": "The lambda function that is invoked by the AI Agent to search for Appointment Slots in BaRS FHIR R4 API",
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "GetSlotsFunction"]]
+        },
+        "Handler": "GetSlotsFactory.handler",
+        "Role": { "Fn::GetAtt": ["aiagentpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["aiagentpocbeLambdaRole"]
+    },
+    "GetSlotsFunctionPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+          "Action": "lambda:InvokeFunction",
+          "FunctionName": {"Ref": "GetSlotsFunction"},
+          "Principal": "bedrock.amazonaws.com",
+          "SourceAccount": { "Ref": "AWS::AccountId" },
+          "SourceArn": { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":bedrock:",{ "Ref": "AWSREGIONNAME" },":", { "Ref": "AWS::AccountId" }, ":agent/*"]]}
+      }
+    },
     "GetAppointmentFunction": {
       "Type": "AWS::Serverless::Function",
       "Properties": {
@@ -296,6 +343,31 @@
       "Properties": {
           "Action": "lambda:InvokeFunction",
           "FunctionName": {"Ref": "GetAppointmentFunction"},
+          "Principal": "bedrock.amazonaws.com",
+          "SourceAccount": { "Ref": "AWS::AccountId" },
+          "SourceArn": { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":bedrock:",{ "Ref": "AWSREGIONNAME" },":", { "Ref": "AWS::AccountId" }, ":agent/*"]]}
+      }
+    },
+    "RescheduleAppointmentFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "aiagentpocapilambdas.zip",
+        "Description": "The lambda function that is invoked by the AI Agent to reschedule an appointment via the BaRS FHIR R4 API",
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "RescheduleAppointmentFunction"]]
+        },
+        "Handler": "RescheduleAppointmentFactory.handler",
+        "Role": { "Fn::GetAtt": ["aiagentpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["aiagentpocbeLambdaRole"]
+    },
+    "RescheduleAppointmentFunctionPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+          "Action": "lambda:InvokeFunction",
+          "FunctionName": {"Ref": "RescheduleAppointmentFunction"},
           "Principal": "bedrock.amazonaws.com",
           "SourceAccount": { "Ref": "AWS::AccountId" },
           "SourceArn": { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":bedrock:",{ "Ref": "AWSREGIONNAME" },":", { "Ref": "AWS::AccountId" }, ":agent/*"]]}
@@ -344,7 +416,8 @@
                 {
                   "Name": "GetAppointmentAction",
                   "Description": "Get Appointment details from BaRS FHIR R4 API",
-                  "Parameters": { "dosserviceid" : {
+                  "Parameters": { 
+                    "dosserviceid" : {
                       "Description" : "The appointment's DOS service ID - obtained from the https://fhir.nhs.uk/Id/dos-service-id identifier in the selected DocumentReference resource",
                       "Required" : true,
                       "Type" : "string"
@@ -354,7 +427,79 @@
                       "Required" : true,
                       "Type" : "string"
                     }
+                  },
+                  "RequireConfirmation": "DISABLED"
+                }
+              ]
+            }
+          },
+          {
+            "ActionGroupName": "GetSlotsActionGroup",
+            "ActionGroupState": "ENABLED",
+            "Description": "Action group to get free appointment slots for a HealthcareService from BaRS FHIR R4 API using the GetSlotsFunction",
+            "ActionGroupExecutor": {
+              "Lambda": { "Fn::GetAtt": ["GetSlotsFunction", "Arn"] }
+            },
+            "FunctionSchema": {
+              "Functions": [
+                {
+                  "Name": "GetAppointmentSlotsAction",
+                  "Description": "Get Free Appointment Slots details from BaRS FHIR R4 API",
+                  "Parameters": { 
+                    "dosserviceid" : {
+                      "Description" : "The appointment's DOS service ID - obtained from the https://fhir.nhs.uk/Id/dos-service-id identifier in the Appointment's HealthcareService actor",
+                      "Required" : true,
+                      "Type" : "string"
+                    },
+                    "healthcareserviceid" : {
+                      "Description" : "The appointment's HealthcareService identifier - obtained from the Appointment's HealthcareService actor reference",
+                      "Required" : true,
+                      "Type" : "string"
+                    }
                   }
+                }
+              ]
+            }
+          },
+          {
+            "ActionGroupName": "RescheduleAppointmentActionGroup",
+            "ActionGroupState": "ENABLED",
+            "Description": "Action group to reschedule a specific appointment using the BaRS FHIR R4 API",
+            "ActionGroupExecutor": {
+              "Lambda": { "Fn::GetAtt": ["RescheduleAppointmentFunction", "Arn"] }
+            },
+            "FunctionSchema": {
+              "Functions": [
+                {
+                  "Name": "RescheduleAppointmentAction",
+                  "Description": "This gives access to the scheduling system to reschedule an Appointment into a new Slot. The information needed is the dosserviceid, the barsidentifier (which is also the id of the Appointment), the id of the Slot, and the start and end properties of the selected Slot",
+                  "Parameters": { "dosserviceid" : {
+                      "Description" : "The appointment's DOS service ID - obtained from the https://fhir.nhs.uk/Id/dos-service-id identifier in the selected DocumentReference resource",
+                      "Required" : true,
+                      "Type" : "string"
+                    },
+                    "barsidentifier" : {
+                      "Description" : "The appointment's BaRS identifier - obtained from the https://fhir.nhs.uk/Id/BaRS-Identifier identifier in the selected DocumentReference resource",
+                      "Required" : true,
+                      "Type" : "string"
+                    },
+                    "slotid" : {
+                      "Description" : "The Slot ID to reschedule the appointment to - obtained from the id of the Slot resource returned by the GetSlotsActionGroup and selected by the user",
+                      "Required" : true,
+                      "Type" : "string"
+                    },
+                    "slotstart" : {
+                      "Description" : "The Slot start time to reschedule the appointment to - obtained from the Slot resource returned by the GetSlotsActionGroup and selected by the user",
+                      "Required" : true,
+                      "Type" : "string"
+                    },
+                    "slotend" : {
+                      "Description" : "The Slot end time to reschedule the appointment to - obtained from the Slot resource returned by the GetSlotsActionGroup and selected by the user",
+                      "Required" : true,
+                      "Type" : "string"
+                    }
+                  },
+                  "RequireConfirmation": "DISABLED"
                 }
               ]
             }
@@ -366,7 +511,7 @@
         "AutoPrepare": false,
         "Description": "AI Agent for the AI Agent PoC project that can access BaRS FHIR R4 API to get Appointment information",
         "FoundationModel": "anthropic.claude-3-sonnet-20240229-v1:0",
-        "Instruction": "You are a friendly chatbot that can help a person find their appointments with the NHS. The person's nhsnumber should be provided in sessionstate, if not you need to find out the person's NHS Number which should be 10 numerical digits long. You have access to a lambda function that accepts a NHS Number as a parameter and searches for appointments which are returned as FHIR R4 DocumentReference resources. You also have access to a second function that accepts barsidentifier and dosserviceid as parameters (which are obtained from the identifiers in the selected DocumentReference resource) that retrieves further information about an appointment",
+        "Instruction": "You are a friendly chatbot that can help a person find their appointments with the NHS. The person's nhsnumber should be provided in sessionstate, if not you need to find out the person's NHS Number which should be 10 numerical digits long. You have access to an ActionGroup (GetAppointmentsActionGroup) that accepts a NHS Number as a parameter and searches for appointments which are returned as FHIR R4 DocumentReference resources. You have access to an ActionGroup (GetAppointmentActionGroup) that accepts barsidentifier and dosserviceid as parameters (which are obtained from the identifiers in the selected DocumentReference resource) that retrieves further information about an appointment. A third ActionGroup (GetSlotsActionGroup) accepts dosserviceid and healthcareserviceid as parameters to search for free appointment slots for a HealthcareService - these parameters can be obtained from the Appointment information returned from the GetAppointmentActionGroup. A fourth ActionGroup (RescheduleAppointmentActionGroup) accepts dosserviceid and barsidentifier and slotid and slotstart and slotend as parameters to reschedule the appointment selected by the user to a new time slot - these parameters can be obtained from the information returned from the GetAppointmentActionGroup, GetAppointmentsActionGroup and GetSlotsActionGroup. You should only use the ActionGroups if you need to retrieve information from BaRS FHIR R4 API, otherwise you should chat with the user in a friendly way. You should only retrieve specific Appointment details and reschedule appointments at the specific request of the user. Always try to get the user to provide their NHS Number if it is not already provided in session state. If you do not know the answer to a question, you should say you do not know and suggest the user contacts their GP or NHS 111.",
         "AgentResourceRoleArn": "arn:aws:iam::865198111306:role/service-role/AmazonBedrockExecutionRoleForAgents_QL44VROKC7M",
         "Tags": {"shortcode": { "Ref": "SHORTCODE" }}
       },

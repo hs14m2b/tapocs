@@ -80,9 +80,6 @@
   "Globals": {
     "Function": {
       "AutoPublishAlias": "live",
-      "ProvisionedConcurrencyConfig": {
-        "ProvisionedConcurrentExecutions": 0
-      },
       "Tags": {
         "shortcode": { "Ref": "SHORTCODE" }
       },
@@ -152,6 +149,25 @@
             ]
           },
           "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "nextjsuibeLambdaSSMPolicy"]]},
+          "Roles": [{"Ref": "nextjsuibeLambdaRole"}]
+        },
+        "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "nextjsuibeLambdaBedrockPolicy":{
+      "Type" : "AWS::IAM::Policy",
+      "Properties" : {
+          "PolicyDocument" : {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Action": "bedrock:InvokeAgent",
+                "Resource": [{ "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":bedrock:", { "Ref": "AWS::Region" },":", { "Ref": "AWS::AccountId" }, ":agent/*"]]},
+                { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":bedrock:", { "Ref": "AWS::Region" },":", { "Ref": "AWS::AccountId" }, ":agent-alias/*"]]}]
+              }
+            ]
+          },
+          "PolicyName" : {"Fn::Join": ["-",[{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "nextjsuibeLambdaBedrockPolicy"]]},
           "Roles": [{"Ref": "nextjsuibeLambdaRole"}]
         },
         "DependsOn": ["nextjsuibeLambdaRole"]
@@ -567,6 +583,168 @@
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "checkAIAgentResponseFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjsuiapilambdas.zip",
+        "Description": "The lambda function that checks the ddb table for the AI Agent response to return to the user",
+        "Environment": {
+          "Variables":{
+            "AIAGENTRESPONSETABLE": { "Ref": "aiAgentResponseTable" }
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsuiHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/checkaiagentresponse",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "checkAIAgentResponseFunction"]]
+        },
+        "Handler": "CheckAIAgentResponseFactory.handler",
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "processAIAgentMessageFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjsuiapilambdas.zip",
+        "Description": "The lambda function that invokes the AI Agent passing the user message and returning the response to a SQS queue for retrieval",
+        "Environment": {
+          "Variables":{
+            "AIAGENTMESSAGETOPIC": { "Ref": "aiAgentMessageTopic" },
+            "AIAGENTRESPONSETABLE": { "Ref": "aiAgentResponseTable" }
+          }
+        },
+        "Events": {
+          "AIAgentMessageUpdateSNSTrigger":{
+            "Type": "SNS",
+            "Properties": {
+              "Topic": {"Ref": "aiAgentMessageTopic"}
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "processAIAgentMessageFunction"]]
+        },
+        "Handler": "ProcessAIAgentMessageFactory.handler",
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "sendAIAgentMessageFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "nextjsuiapilambdas.zip",
+        "Description": "The lambda function that invokes the AI Agent passing the user message and returning the response",
+        "Environment": {
+          "Variables":{
+            "AIAGENTMESSAGETOPIC": { "Ref": "aiAgentMessageTopic" }
+          }
+        },
+        "Events": {
+          "Api": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "nextjsuiHttpApi" },
+              "Method": "ANY",
+              "Path": "/extapi/sendaiagentmessage",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, { "Ref": "PROJECTNAME" }, "sendAIAgentMessageFunction"]]
+        },
+        "Handler": "SendAIAgentMessageFactory.handler",
+        "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["nextjsuibeLambdaRole"]
+    },
+    "aiAgentMessageTopic": {
+      "Type" : "AWS::SNS::Topic",
+      "Properties" : {
+          "DisplayName" : "Topic for Messages to the AI Agent to allow background processing as longer than 30 seconds",
+          "FifoTopic" : false,
+          "Tags": [{ "Key": "shortcode", "Value": { "Ref": "SHORTCODE" } }],
+          "TopicName" : {"Fn::Join": ["-", [{ "Ref": "PROJECTNAME" },{ "Ref": "BRANCHNAME" }, "aiagentmessages"]]}
+      }
+    },
+    "aiResponseDDBKey":{
+        "Type" : "AWS::KMS::Key",
+        "Properties" : {
+            "Description" : "KMS key used to encrypt DDB tables",
+            "Enabled" : true,
+            "EnableKeyRotation" : true,
+            "KeyPolicy" : {
+                "Version": "2012-10-17",
+                "Id": "key-default-1",
+                "Statement": [
+                    {
+                        "Sid": "Enable IAM User Permissions",
+                        "Effect": "Allow",
+                        "Principal": {
+                            "AWS": { "Fn::Join" : [ "", [ "arn:aws:iam::",{ "Ref" : "AWS::AccountId" },":root"] ] }
+                        },
+                        "Action": "kms:*",
+                        "Resource": "*"
+                    }
+                ]
+            },
+            "KeySpec" : "SYMMETRIC_DEFAULT",
+            "KeyUsage" : "ENCRYPT_DECRYPT",
+            "MultiRegion" : false,
+            "PendingWindowInDays" : 30,
+            "Tags" : [ {"Key": "shortcode", "Value": { "Ref" : "SHORTCODE" }} ]
+        }
+    },
+    "aiAgentResponseTable":{
+      "Type" : "AWS::DynamoDB::Table",
+      "Properties" : {
+        "AttributeDefinitions" : [ {
+            "AttributeName" : "messageuuid",
+            "AttributeType" : "S"
+        }],
+        "BillingMode" : "PAY_PER_REQUEST",
+        "KeySchema" : [ {
+            "AttributeName" : "messageuuid",
+            "KeyType" : "HASH"
+        }],
+        "SSESpecification" : {
+            "KMSMasterKeyId" : {"Ref" : "aiResponseDDBKey"},
+            "SSEEnabled" : true,
+            "SSEType": "KMS"
+        },
+        "StreamSpecification": {
+          "StreamViewType" : "NEW_AND_OLD_IMAGES"
+        },
+        "TableClass" : "STANDARD",
+        "TableName" : {"Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "BRANCHNAME" } , "aiResponseTable"]]},
+        "Tags" : [ {
+            "Key" : "shortcode",
+            "Value" : { "Ref" : "SHORTCODE" }
+        }],
+        "TimeToLiveSpecification": {
+          "AttributeName" : "valid_until",
+          "Enabled" : true
+        }
+      }
     },
     "nextjsuiHttpApi": {
       "Type": "AWS::Serverless::HttpApi",

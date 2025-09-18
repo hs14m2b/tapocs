@@ -1,6 +1,6 @@
 // Filename: GetAppointmentsProcessor.mjs
 
-export const handler = async (event, findDocumentRefBarsObject, findDocumentRefPDMObject, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED) => {
+export const handler = async (event, findDocumentRefBarsObject, findDocumentRefPDMObject, getParameterCaseInsensitive, APIENVIRONMENT, APIKEYSECRET, APIKNAMEPARAM, NRLENABLED, dateFromString) => {
   console.log(JSON.stringify(event));
   //sample event
   /*
@@ -48,6 +48,13 @@ export const handler = async (event, findDocumentRefBarsObject, findDocumentRefP
     };
     //get the nhsnumber from the parameter which is an array of objects with name, type and value
     //example: "parameters": [ { "name": "nhsnumber", "type": "string", "value": "9661034524" } ]
+    let fromDate;
+    try {
+      fromDate = new Date(dateFromString);
+    } catch (error) {
+      fromDate = Date.now(); //default to now
+    }
+    console.log("fromDate is " + fromDate.toISOString());
     let nhsnumber;
     try {
       nhsnumber = event.parameters.find(param => param.name === "nhsnumber").value;
@@ -57,7 +64,11 @@ export const handler = async (event, findDocumentRefBarsObject, findDocumentRefP
     //check if nhs number is present in sessionAttributes
     if (event.sessionAttributes && event.sessionAttributes.nhsnumber) {
       if (nhsnumber !== event.sessionAttributes.nhsnumber) {
-        throw new Error("nhsnumber in parameters does not match nhsnumber in sessionAttributes");
+        console.log("nhsnumber in parameters does not match nhsnumber in sessionAttributes");
+        response.sessionAttributes["nhsnumber"] = nhsnumber;
+        response.promptSessionAttributes["nhsnumber"] = nhsnumber;
+        //proceed anyway
+        //throw new Error("nhsnumber in parameters does not match nhsnumber in sessionAttributes");
       }
     }
     let odscode = "X26"; //hardcoded for the moment
@@ -97,23 +108,23 @@ export const handler = async (event, findDocumentRefBarsObject, findDocumentRefP
         return !entry.resource.id.includes("|");
       });
     }
-    //filter out the resources with context period.start in the past
-    let currentDate = new Date();
-    if (barsResponse.body.entry && barsResponse.body.entry.length > 0) {
-      barsResponse.body.entry = barsResponse.body.entry.filter((entry) => {
-        if (entry.resource.context && entry.resource.context.period && entry.resource.context.period.start) {
-          let periodStartDate = new Date(entry.resource.context.period.start);
-          return periodStartDate >= currentDate;
-        }
-        return false; //evict the resource if no context period start
-      });
-    }
     let mappedAppointments = [];
     if (barsResponse.body.entry && barsResponse.body.entry.length > 0) {
       mappedAppointments = barsResponse.body.entry.map((entry) => {
         return entry.resource;
       });
     }
+    //filter out the resources with context period.start before fromDate
+    if (mappedAppointments && mappedAppointments.length > 0) {
+        mappedAppointments = mappedAppointments.filter((appointment) => {
+            if (appointment.context && appointment.context.period && appointment.context.period.start) {
+            let periodStartDate = new Date(appointment.context.period.start);
+            return periodStartDate >= fromDate;
+            }
+            return false; //evict the resource if no context period start
+        });
+    }
+
     response.response.functionResponse["responseBody"]["TEXT"] =  {"body": JSON.stringify(mappedAppointments) };
       
     console.log("filtered bars response is " + JSON.stringify(mappedAppointments));

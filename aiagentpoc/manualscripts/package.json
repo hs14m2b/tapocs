@@ -7,6 +7,8 @@
     "@aws-sdk/client-ssm": "^3.606.0",
     "@aws-sdk/client-sns": "^3.883.0",
     "@aws-sdk/client-bedrock-agent-runtime": "^3.890.0",
+    "@aws-sdk/lib-dynamodb": "^3.294.0",
+    "@aws-sdk/client-dynamodb": "^3.294.0",
     "cookie": "^0.7.2",
     "jsonwebtoken": "^9.0.2",
     "uuid": "^9.0.0"

@@ -14,10 +14,10 @@ const input = { // InvokeAgentRequest
   },
   agentId: "N8JM7Q8BTF", // required
   agentAliasId: "TSTALIASID", // required
-  sessionId: uuidv4(), // required
+  sessionId: "d60f2749-90e2-4f2b-bbf6-b0059f61fcea",//uuidv4(), // required
   endSession: false,
   enableTrace: false,
-  inputText: "Hello, what is my next NHS appointment?"
+  inputText: "the GetSlotsActionGroup allows you to search for alternative times for an appointment"//"I need to reschedule this - what alternative dates are available?"//"Hello, what is my next NHS appointment?"
 };
 console.log("input is " + JSON.stringify(input, null, 2));
 const command = new InvokeAgentCommand(input);
