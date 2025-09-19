@@ -15,7 +15,7 @@ exports.handler = async (event) => {
             client_id: NHSLOGINCLIENTID,
             redirect_uri: (redirect_uri) ? redirect_uri: REDIRECTURI,
             state: (state) ? state: "tempstate",
-            scope: "openid profile",
+            scope: "openid profile profile_extended",
             response_type: "code",
             vtr: vtr,
         }

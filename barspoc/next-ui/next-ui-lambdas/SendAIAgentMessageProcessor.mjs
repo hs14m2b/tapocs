@@ -11,6 +11,7 @@ export const handler = async (event, snsCommonFunctionObjectInstance, bedrockAge
 
     let identity_token = "";
     let id_token_nhsnumber = "";
+    let decoded = {};
     try {
       // get the formdata cookie from the event.cookies array and parse it
       let formdata = "";
@@ -24,7 +25,7 @@ export const handler = async (event, snsCommonFunctionObjectInstance, bedrockAge
       let formData = JSON.parse(formdata);
       //get the identity_token from the formdata
       identity_token = formData.identity_token;
-      const decoded = jwt.decode(identity_token);
+      decoded = jwt.decode(identity_token);
       console.log("decoded id_token is " + JSON.stringify(decoded));
       id_token_nhsnumber = decoded.nhs_number;
       console.log("nhsnumber is " + id_token_nhsnumber);
@@ -41,10 +42,14 @@ export const handler = async (event, snsCommonFunctionObjectInstance, bedrockAge
     let sessionId = (resourceJson.sessionId && resourceJson.sessionId !== "") ? resourceJson.sessionId : uuidv4();
     let sessionState = (resourceJson.sessionState && resourceJson.sessionState !== "") ? JSON.parse(resourceJson.sessionState) : { // SessionState
         sessionAttributes: { // SessionAttributesMap
-          "nhsnumber": id_token_nhsnumber
+          "nhsnumber": id_token_nhsnumber,
+          "identity_token": identity_token,
+          "identity_token_decoded": JSON.stringify(decoded)
         },
         promptSessionAttributes: { 
-          "nhsnumber": id_token_nhsnumber
+          "nhsnumber": id_token_nhsnumber,
+          "identity_token": identity_token,
+          "identity_token_decoded": JSON.stringify(decoded)
         }
       };
     console.log("message is " + message);

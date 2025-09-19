@@ -140,7 +140,7 @@ async function getTokens( requestParams)
 		"client_id": client_id,
 		"redirect_uri": "https://main-mabr8-barspocui-nextjsfe.nhsdta.com/extapi/oidcresponse",
 		"grant_type": "authorization_code",
-        "scope": "openid profile email phone",
+        "scope": "openid profile profile_extended",
         "client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
         "client_assertion": client_assertion
         }).toString();

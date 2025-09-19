@@ -93,7 +93,7 @@ function Home(props) {
     }
     let body = new URLSearchParams(bodyJson).toString();
     let apiResult = await fetch(url, { method: "POST", cache: "no-cache", body: body, signal: controller.signal });
-    document.getElementById("pageTransitionMessage").classList.add("nhsuk-hidden");
+    //document.getElementById("pageTransitionMessage").classList.add("nhsuk-hidden");
     clearTimeout(id);
     if (apiResult.status != "200") {
       console.log("response status is " + apiResult.status);
@@ -105,8 +105,18 @@ function Home(props) {
     console.log(JSON.stringify(apiResultJson));
     document.getElementById("message").value = (apiResultJson.aiResponse) ? apiResultJson.aiResponse : apiResultJson.messageUUID + " uuid to check for response";
     messageUUID = (apiResultJson.messageUUID) ? apiResultJson.messageUUID : messageUUID;
-    setTimeout(async () => {await checkResponse(props)}, 1000);
-    setTimeout( () => document.getElementById("pageTransitionMessage").classList.add("nhsuk-hidden"), 60000);
+    if (apiResultJson.aiResponse) 
+    {
+      //we have a direct response - hide the spinner
+      document.getElementById("pageTransitionMessage").classList.add("nhsuk-hidden");
+    }
+    else
+    {
+      //no direct response - keep the spinner and check for a response every second
+      setTimeout(async () => {await checkResponse(props)}, 1000);
+      setTimeout( () => document.getElementById("pageTransitionMessage").classList.add("nhsuk-hidden"), 60000);
+
+    }
   }
   async function checkResponse(props) {
     //enable the spinner
