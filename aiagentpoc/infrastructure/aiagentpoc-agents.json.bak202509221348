@@ -1,0 +1,291 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Parameters": {
+    "AWSREGIONNAME": {
+      "Type": "String",
+      "Default": "eu-west-2",
+      "Description": "The AWS region name"
+    },
+    "APIENVIRONMENT": {
+      "Type": "String",
+      "Description": "The API-M environment the deployment supports - values are internal-dev, internal-dev-sandbox, internal-qa, internal-qa-sandbox, ref (all previous are non-prod), sandbox, dev, int, prod"
+    },
+    "BEDOMAIN": {
+      "Type": "String",
+      "Default": "aiagentpocbe",
+      "Description": "Back end domain identifier"
+    },
+    "BARSCERTIFICATEARN": {
+      "Type": "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/1a507374-9136-49e1-b7e0-397c95b2fcc7",
+      "Description": "The Certificate ARN for the BaRS provider"
+    },
+    "BARSVERIFICATIONCERTIFICATEARN": {
+      "Type": "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/7e1019f5-2734-44f3-ab2a-5a6cbcaac3bb",
+      "Description": "The Verification Certificate ARN for the BaRS provider to prove domain ownership"
+    },
+    "BARSDOMAIN": {
+      "Type": "String",
+      "Default": "bars-int-x26.tsassolarch.thirdparty.nhs.uk",
+      "Description": "The bars domain name for the BaRS provider - must be lowercased"
+    },
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "The branchname to derive fqdn"
+    },
+    "NRLENABLED": {
+      "Type": "String",
+      "Default": "false",
+      "Description": "Flag to indicate if NRL is enabled"
+    },
+    "PROJECTNAME": {
+      "Type": "String",
+      "Default": "aiagentpoc",
+      "Description": "Project name for the deployment"
+    },
+    "CFCERTARN": {
+      "Type": "String",
+      "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/6736e423-7278-444e-aa34-7d849d896d4f"
+    },
+    "CERTIFICATEARN": {
+      "Type": "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/c4bf4fbf-7440-4345-8720-eff73b19bcce",
+      "Description": "The certificate ARN for the nhsdta.com domain"
+    },
+    "DEPLOYMENTSTAGENAME": {
+      "Type": "String",
+      "Default": "prod",
+      "Description": "The stage deployment name"
+    },
+    "FEDOMAIN": {
+      "Type": "String",
+      "Default": "aiagentpocfe",
+      "Description": "The frontend domain identifier"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Default": "Z1075FNTZPAM5I",
+      "Description": "The ID of the Route53 hosted zone"
+    },
+    "ROOTDOMAIN": {
+      "Type": "String",
+      "Default": "nhsdta.com",
+      "Description": "The root domain name"
+    },
+    "SHORTCODE": {
+      "Type": "String",
+      "Default": "mabr8",
+      "Description": "The shortcode for tags"
+    }
+  },
+  "Globals": {
+    "Function": {
+      "AutoPublishAlias": "live",
+      "Tags": {
+        "shortcode": { "Ref": "SHORTCODE" }
+      },
+      "Environment": {
+        "Variables": {
+          "ROOTDOMAIN": { "Ref": "ROOTDOMAIN" },
+          "BRANCHNAME": { "Ref": "BRANCHNAME" },
+          "FEDOMAIN": { "Ref": "FEDOMAIN" },
+          "APIENVIRONMENT": {"Ref": "APIENVIRONMENT"},
+          "APIKNAMEPARAM": {"Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "apimkeyname"]]},
+          "APIKEYSECRET": {"Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "apimclientcertkey"]]},
+          "NRLENABLED": { "Ref": "NRLENABLED" }
+        }
+      },
+      "Timeout": 300
+    }
+  },
+  "Resources": {
+    "BedrockAgentApptMgmt" : {
+      "Type": "AWS::Bedrock::Agent",
+      "Properties": {
+        "ActionGroups": [
+          {
+            "ActionGroupName": "UserInputReprompt",
+            "ActionGroupState": "ENABLED",
+            "ParentActionGroupSignature": "AMAZON.UserInput"
+          },
+          {
+            "ActionGroupName": "GetAppointmentsActionGroup",
+            "ActionGroupState": "ENABLED",
+            "Description": "Action group to get appointments from BaRS FHIR R4 API",
+            "ActionGroupExecutor": {
+              "Lambda": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "GetAppointmentsFunction"]]}}
+            },
+            "FunctionSchema": {
+              "Functions": [
+                {
+                  "Name": "GetAppointmentsAction",
+                  "Description": "Get Appointments from BaRS FHIR R4 API",
+                  "Parameters": { "nhsnumber" : {
+                      "Description" : "The person's NHS Number - MUST be 10 numerical digits long",
+                      "Required" : true,
+                      "Type" : "string"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "ActionGroupName": "GetAppointmentActionGroup",
+            "ActionGroupState": "ENABLED",
+            "Description": "Action group to get appointment details for a specific appointment from BaRS FHIR R4 API",
+            "ActionGroupExecutor": {
+              "Lambda": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "GetAppointmentFunction"]]}}
+            },
+            "FunctionSchema": {
+              "Functions": [
+                {
+                  "Name": "GetAppointmentAction",
+                  "Description": "Get Appointment details from BaRS FHIR R4 API",
+                  "Parameters": { 
+                    "dosserviceid" : {
+                      "Description" : "The appointment's DOS service ID - obtained from the https://fhir.nhs.uk/Id/dos-service-id identifier in the selected DocumentReference resource",
+                      "Required" : true,
+                      "Type" : "string"
+                    },
+                    "barsidentifier" : {
+                      "Description" : "The appointment's BaRS identifier - obtained from the https://fhir.nhs.uk/Id/BaRS-Identifier identifier in the selected DocumentReference resource",
+                      "Required" : true,
+                      "Type" : "string"
+                    }
+                  },
+                  "RequireConfirmation": "DISABLED"
+                }
+              ]
+            }
+          },
+          {
+            "ActionGroupName": "GetSlotsActionGroup",
+            "ActionGroupState": "ENABLED",
+            "Description": "Action group to get free appointment slots for a HealthcareService from BaRS FHIR R4 API using the GetSlotsFunction",
+            "ActionGroupExecutor": {
+              "Lambda": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "GetSlotsFunction"]]}}
+            },
+            "FunctionSchema": {
+              "Functions": [
+                {
+                  "Name": "GetAppointmentSlotsAction",
+                  "Description": "Get Free Appointment Slots details from BaRS FHIR R4 API",
+                  "Parameters": { 
+                    "dosserviceid" : {
+                      "Description" : "The appointment's DOS service ID - obtained from the https://fhir.nhs.uk/Id/dos-service-id identifier in the Appointment's HealthcareService actor",
+                      "Required" : true,
+                      "Type" : "string"
+                    },
+                    "healthcareserviceid" : {
+                      "Description" : "The appointment's HealthcareService identifier - obtained from the Appointment's HealthcareService actor reference",
+                      "Required" : true,
+                      "Type" : "string"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "ActionGroupName": "RescheduleAppointmentActionGroup",
+            "ActionGroupState": "ENABLED",
+            "Description": "Action group to reschedule a specific appointment using the BaRS FHIR R4 API",
+            "ActionGroupExecutor": {
+              "Lambda": {"Fn::ImportValue" : {"Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "RescheduleAppointmentFunction"]]}}
+            },
+            "FunctionSchema": {
+              "Functions": [
+                {
+                  "Name": "RescheduleAppointmentAction",
+                  "Description": "This gives access to the scheduling system to reschedule an Appointment into a new Slot. The information needed is the dosserviceid, the barsidentifier (which is also the id of the Appointment), the id of the Slot, and the start and end properties of the selected Slot",
+                  "Parameters": { "dosserviceid" : {
+                      "Description" : "The appointment's DOS service ID - obtained from the https://fhir.nhs.uk/Id/dos-service-id identifier in the selected DocumentReference resource",
+                      "Required" : true,
+                      "Type" : "string"
+                    },
+                    "barsidentifier" : {
+                      "Description" : "The appointment's BaRS identifier - obtained from the https://fhir.nhs.uk/Id/BaRS-Identifier identifier in the selected DocumentReference resource",
+                      "Required" : true,
+                      "Type" : "string"
+                    },
+                    "slotid" : {
+                      "Description" : "The Slot ID to reschedule the appointment to - obtained from the id of the Slot resource returned by the GetSlotsActionGroup and selected by the user",
+                      "Required" : true,
+                      "Type" : "string"
+                    },
+                    "slotstart" : {
+                      "Description" : "The Slot start time to reschedule the appointment to - obtained from the Slot resource returned by the GetSlotsActionGroup and selected by the user",
+                      "Required" : true,
+                      "Type" : "string"
+                    },
+                    "slotend" : {
+                      "Description" : "The Slot end time to reschedule the appointment to - obtained from the Slot resource returned by the GetSlotsActionGroup and selected by the user",
+                      "Required" : true,
+                      "Type" : "string"
+                    }
+                  },
+                  "RequireConfirmation": "DISABLED"
+                }
+              ]
+            }
+          }
+        ],
+        "AgentName": {
+          "Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "agent"]]
+        },
+        "AutoPrepare": false,
+        "Description": "AI Agent for the AI Agent PoC project that can access BaRS FHIR R4 API to get Appointment information",
+        "FoundationModel": "anthropic.claude-3-sonnet-20240229-v1:0",
+        "Instruction": "You are a friendly chatbot that can help a person find and manage their appointments with the NHS. The person's nhsnumber will be provided in sessionstate, never ask the person for it. You have access to an ActionGroup (GetAppointmentsActionGroup) that accepts a NHS Number as a parameter and searches for appointments which are returned as FHIR R4 DocumentReference resources. You have access to an ActionGroup (GetAppointmentActionGroup) that accepts barsidentifier and dosserviceid as parameters (which are obtained from the identifiers in the selected DocumentReference resource) that retrieves further information about an appointment. A third ActionGroup (GetSlotsActionGroup) accepts dosserviceid and healthcareserviceid as parameters to search for free appointment slots for a HealthcareService - these parameters can be obtained from the Appointment information returned from the GetAppointmentActionGroup. A fourth ActionGroup (RescheduleAppointmentActionGroup) accepts dosserviceid and barsidentifier and slotid and slotstart and slotend as parameters to reschedule the appointment selected by the user to a new time slot - these parameters can be obtained from the information returned from the GetAppointmentActionGroup, GetAppointmentsActionGroup and GetSlotsActionGroup. You should only use the ActionGroups if you need to retrieve information from BaRS FHIR R4 API, otherwise you should chat with the user in a friendly way. You should only retrieve specific Appointment details and reschedule appointments at the specific request of the user. If you do not know the answer to a question, you should say you do not know and suggest the user contacts their GP or NHS 111. If identity token information is provided in sessionstate, you should use this to personalise the conversation with the user. Always be friendly and polite.",
+        "AgentResourceRoleArn": "arn:aws:iam::865198111306:role/service-role/AmazonBedrockExecutionRoleForAgents_QL44VROKC7M",
+        "Tags": {"shortcode": { "Ref": "SHORTCODE" }}
+      },
+      "DependsOn": []
+    },
+    "BedrockAgentApptMgmtAlias": {
+      "Type" : "AWS::Bedrock::AgentAlias",
+      "Properties" : {
+        "AgentAliasName" : {
+          "Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "agent", "apptmgmt", "testalias"]]
+        },
+        "AgentId" : {"Ref" : "BedrockAgentApptMgmt"},
+        "Description" : "Alias for Orchestrator Agent for the AI Agent PoC project",
+        "Tags" : {"shortcode": { "Ref": "SHORTCODE" }}
+      },
+      "DependsOn": ["BedrockAgentApptMgmt"]
+    },
+    "BedrockAgentOrchestrator": {
+      "Type": "AWS::Bedrock::Agent",
+      "Properties": {
+        "AgentCollaboration": "SUPERVISOR",
+        "AgentCollaborators": [
+          {
+            "AgentDescriptor" : {
+              "AliasArn" : {"Fn::GetAtt": ["BedrockAgentApptMgmtAlias", "AgentAliasArn"]}
+            },
+            "CollaborationInstruction" : "You are a friendly chatbot that can help a person find and manage their appointments with the NHS. The person's nhsnumber will be provided in sessionstate, never ask the person for it. You have access to an ActionGroup (GetAppointmentsActionGroup) that accepts a NHS Number as a parameter and searches for appointments which are returned as FHIR R4 DocumentReference resources. You have access to an ActionGroup (GetAppointmentActionGroup) that accepts barsidentifier and dosserviceid as parameters (which are obtained from the identifiers in the selected DocumentReference resource) that retrieves further information about an appointment. A third ActionGroup (GetSlotsActionGroup) accepts dosserviceid and healthcareserviceid as parameters to search for free appointment slots for a HealthcareService - these parameters can be obtained from the Appointment information returned from the GetAppointmentActionGroup. A fourth ActionGroup (RescheduleAppointmentActionGroup) accepts dosserviceid and barsidentifier and slotid and slotstart and slotend as parameters to reschedule the appointment selected by the user to a new time slot - these parameters can be obtained from the information returned from the GetAppointmentActionGroup, GetAppointmentsActionGroup and GetSlotsActionGroup. You should only use the ActionGroups if you need to retrieve information from BaRS FHIR R4 API, otherwise you should chat with the user in a friendly way. You should only retrieve specific Appointment details and reschedule appointments at the specific request of the user. If you do not know the answer to a question, you should say you do not know and suggest the user contacts their GP or NHS 111. If identity token information is provided in sessionstate, you should use this to personalise the conversation with the user. Always be friendly and polite.",
+            "CollaboratorName" : {
+              "Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "agent", "apptmgmt", "collaborator"]]
+            },
+            "RelayConversationHistory" : "TO_COLLABORATOR"
+          }
+        ],
+        "AgentName": {
+          "Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "agent", "orchestrator"]]
+        },
+        "AutoPrepare": false,
+        "Description": "AI Agent Orchestrator for the AI Agent PoC project that interacts with the user and delegates to specific Agents as needed",
+        "FoundationModel": "anthropic.claude-3-sonnet-20240229-v1:0",
+        "Instruction": "You are a friendly chatbot that can help a person manage their appointments and tasks with the NHS. The person's nhsnumber will be provided in sessionstate, never ask the person for it. You are the supervising agent with access to other agents that can perform specific tasks for the user. These include managing existing appointments and completing tasks such as booking a new appointment or completing a questionnaire. If you do not know the answer to a question, you should say you do not know and suggest the user contacts their GP or NHS 111. If identity token information is provided in sessionstate, you should use this to personalise the conversation with the user. Always be friendly and polite.",
+        "AgentResourceRoleArn": "arn:aws:iam::865198111306:role/service-role/AmazonBedrockExecutionRoleForAgents_QL44VROKC7M",
+        "Tags": {"shortcode": { "Ref": "SHORTCODE" }}
+      },
+      "DependsOn": ["BedrockAgentApptMgmtAlias"]
+    }
+  }
+}

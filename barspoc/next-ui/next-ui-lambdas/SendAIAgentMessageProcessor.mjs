@@ -56,11 +56,11 @@ export const handler = async (event, snsCommonFunctionObjectInstance, bedrockAge
     console.log("sessionId is " + sessionId);
     let aiInput = { // InvokeAgentRequest
       sessionState: sessionState,
-      agentId: "N8JM7Q8BTF", // required
+      agentId: "UN9WSCGE59", // this is the orchestrator "ZEHXEDPDRO", // required
       agentAliasId: "TSTALIASID", // required
       sessionId: sessionId,//uuidv4(), // required
       endSession: false,
-      enableTrace: false,
+      enableTrace: true,
       inputText: message
     };
     if (identity_token === "") {

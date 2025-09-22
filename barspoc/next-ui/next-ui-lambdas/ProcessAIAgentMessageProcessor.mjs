@@ -34,6 +34,9 @@ export const handler = async (event, bedrockAgentClient, InvokeAgentCommand, ddb
             console.log("Response chunk:", chunk);
             aiResponseText += chunk;
           }
+          if (event.trace) {
+            console.log("Response trace:", JSON.stringify(event.trace, null, 2));
+          }
         }
         console.log("response is " + JSON.stringify(response, null, 2));
       } catch (err) {
