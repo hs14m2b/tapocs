@@ -77,17 +77,18 @@ async function checkResultLoop() {
 
 function Home(props) {
   console.log("in Home in agentchat2 - props are " + JSON.stringify(props, null, 2));
-  if (!props.message) props.message = "";
-  if (!props.sessionId) props.sessionId = "";
-  if (!props.sessionState) props.sessionState = "";
+  let pageProps = { ...props };
+  if (!pageProps.message) pageProps["message"] = "";
+  if (!pageProps.sessionId) pageProps["sessionId"] = "";
+  if (!pageProps.sessionState) pageProps["sessionState"] = "";
   const router = useRouter();
   useEffect(() => { 
     console.log("in useEffect");
     document.getElementById("pageTransitionMessage").classList.add("nhsuk-hidden");
     document.getElementById("message").focus();
-    document.getElementById("message").value = props.message;
-    document.getElementById("sessionId").value = props.sessionId;
-    document.getElementById("sessionState").value = props.sessionState;
+    document.getElementById("message").value = pageProps.message;
+    document.getElementById("sessionId").value = pageProps.sessionId;
+    document.getElementById("sessionState").value = pageProps.sessionState;
     //setTimeout(checkResultLoop, 1000);
   });
 
@@ -160,7 +161,7 @@ function Home(props) {
               Enter Chat Here
             </dt>
             <dd class="nhsuk-summary-list__value">
-              <textarea class="nhsuk-textarea" id="message" name="message" rows="5" aria-describedby="message-hint" >{ props.message }</textarea>
+              <textarea class="nhsuk-textarea" id="message" name="message" rows="5" aria-describedby="message-hint" >{ pageProps.message }</textarea>
             </dd>
 
           </div>
@@ -177,8 +178,8 @@ function Home(props) {
           </dd>
           </div>
 
-          <input id="sessionId" name="sessionId" type="hidden" default={props.sessionId} />
-          <input id="sessionState" name="sessionState" type="hidden" default={props.sessionState} />
+          <input id="sessionId" name="sessionId" type="hidden" default={pageProps.sessionId} />
+          <input id="sessionState" name="sessionState" type="hidden" default={pageProps.sessionState} />
           </form>
 
         </dl>
@@ -196,7 +197,7 @@ function Home(props) {
 //not using getServerSideProps as the risk of exceeding the 29 second API Gateway limit is too high. 
 //It will need a breakout to client side code to check for completion
 export const getServerSideProps = async (ctx) => {
-  console.log("in initial props in agentchat2");
+  console.log("in getServerSideProps in agentchat2");
   let props = {
     "hasData": true,
     "execlocation": "server",
@@ -229,15 +230,15 @@ export const getServerSideProps = async (ctx) => {
     }
     console.log(JSON.stringify(formdataCookie));
     let body = {};
-    if (ctx.query && Object.keys(ctx.query).length > 0) {
-      body = {...ctx.query};
+    if (ctx.req.method == "GET") {
+      body = {...((ctx.query)? ctx.query : {})};
     }
     if (ctx.req.method == "POST") {
-      body = { ...body, ...(await parse(ctx.req)) };
+      body = { ...(await parse(ctx.req)), ...((ctx.query)? ctx.query : {}) };
     }
-    if (body.sessionId && (body.sessionId.trim() !== "" || body.sessionId.trim() !== "undefined")) delete body.sessionId;
-    if (body.sessionState && (body.sessionState.trim() !== "" || body.sessionState.trim() !== "undefined")) delete body.sessionState;
-    if (body.messageuuid && (body.messageuuid.trim() !== "")) delete body.messageuuid;
+    if (body.sessionId && (body.sessionId.trim() == "" || body.sessionId.trim() == "undefined")) delete body.sessionId;
+    if (body.sessionState && (body.sessionState.trim() == "" || body.sessionState.trim() == "undefined")) delete body.sessionState;
+    if (body.messageuuid && (body.messageuuid.trim() == "")) delete body.messageuuid;
     console.log("body is " + JSON.stringify(body));
     if (ctx.req.method != "POST" && ctx.req.method != "GET") {
       //unanticipated method - just return
