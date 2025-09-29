@@ -26,6 +26,7 @@ export default function Home() {
         <Link className="nhsuk-u-visually-hidden" href="/confirmdata" />
         <Link className="nhsuk-u-visually-hidden" href="/home" />
         <Link className="nhsuk-u-visually-hidden" href="/agentchat" />
+        <Link className="nhsuk-u-visually-hidden" href="/agentchat2" />
       </p>
       <button className="nhsuk-button" data-module="nhsuk-button" onClick={clearData}>
           Clear Saved Data

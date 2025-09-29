@@ -34,6 +34,15 @@ export const handler = async (event, snsCommonFunctionObjectInstance, bedrockAge
       console.log("error getting identity_token from formdata cookie");
       console.log(error.message);
       identity_token = "";
+      //check if identity_token is in the event.body
+      let resourceJsonTemp = Object.fromEntries(new URLSearchParams(event.body));
+      if (resourceJsonTemp.identity_token && resourceJsonTemp.identity_token !== "") {
+        identity_token = resourceJsonTemp.identity_token;
+        decoded = jwt.decode(identity_token);
+        console.log("decoded id_token is " + JSON.stringify(decoded));
+        id_token_nhsnumber = decoded.nhs_number;
+        console.log("nhsnumber is " + id_token_nhsnumber);
+      }
     }
     let resourceJson = Object.fromEntries(new URLSearchParams(event.body));
     console.log("resourceJson is " + JSON.stringify(resourceJson));

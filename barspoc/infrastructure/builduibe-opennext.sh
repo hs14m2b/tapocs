@@ -67,7 +67,7 @@ sed -i "s/nextjsuiapilambdas\.zip/${TIMESTAMP}nextjsuiapilambdas\.zip/g" nextjsu
 aws cloudformation package --use-json --template-file nextjsui-backend.json --s3-bucket ${S3CODEBUCKET} --output-template-file ${TIMESTAMP}nextjsui-backend.json --region ${REGION}
 aws cloudformation deploy --template-file ${TIMESTAMP}nextjsui-backend.json --stack-name main-mabr8-nextjsuibestack-barspoc --capabilities "CAPABILITY_NAMED_IAM" --region ${REGION} --parameter-overrides APIENVIRONMENT=${APIENVIRONMENT}
 
-#aws cloudformation deploy --template-file ${TIMESTAMP}nextjsui-frontend.json --stack-name main-mabr8-nextjsuifestack-barspoc --capabilities "CAPABILITY_NAMED_IAM"  --region ${REGION}
+aws cloudformation deploy --template-file ${TIMESTAMP}nextjsui-frontend.json --stack-name main-mabr8-nextjsuifestack-barspoc --capabilities "CAPABILITY_NAMED_IAM"  --region ${REGION}
 
 mkdir assets
 unzip -q ${TIMESTAMP}assetsLayer.zip -d assets

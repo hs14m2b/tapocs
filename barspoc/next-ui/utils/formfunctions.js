@@ -18,44 +18,65 @@ module.exports.populateHiddenForm = function () {
 }
 
 module.exports.saveDataLocally = function(formdata) {
-    console.log("in saveDataLocally");
-    console.log(formdata);
+    //console.log("in saveDataLocally");
+    //console.log(formdata);
     //get FORMDATACOOKIENAME
     let formdataCookie = getCookie(FORMDATACOOKIENAME, JSON.stringify({}));
-    console.log(formdataCookie);
+    //console.log(formdataCookie);
     //parse to object
     let formdataCookieObject = (formdataCookie == "") ? {} : JSON.parse(formdataCookie);
-    console.log(formdataCookieObject);
+    //console.log(formdataCookieObject);
     //override name fields
     for(const key of Object.keys(formdata)) { // each 'entry' is a [key, value] tuple
         formdataCookieObject[key] = formdata[key];
     }
     //save cookie again as well as localstorage
+    //console.log("formdataCookieObject is " + JSON.stringify(formdataCookieObject, null, 2));
+    //console.log("saving formdata to cookie");
     document.cookie = FORMDATACOOKIENAME + "=" + JSON.stringify(formdataCookieObject) + "; path=/";
     sessionStorage.setItem(FORMDATACOOKIENAME, JSON.stringify(formdataCookieObject));
 }
 
 module.exports.getSavedItem = function(itemName) {
-    console.log(itemName);
-    //get FORMDATACOOKIENAME
-    let formdataCookie = getCookie(FORMDATACOOKIENAME, JSON.stringify({}));
-    console.log(formdataCookie);
-    //parse to object
-    let formdataCookieObject = (formdataCookie == "") ? {} : JSON.parse(formdataCookie);
-    console.log(formdataCookieObject);
-    //override name fields
-    return (Object.keys(formdataCookieObject).includes(itemName)) ? formdataCookieObject[itemName] : "";
+    try {
+        //console.log(itemName);
+        //get from sessionStorage
+        let formdataSession = decodeURIComponent(sessionStorage.getItem(FORMDATACOOKIENAME));
+        //console.log(formdataSession);
+        //parse to object
+        let formdataSessionObject = (formdataSession == null || typeof formdataSession == "undefined" || formdataSession=="") ? {} : JSON.parse(formdataSession);
+        //console.log(formdataSessionObject, null, 2);
+        //return if found
+        if (Object.keys(formdataSessionObject).includes(itemName)) return formdataSessionObject[itemName];
+    } catch (error) {
+        console.error("Error getting saved item from sessionStorage:", error);
+    }
+    try {
+        //not found in sessionStorage so look in cookie
+        //get FORMDATACOOKIENAME
+        let formdataCookie = decodeURIComponent(getCookie(FORMDATACOOKIENAME, JSON.stringify({})));
+        //console.log(formdataCookie);
+        //parse to object
+        let formdataCookieObject = (formdataCookie == "") ? {} : JSON.parse(formdataCookie);
+        //console.log(formdataCookieObject);
+        //override name fields
+        return (Object.keys(formdataCookieObject).includes(itemName)) ? formdataCookieObject[itemName] : "";
+    } catch (error) {
+        console.error("Error getting saved item from cookie:", error);
+    }
+    //not found in either place
+    return "";
 }
 
 
 module.exports.confirmScreenShown = function() {
     //get FORMDATACOOKIENAME
     let formdataCookie = getCookie(FORMDATACOOKIENAME, JSON.stringify({"confirmScreenShown": false}));
-    console.log(formdataCookie);
+    //console.log(formdataCookie);
     //parse to object
     let formdataCookieObject = (formdataCookie == "") ? {"confirmScreenShown": false} : JSON.parse(formdataCookie);
     let confirmScreenShown = (formdataCookieObject.confirmScreenShown) ? formdataCookieObject.confirmScreenShown : false;
-    console.log(confirmScreenShown);
+    //console.log(confirmScreenShown);
     return confirmScreenShown;
 }
 

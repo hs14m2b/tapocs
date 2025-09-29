@@ -120,6 +120,8 @@ function Home( props ) {
       </a>
       <br />
       Start <Link href="/agentchat">AI Agent Chat</Link>
+      <br />
+      Start <Link href="/agentchat2">AI Agent Chat2</Link>
       <Spinner1 message="Finding your appointments" id="pageTransitionMessagegetappointments"></Spinner1>
       <Spinner1 message="Finding your service requests" id="pageTransitionMessagegetservicerequests"></Spinner1>
       <Spinner1 message="Finding your outstanding tasks" id="pageTransitionMessagegettasks"></Spinner1>
@@ -131,7 +133,7 @@ function Home( props ) {
 }
 
 Home.getInitialProps = async (ctx) => {
-  console.log("in initial props");
+  console.log("in initial props in form1");
   let props = {
     "execlocation": "server",
     "nhsnumber": "",
@@ -157,7 +159,12 @@ Home.getInitialProps = async (ctx) => {
   const cookies = new Cookies(ctx.req, ctx.res);
   const formdataCookieRaw = cookies.get(FORMDATACOOKIENAME);
   console.log(formdataCookieRaw);
-  let formdataCookie = (formdataCookieRaw == null || typeof formdataCookieRaw == "undefined" || formdataCookieRaw=="") ? {} : JSON.parse(decodeURIComponent(formdataCookieRaw));
+  let formdataCookie = {};
+  try {
+    formdataCookie = (formdataCookieRaw == null || typeof formdataCookieRaw == "undefined" || formdataCookieRaw=="") ? {} : JSON.parse(decodeURIComponent(formdataCookieRaw));
+  } catch (error) {
+    console.error("Error parsing formdataCookie:", error);
+  }
   console.log(JSON.stringify(formdataCookie));
   if (ctx.req.method == "GET") {
     const { nhsnumber } = formdataCookie;
@@ -196,7 +203,7 @@ Home.getInitialProps = async (ctx) => {
       httpOnly: false,
       path: "/",
     });
-    ctx.res.setHeader("Set-Cookie", cookie);
+    //ctx.res.setHeader("Set-Cookie", cookie);
     console.log("have set cookie header");
     let confirmScreenShown = (formdataCookie.confirmScreenShown) ? true : false;
     console.log("has confirm screen been shown yet? " + confirmScreenShown);

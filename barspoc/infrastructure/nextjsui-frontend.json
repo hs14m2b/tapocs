@@ -293,7 +293,7 @@
               "CachedMethods": ["GET", "HEAD"],
               "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
               "Compress": true,
-              "PathPattern": "_next/*",
+              "PathPattern": "_next/static/*",
               "TargetOriginId": {
                 "Fn::Join": ["-", [{ "Ref": "BRANCHNAME" }, "s3origin"]]
               },
