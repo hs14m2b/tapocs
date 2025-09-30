@@ -111,6 +111,10 @@ function Home( props ) {
         <button className="nhsuk-button" data-module="nhsuk-button" type="submit" name="action" value="createservicerequest">
           Create Service Request
         </button>
+        <br />
+        <button className="nhsuk-button" data-module="nhsuk-button" type="submit" name="action" value="agentchat2">
+          Start AI Agent Chat
+        </button>
       </form>
       <br />
       <a href="https://main-mabr8-barspocui-nextjsfe.nhsdta.com/extapi/oidcrequest" className="nhsuk-link">
@@ -119,13 +123,11 @@ function Home( props ) {
       </button>
       </a>
       <br />
-      Start <Link href="/agentchat">AI Agent Chat</Link>
-      <br />
-      Start <Link href="/agentchat2">AI Agent Chat2</Link>
       <Spinner1 message="Finding your appointments" id="pageTransitionMessagegetappointments"></Spinner1>
       <Spinner1 message="Finding your service requests" id="pageTransitionMessagegetservicerequests"></Spinner1>
       <Spinner1 message="Finding your outstanding tasks" id="pageTransitionMessagegettasks"></Spinner1>
       <Spinner1 message="Creating new referral/service request" id="pageTransitionMessagecreateservicerequest"></Spinner1>
+      <Spinner1 message="Launching AI Agent Chat" id="pageTransitionMessageagentchat2"></Spinner1>
 
       <Hiddenform></Hiddenform>
     </>
