@@ -1,0 +1,42 @@
+---
+title: Sequence diagram for Token Exchange role within Wayfinder and Epic integration
+description: Sequence diagram showing the process of token exchange between Wayfinder and Epic systems, NOT using NHS login.
+author: Matthew Brown
+date: 2025-08-01
+tags: [Wayfinder, Epic, Token Exchange, Sequence Diagram]
+displayMode: sequence
+config:
+  theme: default
+  look: handdrawn
+---
+
+
+sequenceDiagram
+    actor P as Patient
+    participant NHSA as NHS App
+    participant PCA as Wayfinder Patient Care Aggregator
+    participant WFR as Wayfinder relationship store
+    participant EPIC as Epic FHIR Server
+    participant EOAUTH as Epic OAuth Server 
+    participant PEP as Other Patient Engagement Platform/EPR
+    note over P: Patient uses NHS App<br />to retrieve list of appointments
+    P->>NHSA: Launches Wayfinder within NHS App
+    NHSA->>+PCA: Request list of appointments using FHIR
+    %% see https://simplifier.net/nhsbookingandreferrals/~resources?category=Example&exampletype=Bundle&sortBy=DisplayName for example messages
+    PCA->>WFR: Request patient relationship information
+    WFR-->>PCA: Return patient relationships
+    par for all relationships
+      alt Relationship with Epic
+        PCA->>+EOAUTH: Request access token using OAuth2.0 Token Exchange, passing NHS Login identity token from NHS App
+        EOAUTH<<->>EOAUTH: Validate NHS Login identity token
+        EOAUTH-->>-PCA: Return new Epic access token (patient context) to Patient Care Aggregator
+        PCA->>+EPIC: Request list of appointments using FHIR with Epic access token (patient context)
+        EPIC-->>-PCA: Return list of appointments (patient context)
+      else Relationship with another EPR/PEP
+        PCA->>+PEP: Request list of appointments using FHIR secured with TLS-MA
+        PEP-->>-PCA: Return list of appointments
+      end
+    end
+    PCA-->>PCA: Aggregate list of appointments
+    PCA-->>-NHSA: Return list of appointments
+    NHSA-->>P: Return list of appointments
