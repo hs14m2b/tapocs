@@ -1,0 +1,10 @@
+{
+    "name": "aws-mermaid-icons",
+    "version": "1.0.0",
+    "description": "Package to use AWS icons in Mermaid diagrams",
+    "main": "index.js",
+    "license": "MIT",
+    "dependencies": {
+        "@mermaid-js/mermaid-aws-icons": "^1.0.0"
+    }
+}
