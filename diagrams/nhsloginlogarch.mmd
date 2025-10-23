@@ -1,0 +1,19 @@
+architecture-beta
+title NHS Login Routing Pattern
+    group frontend[Frontend]
+    group api2(logos:aws-lambda)[API]
+
+    service browser(aws:res-user)[Users Browser]
+    service cloudfront(logos:aws-cloudfront)[CDN] in frontend
+    service s3(logos:aws-s3)[Static Hosting] in frontend
+
+    service apigw(logos:aws-api-gateway)[API Gateway] in api2
+    service lambda1(logos:aws-lambda)[Lambda Function] in api2
+    service lambda2(logos:aws-lambda)[Lambda Function] in api2
+
+    
+    browser:R -[hello]-> L:cloudfront
+    cloudfront:T -[static content]-> B:s3
+    cloudfront:R -[API calls]-> L:apigw
+    apigw:R -[route1]-> L:lambda1
+    apigw:B -[route2]-> L:lambda2

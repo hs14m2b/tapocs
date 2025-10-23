@@ -1,0 +1,25 @@
+architecture-beta
+title Proposed Django Routing Pattern
+    group frontend[Frontend]
+    group backend[Backend]
+    group api2(logos:aws-lambda)[API] in backend
+    group api1(logos:aws-lambda)[Nextjs frontend] in backend
+
+    service browser(aws:res-user)[Users Browser]
+    service cloudfront(logos:aws-cloudfront)[CDN] in frontend
+    service s3(logos:aws-s3)[Static Hosting] in frontend
+
+    service apigw(logos:aws-api-gateway)[API Gateway] in api2
+    service lambda1(logos:aws-lambda)[Django App] in api2
+
+    service apigw2(logos:aws-api-gateway)[API Gateway] in api1
+    service Nextjs(logos:aws-lambda)[Nextjs App] in api1
+
+    browser:R --> L:cloudfront
+    cloudfront:T -[static content]-> B:s3
+    cloudfront:R -[API calls]-> L:apigw
+    apigw:R -[all routes]-> L:lambda1
+
+    cloudfront:B -[serverside rendering]-> L:apigw2
+    apigw2:R -[Nextjs routing]-> L:Nextjs
+    
