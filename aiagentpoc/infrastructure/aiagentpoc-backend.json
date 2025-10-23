@@ -1,0 +1,399 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Parameters": {
+    "AWSREGIONNAME": {
+      "Type": "String",
+      "Default": "eu-west-2",
+      "Description": "The AWS region name"
+    },
+    "APIENVIRONMENT": {
+      "Type": "String",
+      "Description": "The API-M environment the deployment supports - values are internal-dev, internal-dev-sandbox, internal-qa, internal-qa-sandbox, ref (all previous are non-prod), sandbox, dev, int, prod"
+    },
+    "BEDOMAIN": {
+      "Type": "String",
+      "Default": "aiagentpocbe",
+      "Description": "Back end domain identifier"
+    },
+    "BARSCERTIFICATEARN": {
+      "Type": "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/1a507374-9136-49e1-b7e0-397c95b2fcc7",
+      "Description": "The Certificate ARN for the BaRS provider"
+    },
+    "BARSVERIFICATIONCERTIFICATEARN": {
+      "Type": "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/7e1019f5-2734-44f3-ab2a-5a6cbcaac3bb",
+      "Description": "The Verification Certificate ARN for the BaRS provider to prove domain ownership"
+    },
+    "BARSDOMAIN": {
+      "Type": "String",
+      "Default": "bars-int-x26.tsassolarch.thirdparty.nhs.uk",
+      "Description": "The bars domain name for the BaRS provider - must be lowercased"
+    },
+    "BRANCHNAME": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "The branchname to derive fqdn"
+    },
+    "NRLENABLED": {
+      "Type": "String",
+      "Default": "false",
+      "Description": "Flag to indicate if NRL is enabled"
+    },
+    "PROJECTNAME": {
+      "Type": "String",
+      "Default": "aiagentpoc",
+      "Description": "Project name for the deployment"
+    },
+    "CFCERTARN": {
+      "Type": "String",
+      "Description": "Certificate for CloudFront deployment *.nhsdta.com - in US East 1",
+      "Default": "arn:aws:acm:us-east-1:865198111306:certificate/6736e423-7278-444e-aa34-7d849d896d4f"
+    },
+    "CERTIFICATEARN": {
+      "Type": "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/c4bf4fbf-7440-4345-8720-eff73b19bcce",
+      "Description": "The certificate ARN for the nhsdta.com domain"
+    },
+    "DEPLOYMENTSTAGENAME": {
+      "Type": "String",
+      "Default": "prod",
+      "Description": "The stage deployment name"
+    },
+    "FEDOMAIN": {
+      "Type": "String",
+      "Default": "aiagentpocfe",
+      "Description": "The frontend domain identifier"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Default": "Z1075FNTZPAM5I",
+      "Description": "The ID of the Route53 hosted zone"
+    },
+    "ROOTDOMAIN": {
+      "Type": "String",
+      "Default": "nhsdta.com",
+      "Description": "The root domain name"
+    },
+    "SHORTCODE": {
+      "Type": "String",
+      "Default": "mabr8",
+      "Description": "The shortcode for tags"
+    }
+  },
+  "Globals": {
+    "Function": {
+      "AutoPublishAlias": "live",
+      "Tags": {
+        "shortcode": { "Ref": "SHORTCODE" }
+      },
+      "Environment": {
+        "Variables": {
+          "ROOTDOMAIN": { "Ref": "ROOTDOMAIN" },
+          "BRANCHNAME": { "Ref": "BRANCHNAME" },
+          "FEDOMAIN": { "Ref": "FEDOMAIN" },
+          "APIENVIRONMENT": {"Ref": "APIENVIRONMENT"},
+          "APIKNAMEPARAM": {"Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "apimkeyname"]]},
+          "APIKEYSECRET": {"Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "apimclientcertkey"]]},
+          "NRLENABLED": { "Ref": "NRLENABLED" }
+        }
+      },
+      "Timeout": 300
+    }
+  },
+  "Resources": {
+    "aiagentpocbeLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess",
+          "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+          "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+          "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB"
+        ],
+        "Path": "/service-role/",
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "APIENVIRONMENT" },  "aiagentpocbeLambdaRole-001", "ssmread"]
+              ]
+            },
+            "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Sid": "SSMRead",
+                        "Effect": "Allow",
+                        "Action": [
+                            "secretsmanager:GetSecretValue",
+                            "ssm:GetParameter"
+                        ],
+                        "Resource": "*"
+                    },
+                    {
+                        "Sid": "KMSAccess",
+                        "Effect": "Allow",
+                        "Action": [
+                            "kms:*"
+                        ],
+                        "Resource": "*"
+                    }
+                ]
+            }
+        }        ],
+        "RoleName": {
+          "Fn::Join": [
+            "",
+            [{ "Ref": "APIENVIRONMENT" }, "-", "aiagentpocbeLambdaRole-001"]
+          ]
+        }
+      }
+    },
+    "aiagentpocbeCWRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/CloudWatchEventsFullAccess"
+        ],
+        "Path": "/service-role/",
+        "RoleName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-", "aiagentpocbeCWRole"]]
+        }
+      }
+    },
+    "aiagentpocKey":{
+      "Type" : "AWS::KMS::Key",
+      "Properties" : {
+          "BypassPolicyLockoutSafetyCheck" : false,
+          "Description" : "Key for managing encryption in AWS aiagentpoc SNS topics etc",
+          "Enabled" : true,
+          "EnableKeyRotation" : true,
+          "KeyPolicy" : {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Action": "kms:*",
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":iam::", { "Ref": "AWS::AccountId" }, ":root"]]}
+                },
+                "Resource": "*"
+              },
+              {
+                "Principal": {
+                  "AWS": { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":iam::", { "Ref": "AWS::AccountId" }, ":root"]]},
+                  "Service": [
+                    { "Fn::Join": ["", ["logs.",{ "Ref": "AWS::URLSuffix" }]]},
+                    { "Fn::Join": ["", ["lambda.",{ "Ref": "AWS::URLSuffix" }]]},
+                    { "Fn::Join": ["", ["cloudtrail.",{ "Ref": "AWS::URLSuffix" }]]},
+                    { "Fn::Join": ["", ["sns.",{ "Ref": "AWS::URLSuffix" }]]},
+                    { "Fn::Join": ["", ["s3.",{ "Ref": "AWS::URLSuffix" }]]}
+                  ]
+                },
+                "Action": [
+                  "kms:CreateGrant", 
+                  "kms:Decrypt", 
+                  "kms:DescribeKey", 
+                  "kms:Encrypt", 
+                  "kms:GenerateDataKey*", 
+                  "kms:ReEncrypt*", 
+                  "kms:ListGrants"
+                ],
+                "Effect": "Allow",
+                "Resource": "*"
+              }
+            ]
+          },
+          "KeySpec" : "SYMMETRIC_DEFAULT",
+          "KeyUsage" : "ENCRYPT_DECRYPT",
+          "MultiRegion" : false,
+          "Origin" : "AWS_KMS",
+          "PendingWindowInDays" : 7,
+          "Tags" : [ {"Key": "shortcode", "Value": {"Ref": "SHORTCODE"}} ]
+        }
+    },
+    "aiagentpocKeyAlias": {
+      "Type" : "AWS::KMS::Alias",
+      "Properties" : {
+          "AliasName" : "alias/aiagentpoc",
+          "TargetKeyId" : {"Ref": "aiagentpocKey"}
+        }
+    },
+    "GetAppointmentsFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "aiagentpocapilambdas.zip",
+        "Description": "The lambda function that is invoked by the AI Agent to search for Appointments in BaRS FHIR R4 API",
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "GetAppointmentsFunction"]]
+        },
+        "Handler": "GetAppointmentsFactory.handler",
+        "Role": { "Fn::GetAtt": ["aiagentpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["aiagentpocbeLambdaRole"]
+    },
+    "GetAppointmentsFunctionPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+          "Action": "lambda:InvokeFunction",
+          "FunctionName": {"Ref": "GetAppointmentsFunction"},
+          "Principal": "bedrock.amazonaws.com",
+          "SourceAccount": { "Ref": "AWS::AccountId" },
+          "SourceArn": { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":bedrock:",{ "Ref": "AWSREGIONNAME" },":", { "Ref": "AWS::AccountId" }, ":agent/*"]]}
+      }
+    },
+    "GetPastAppointmentsFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "aiagentpocapilambdas.zip",
+        "Description": "The lambda function that is invoked by the AI Agent to search for Appointments in BaRS FHIR R4 API",
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "GetPastAppointmentsFunction"]]
+        },
+        "Handler": "GetPastAppointmentsFactory.handler",
+        "Role": { "Fn::GetAtt": ["aiagentpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["aiagentpocbeLambdaRole"]
+    },
+    "GetPastAppointmentsFunctionPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+          "Action": "lambda:InvokeFunction",
+          "FunctionName": {"Ref": "GetPastAppointmentsFunction"},
+          "Principal": "bedrock.amazonaws.com",
+          "SourceAccount": { "Ref": "AWS::AccountId" },
+          "SourceArn": { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":bedrock:",{ "Ref": "AWSREGIONNAME" },":", { "Ref": "AWS::AccountId" }, ":agent/*"]]}
+      }
+    },
+    "GetSlotsFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "aiagentpocapilambdas.zip",
+        "Description": "The lambda function that is invoked by the AI Agent to search for Appointment Slots in BaRS FHIR R4 API",
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "GetSlotsFunction"]]
+        },
+        "Handler": "GetSlotsFactory.handler",
+        "Role": { "Fn::GetAtt": ["aiagentpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["aiagentpocbeLambdaRole"]
+    },
+    "GetSlotsFunctionPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+          "Action": "lambda:InvokeFunction",
+          "FunctionName": {"Ref": "GetSlotsFunction"},
+          "Principal": "bedrock.amazonaws.com",
+          "SourceAccount": { "Ref": "AWS::AccountId" },
+          "SourceArn": { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":bedrock:",{ "Ref": "AWSREGIONNAME" },":", { "Ref": "AWS::AccountId" }, ":agent/*"]]}
+      }
+    },
+    "GetAppointmentFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "aiagentpocapilambdas.zip",
+        "Description": "The lambda function that is invoked by the AI Agent to search for Appointments in BaRS FHIR R4 API",
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "GetAppointmentFunction"]]
+        },
+        "Handler": "GetAppointmentFactory.handler",
+        "Role": { "Fn::GetAtt": ["aiagentpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["aiagentpocbeLambdaRole"]
+    },
+    "GetAppointmentFunctionPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+          "Action": "lambda:InvokeFunction",
+          "FunctionName": {"Ref": "GetAppointmentFunction"},
+          "Principal": "bedrock.amazonaws.com",
+          "SourceAccount": { "Ref": "AWS::AccountId" },
+          "SourceArn": { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":bedrock:",{ "Ref": "AWSREGIONNAME" },":", { "Ref": "AWS::AccountId" }, ":agent/*"]]}
+      }
+    },
+    "RescheduleAppointmentFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "aiagentpocapilambdas.zip",
+        "Description": "The lambda function that is invoked by the AI Agent to reschedule an appointment via the BaRS FHIR R4 API",
+        "FunctionName": {
+          "Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "RescheduleAppointmentFunction"]]
+        },
+        "Handler": "RescheduleAppointmentFactory.handler",
+        "Role": { "Fn::GetAtt": ["aiagentpocbeLambdaRole", "Arn"] },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300
+      },
+      "DependsOn": ["aiagentpocbeLambdaRole"]
+    },
+    "RescheduleAppointmentFunctionPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+          "Action": "lambda:InvokeFunction",
+          "FunctionName": {"Ref": "RescheduleAppointmentFunction"},
+          "Principal": "bedrock.amazonaws.com",
+          "SourceAccount": { "Ref": "AWS::AccountId" },
+          "SourceArn": { "Fn::Join": ["", ["arn:",{ "Ref": "AWS::Partition" },":bedrock:",{ "Ref": "AWSREGIONNAME" },":", { "Ref": "AWS::AccountId" }, ":agent/*"]]}
+      }
+    }
+  },
+  "Outputs" : {
+    "GetAppointmentsFunctionArn" : {
+        "Description" : "The ARN of the GetAppointmentsFunction Lambda Function",
+        "Value" : { "Fn::GetAtt": ["GetAppointmentsFunction", "Arn"] },
+        "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "GetAppointmentsFunction"]]}}
+    },
+    "GetAppointmentFunctionArn" : {
+        "Description" : "The ARN of the GetAppointmentFunction Lambda Function",
+        "Value" : { "Fn::GetAtt": ["GetAppointmentFunction", "Arn"] },
+        "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "GetAppointmentFunction"]]}}
+    },
+    "GetSlotsFunctionArn" : {
+        "Description" : "The ARN of the GetSlotsFunction Lambda Function",
+        "Value" : { "Fn::GetAtt": ["GetSlotsFunction", "Arn"] },
+        "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "GetSlotsFunction"]]}}
+    },
+    "RescheduleAppointmentFunctionArn" : {
+        "Description" : "The ARN of the RescheduleAppointmentFunction Lambda Function",
+        "Value" : { "Fn::GetAtt": ["RescheduleAppointmentFunction", "Arn"] },
+        "Export": {"Name": {"Fn::Join": ["-", [{ "Ref": "PROJECTNAME" }, { "Ref": "APIENVIRONMENT" }, "RescheduleAppointmentFunction"]]}}
+    }
+  }
+}

@@ -111,6 +111,10 @@ function Home( props ) {
         <button className="nhsuk-button" data-module="nhsuk-button" type="submit" name="action" value="createservicerequest">
           Create Service Request
         </button>
+        <br />
+        <button className="nhsuk-button" data-module="nhsuk-button" type="submit" name="action" value="agentchat2">
+          Start AI Agent Chat
+        </button>
       </form>
       <br />
       <a href="https://main-mabr8-barspocui-nextjsfe.nhsdta.com/extapi/oidcrequest" className="nhsuk-link">
@@ -123,6 +127,7 @@ function Home( props ) {
       <Spinner1 message="Finding your service requests" id="pageTransitionMessagegetservicerequests"></Spinner1>
       <Spinner1 message="Finding your outstanding tasks" id="pageTransitionMessagegettasks"></Spinner1>
       <Spinner1 message="Creating new referral/service request" id="pageTransitionMessagecreateservicerequest"></Spinner1>
+      <Spinner1 message="Launching AI Agent Chat" id="pageTransitionMessageagentchat2"></Spinner1>
 
       <Hiddenform></Hiddenform>
     </>
@@ -130,7 +135,7 @@ function Home( props ) {
 }
 
 Home.getInitialProps = async (ctx) => {
-  console.log("in initial props");
+  console.log("in initial props in form1");
   let props = {
     "execlocation": "server",
     "nhsnumber": "",
@@ -156,7 +161,12 @@ Home.getInitialProps = async (ctx) => {
   const cookies = new Cookies(ctx.req, ctx.res);
   const formdataCookieRaw = cookies.get(FORMDATACOOKIENAME);
   console.log(formdataCookieRaw);
-  let formdataCookie = (formdataCookieRaw == null || typeof formdataCookieRaw == "undefined" || formdataCookieRaw=="") ? {} : JSON.parse(decodeURIComponent(formdataCookieRaw));
+  let formdataCookie = {};
+  try {
+    formdataCookie = (formdataCookieRaw == null || typeof formdataCookieRaw == "undefined" || formdataCookieRaw=="") ? {} : JSON.parse(decodeURIComponent(formdataCookieRaw));
+  } catch (error) {
+    console.error("Error parsing formdataCookie:", error);
+  }
   console.log(JSON.stringify(formdataCookie));
   if (ctx.req.method == "GET") {
     const { nhsnumber } = formdataCookie;
@@ -195,7 +205,7 @@ Home.getInitialProps = async (ctx) => {
       httpOnly: false,
       path: "/",
     });
-    ctx.res.setHeader("Set-Cookie", cookie);
+    //ctx.res.setHeader("Set-Cookie", cookie);
     console.log("have set cookie header");
     let confirmScreenShown = (formdataCookie.confirmScreenShown) ? true : false;
     console.log("has confirm screen been shown yet? " + confirmScreenShown);

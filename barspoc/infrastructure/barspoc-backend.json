@@ -89,6 +89,7 @@
   },
   "Globals": {
     "Function": {
+      "AutoPublishAlias": "live",
       "Tags": {
         "shortcode": { "Ref": "SHORTCODE" }
       },

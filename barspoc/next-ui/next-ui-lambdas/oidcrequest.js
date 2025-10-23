@@ -10,12 +10,14 @@ exports.handler = async (event) => {
         let state = (event.queryStringParameters && event.queryStringParameters.state && event.queryStringParameters.state.length > 0) ? event.queryStringParameters.state: false;
         let prompt = (event.queryStringParameters && event.queryStringParameters.prompt && event.queryStringParameters.prompt.length > 0) ? event.queryStringParameters.prompt: false;
         let authorization_endpoint= "https://auth.aos.signin.nhs.uk/authorize";
+        let vtr = "[\"P9.Cp.Cd\"]"; //this is the vtr for P9 level of assurance
         let qsvalues = {
             client_id: NHSLOGINCLIENTID,
             redirect_uri: (redirect_uri) ? redirect_uri: REDIRECTURI,
             state: (state) ? state: "tempstate",
-            scope: "openid profile",
+            scope: "openid profile profile_extended",
             response_type: "code",
+            vtr: vtr,
         }
         if (prompt) qsvalues['prompt'] = prompt;
         let searchparams = new URLSearchParams(qsvalues).toString();
