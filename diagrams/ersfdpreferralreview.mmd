@@ -1,0 +1,25 @@
+sequenceDiagram
+    autonumber
+    participant GP
+    participant e-RS as NHS e-Referral Service
+    participant FDP as FDP Demand Centre
+    participant EPR as Electronic Patient Record
+    participant Specialist
+       
+    rect rgb(50, 205, 50)
+        Note over e-RS,FDP: Referral Review & Acceptance
+        FDP<<->>e-RS: Receives referral from GP via e-RS worklist
+        Specialist->>FDP: Logs into FDP Demand Centre and accesses worklist
+        FDP->>FDP: Presents referral details alongside relevant clinical and operational information
+        Specialist->>FDP: Reviews clinical information and attachments
+        alt Referral Accepted
+            Specialist->>FDP: Accepts referral via worklist action
+            FDP-->>e-RS: Updates referral status to 'Accepted'
+            FDP ->>EPR: Updates patient's Electronic Patient Record with referral acceptance
+        else Referral Rejected
+            Specialist->>FDP: Rejects referral with clinical reason
+            FDP-->>e-RS: Updates referral status to 'Rejected'
+            e-RS->>GP: Notifies rejection with advice via worklist
+        end
+    end
+    

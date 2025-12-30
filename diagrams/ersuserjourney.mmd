@@ -1,0 +1,42 @@
+sequenceDiagram
+    autonumber
+    actor Patient
+    participant GP
+    participant e-RS as NHS e-Referral Service
+    participant DoS as Directory of Services
+    participant Specialist
+    participant NHS_App as NHS App
+    
+    rect rgb(100, 149, 237)
+        Note over Patient,GP: GP Consultation Phase
+        Patient->>GP: Presents with symptoms requiring specialist care
+        GP->>e-RS: Selects clinically appropriate services
+        e-RS-->>GP: Confirms referral created
+        e-RS->>Patient: Sends referral notification with UBRN (via NHS Notify)
+    end
+
+    rect rgb(255, 99, 132)
+        Note over Patient,MYR: Patient Choice & Booking
+        Patient->>NHS_App: Opens NHS App and accesses referral
+        Patient->>Patient: Reviews available services
+        Patient->>NHS_App: Chooses preferred provider
+        NHS_App<<->>e-RS: Retrieves referral and appointment slots
+        Patient->>NHS_App: Books appointment
+        NHS_App->>e-RS: Confirms booking
+        e-RS-->>Patient: Sends appointment confirmation (via NHS Notify)
+        e-RS->>e-RS: Referral appears in Referrals for Review worklist
+    end
+   
+    rect rgb(50, 205, 50)
+        Note over Specialist,e-RS: Referral Review & Acceptance
+        Specialist->>e-RS: Logs into e-RS and accesses worklist
+        Specialist->>e-RS: Selects referral from Referrals for Review
+        Specialist->>e-RS: Reviews clinical information and attachments
+        alt Referral Accepted
+            Specialist->>e-RS: Accepts referral via worklist action
+        else Referral Rejected
+            Specialist->>e-RS: Rejects referral with clinical reason
+            e-RS->>GP: Notifies rejection with advice via worklist
+        end
+    end
+    
