@@ -195,7 +195,7 @@
         "Handler": "index.handler",
         "Layers": [{ "Ref": "nextjsServerFunctionLayer" }],
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
@@ -236,7 +236,7 @@
         },
         "Handler": "BookNewAppointmentFactory.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
@@ -263,7 +263,7 @@
         },
         "Handler": "CancelAppointmentFactory.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
@@ -290,7 +290,7 @@
         },
         "Handler": "CreateServiceRequestFactory.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
@@ -317,7 +317,7 @@
         },
         "Handler": "GetAppointmentsFactory.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
@@ -344,7 +344,7 @@
         },
         "Handler": "GetAppointmentFactory.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
@@ -371,7 +371,7 @@
         },
         "Handler": "GetServiceRequestFactory.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
@@ -398,7 +398,7 @@
         },
         "Handler": "GetServiceRequestsFactory.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
@@ -425,7 +425,7 @@
         },
         "Handler": "GetSlotsFactory.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
@@ -452,7 +452,7 @@
         },
         "Handler": "GetTasksFactory.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
@@ -479,7 +479,7 @@
         },
         "Handler": "RescheduleAppointmentFactory.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
@@ -513,7 +513,7 @@
         },
         "Handler": "oidcresponse.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
@@ -547,7 +547,7 @@
         },
         "Handler": "oidcrefresh.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
@@ -579,7 +579,7 @@
         },
         "Handler": "oidcrequest.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
@@ -611,7 +611,7 @@
         },
         "Handler": "CheckAIAgentResponseFactory.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
@@ -640,7 +640,7 @@
         },
         "Handler": "ProcessAIAgentMessageFactory.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]
@@ -672,7 +672,7 @@
         },
         "Handler": "SendAIAgentMessageFactory.handler",
         "Role": { "Fn::GetAtt": ["nextjsuibeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["nextjsuibeLambdaRole"]

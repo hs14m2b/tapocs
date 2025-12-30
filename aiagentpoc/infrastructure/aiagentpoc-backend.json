@@ -258,7 +258,7 @@
         },
         "Handler": "GetAppointmentsFactory.handler",
         "Role": { "Fn::GetAtt": ["aiagentpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["aiagentpocbeLambdaRole"]
@@ -283,7 +283,7 @@
         },
         "Handler": "GetPastAppointmentsFactory.handler",
         "Role": { "Fn::GetAtt": ["aiagentpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["aiagentpocbeLambdaRole"]
@@ -308,7 +308,7 @@
         },
         "Handler": "GetSlotsFactory.handler",
         "Role": { "Fn::GetAtt": ["aiagentpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["aiagentpocbeLambdaRole"]
@@ -333,7 +333,7 @@
         },
         "Handler": "GetAppointmentFactory.handler",
         "Role": { "Fn::GetAtt": ["aiagentpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["aiagentpocbeLambdaRole"]
@@ -358,7 +358,7 @@
         },
         "Handler": "RescheduleAppointmentFactory.handler",
         "Role": { "Fn::GetAtt": ["aiagentpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["aiagentpocbeLambdaRole"]

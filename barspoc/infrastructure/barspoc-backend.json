@@ -280,7 +280,7 @@
         },
         "Handler": "DefaultRouteFactory.handler",
         "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["barspocbeLambdaRole"]
@@ -317,7 +317,7 @@
         },
         "Handler": "AppointmentFactory.handler",
         "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["barspocbeLambdaRole"]
@@ -354,7 +354,7 @@
         },
         "Handler": "AppointmentSearchFactory.handler",
         "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["barspocbeLambdaRole"]
@@ -391,7 +391,7 @@
         },
         "Handler": "AppointmentCreateFactory.handler",
         "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["barspocbeLambdaRole"]
@@ -434,7 +434,7 @@
         },
         "Handler": "AppointmentUpdateFactory.handler",
         "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["barspocbeLambdaRole"]
@@ -472,7 +472,7 @@
         },
         "Handler": "AppointmentUpdateEventFactory.handler",
         "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["barspocbeLambdaRole"]
@@ -509,7 +509,7 @@
         },
         "Handler": "ServiceRequestFactory.handler",
         "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["barspocbeLambdaRole"]
@@ -547,7 +547,7 @@
         },
         "Handler": "PDMResourceEventFactory.handler",
         "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["barspocbeLambdaRole"]
@@ -589,7 +589,7 @@
         },
         "Handler": "ServiceRequestCreateFactory.handler",
         "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["barspocbeLambdaRole"]
@@ -626,7 +626,7 @@
         },
         "Handler": "ServiceRequestSearchFactory.handler",
         "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["barspocbeLambdaRole"]
@@ -663,7 +663,7 @@
         },
         "Handler": "SlotSearchFactory.handler",
         "Role": { "Fn::GetAtt": ["barspocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["barspocbeLambdaRole"]

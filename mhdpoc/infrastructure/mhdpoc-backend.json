@@ -212,7 +212,7 @@
         "Handler": "MHDSBaseEndpointFactory.handler",
         "Layers": [{"Ref": "mhdServerFunctionLayer"}],
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -249,7 +249,7 @@
         },
         "Handler": "DocumentReferenceFactory.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -286,7 +286,7 @@
         },
         "Handler": "DocumentReferenceSearchFactory.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -323,7 +323,7 @@
         },
         "Handler": "List.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -360,7 +360,7 @@
         },
         "Handler": "ListSearch.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -397,7 +397,7 @@
         },
         "Handler": "DiagnosticReportLocal.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -470,7 +470,7 @@
         },
         "Handler": "DiagnosticReportProxy.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -507,7 +507,7 @@
         },
         "Handler": "introspect.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -544,7 +544,7 @@
         },
         "Handler": "token.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
@@ -581,7 +581,7 @@
         },
         "Handler": "ping.handler",
         "Role": { "Fn::GetAtt": ["mhdpocbeLambdaRole", "Arn"] },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs24.x",
         "Timeout": 300
       },
       "DependsOn": ["mhdpocbeLambdaRole"]
