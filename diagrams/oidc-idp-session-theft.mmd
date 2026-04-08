@@ -1,0 +1,70 @@
+sequenceDiagram
+    participant User
+    participant ClientA as Client A<br/>(Compromised/Phished)
+    participant Attacker as Attacker<br/>(Actor in the Middle)
+    participant IdP as Identity Provider<br/>(Legitimate)
+    participant ClientB as Client B<br/>(Legitimate Target)
+
+    Note over User,ClientB: IDP Session Token Theft & Reuse Attack
+
+    %% Phase 1: User authenticates via compromised client
+    Note over User,IdP: PHASE 1: Initial Authentication (Compromised Client)
+    
+    User->>ClientA: Visits compromised site<br/>(phishing or XSS-injected)
+    ClientA->>IdP: Initiates OIDC flow<br/>GET /authorize?client_id=ClientA&redirect_uri=...
+    
+    IdP->>User: Redirect to IdP login page<br/>(user has no active IDP session)
+    Note over IdP: IDP session does not exist yet
+    
+    User->>IdP: Enters credentials + MFA
+    IdP->>IdP: Validates credentials<br/>Creates IDP session
+    
+    Note over IdP: IDP SESSION CREATED<br/>Session cookie: idp_session=abc123<br/>Domain: idp.example.com<br/>Valid for all clients using this IDP
+    
+    IdP->>User: Sets IDP session cookie<br/>Redirects with auth code to ClientA
+    Note over User: Browser now has:<br/>Cookie: idp_session=abc123<br/>Domain: idp.example.com
+    
+    User->>ClientA: Delivers auth code
+    ClientA->>IdP: Exchange code for tokens<br/>POST /token (code + client_secret)
+    IdP->>ClientA: Returns access_token, id_token
+    
+    ClientA->>User: User logged into ClientA
+    
+    %% Phase 2: Attacker steals IDP session
+    Note over User,Attacker: PHASE 2: IDP Session Token Theft
+    
+    Note over ClientA,Attacker: Attacker compromised ClientA with:<br/>• XSS vulnerability<br/>• Malicious script injection<br/>• Man-in-the-browser attack
+    
+    ClientA->>Attacker: Malicious script exfiltrates cookies
+    Note over Attacker: Script cannot directly read<br/>HttpOnly cookies, but can:<br/>• Trigger requests to attacker domain<br/>• Capture cookies via network interception<br/>• Use browser extension malware
+    
+    User->>Attacker: Browser sends cookies to attacker-controlled endpoint
+    Note over Attacker: ATTACKER CAPTURES:<br/>✓ IDP session cookie (idp_session=abc123)<br/>✓ Cookie is valid for idp.example.com<br/>✓ Cookie works for ANY client using this IDP
+    
+    %% Phase 3: Attacker uses stolen session on Client B
+    Note over Attacker,ClientB: PHASE 3: Session Reuse on Different Client
+    
+    Attacker->>ClientB: Initiates login to Client B<br/>(legitimate service using same IDP)
+    ClientB->>IdP: OIDC auth request<br/>GET /authorize?client_id=ClientB&redirect_uri=...
+    
+    Note over Attacker: Attacker injects stolen IDP session cookie<br/>Cookie: idp_session=abc123
+    
+    Attacker->>IdP: Request includes stolen session cookie
+    
+    IdP->>IdP: Validates session cookie<br/>Session is valid!<br/>User already authenticated
+    
+    Note over IdP: IDP sees valid session<br/>No re-authentication needed<br/>Assumes this is the legitimate user
+    
+    IdP->>Attacker: Auto-approves authorization<br/>Redirects with auth code for ClientB<br/>(NO credential prompt!)
+    
+    Attacker->>ClientB: Delivers auth code
+    ClientB->>IdP: Exchange code for tokens<br/>POST /token (code + client_secret)
+    IdP->>ClientB: Returns access_token, id_token<br/>for the victim user
+    
+    ClientB->>Attacker: Attacker logged in as victim user
+    
+    Note over Attacker: ATTACK SUCCESSFUL<br/>✓ Logged into Client B as victim<br/>✓ No credentials needed<br/>✓ No MFA challenge<br/>✓ Bypassed all authentication
+    
+    %% Summary
+    Note over User,ClientB: KEY POINTS:<br/><br/>ATTACK SUCCESS FACTORS:<br/>• IDP session cookie is domain-scoped (idp.example.com)<br/>• Single IDP session works across ALL clients<br/>• IDP doesn't re-authenticate if valid session exists<br/>• Session cookies often long-lived (hours/days)<br/><br/>MITIGATION STRATEGIES:<br/>• Short IDP session timeouts<br/>• HttpOnly + Secure + SameSite=Strict cookies<br/>• IDP device/IP binding<br/>• Step-up authentication for sensitive clients<br/>• Continuous authentication monitoring<br/>• Client-specific consent prompts
+

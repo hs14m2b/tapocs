@@ -1,0 +1,78 @@
+sequenceDiagram
+    participant User
+    participant Phishing as Phishing Site<br/>(Attacker)
+    participant IdP as Identity Provider<br/>(Legitimate)
+    participant App as Confidential Client<br/>(Protected Service)<br/>Has client_secret
+
+    Note over User,App: Phishing Attack - OIDC with Confidential Client
+
+    %% Attacker sets up phishing infrastructure
+    Note over Phishing: Attacker creates fake login page<br/>mimicking legitimate service<br/>⚠️ Does NOT have client_secret
+
+    %% User receives phishing link
+    Phishing->>User: Sends phishing email/link<br/>impersonating legitimate service
+    
+    %% User clicks and initiates what they think is legitimate login
+    User->>Phishing: Clicks link, arrives at fake site
+    Note over User,Phishing: User sees convincing replica<br/>of legitimate service
+    
+    User->>Phishing: Attempts to login<br/>(clicks "Sign in with SSO")
+    
+    %% Attacker CANNOT use legitimate client flow directly
+    Note over Phishing: LIMITATION: Attacker cannot initiate<br/>legitimate OIDC flow because:<br/>• redirect_uri must be pre-registered<br/>• Cannot use attacker's domain<br/>• Code is useless without client_secret
+    
+    %% Attacker proxies to capture credentials
+    Phishing->>User: Displays fake IdP login page<br/>(credential harvesting form)
+    
+    %% User provides credentials
+    User->>Phishing: Enters credentials + MFA
+    Note over Phishing: ATTACKER CAPTURES:<br/>✓ Username/password<br/>✓ MFA code (time-limited)<br/>✗ Cannot get valid tokens
+    
+    %% What the attacker CANNOT do
+    Note over Phishing,App: ❌ ATTACK BLOCKED - What Attacker CANNOT Do:
+    
+    Phishing-xApp: ❌ Cannot exchange auth code<br/>for tokens (no client_secret)
+    
+    Phishing-xIdP: ❌ Cannot register own redirect_uri<br/>for legitimate client_id
+    
+    Phishing-xApp: ❌ Cannot directly access<br/>protected resources
+    
+    Note over Phishing: Without client_secret:<br/>• Authorization code is useless<br/>• Cannot obtain access tokens<br/>• Cannot impersonate user to app
+    
+    %% What the attacker CAN still do
+    Note over Phishing,IdP: ⚠️ PARTIAL ATTACK - What Attacker CAN Do:
+    
+    Note over Phishing: Option 1: Real-time session hijacking
+    
+    Phishing->>User: Redirects user to real service
+    User->>App: User initiates legitimate login
+    App->>IdP: OIDC auth request<br/>GET /authorize?client_id=...&redirect_uri=legitimate.com
+    IdP->>User: Login page
+    User->>IdP: Re-enters credentials<br/>(or session still valid)
+    IdP->>User: Redirects with auth code
+    User->>App: Auth code delivered to real app
+    App->>IdP: Exchange code + client_secret<br/>POST /token
+    IdP->>App: Returns tokens
+    App->>User: Sets session cookie, logged in
+    
+    Note over Phishing,User: Attacker attempts to steal session:
+    Phishing->>User: Injects malicious script or<br/>tricks user into revealing session
+    User->>Phishing: Session cookie leaked
+    
+    Phishing->>App: Uses stolen session cookie
+    App->>Phishing: Access granted (valid session)
+    
+    Note over Phishing,IdP: ⚠️ Alternative: Credential Reuse Attack
+    
+    Note over Phishing: Option 2: Use stolen credentials elsewhere
+    
+    Phishing->>IdP: Attempts direct login with<br/>captured credentials<br/>(if IdP allows password auth)
+    
+    Note over IdP: MFA code already expired<br/>Cannot complete authentication
+    
+    IdP-xPhishing: ❌ Authentication fails<br/>(MFA required, code expired)
+    
+    Note over Phishing: Attacker may try:<br/>• Credential stuffing on other services<br/>• Wait for user to trigger new MFA<br/>• Social engineering for new MFA code
+
+    %% Summary of protections
+    Note over User,App: PROTECTION PROVIDED BY CONFIDENTIAL CLIENT:<br/>✓ client_secret prevents token exchange by attacker<br/>✓ Pre-registered redirect_uri limits attack surface<br/>✓ Authorization code useless without client_secret<br/><br/>REMAINING RISKS:<br/>⚠️ Credentials still compromised (password + MFA at that moment)<br/>⚠️ Session hijacking still possible<br/>⚠️ Credentials may be reused on other services<br/>⚠️ User may not realize compromise occurred
