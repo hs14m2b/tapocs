@@ -19,10 +19,10 @@ sequenceDiagram
         Note over Patient,MYR: Patient Choice & Booking
         Patient->>NHS_App: Opens NHS App and accesses referral
         Patient->>Patient: Reviews available services
-        Patient->>NHS_App: Chooses preferred provider
-        NHS_App<<->>e-RS: Retrieves referral and appointment slots
-        Patient->>NHS_App: Books appointment
-        NHS_App->>e-RS: Confirms booking
+        Patient->>MYR: Chooses preferred provider
+        MYR<<->>e-RS: Retrieves referral and appointment slots
+        Patient->>MYR: Books appointment
+        MYR->>e-RS: Confirms booking
         e-RS-->>Patient: Sends appointment confirmation (via NHS Notify)
         e-RS->>e-RS: Referral appears in Referrals for Review worklist
     end

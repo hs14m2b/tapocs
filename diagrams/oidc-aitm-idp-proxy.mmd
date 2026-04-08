@@ -1,0 +1,129 @@
+sequenceDiagram
+    participant User
+    participant AitM as Attacker<br/>(Actor in the Middle)<br/>NOT a registered client
+    participant IdP as Identity Provider<br/>(Legitimate)
+    participant Client as Protected Client<br/>(Legitimate Service)
+
+    Note over User,Client: AitM Phishing Proxy Attack - IDP Impersonation <br />see https://www.youtube.com/watch?v=V4ud5IeFRSA
+
+    %% Phase 1: Attack Setup
+    Note over AitM: SETUP: Attacker is NOT a registered OIDC client<br/>Instead, attacker will:<br/>• Pose as the IDP<br/>• Proxy a legitimate client's OIDC flow<br/>• Intercept user credentials in real-time
+    
+    Note over AitM: Attack vectors to intercept user:<br/>• Phishing email with malicious link<br/>• DNS poisoning/hijacking<br/>• Compromised network (evil twin WiFi)<br/>• Browser extension malware<br/>• Typosquatting domain
+    
+    %% Phase 2: User attempts to access legitimate service
+    Note over User,Client: PHASE 1: User Attempts Legitimate Login
+    
+    User->>Client: User visits legitimate service<br/>(e.g., app.company.com)
+    Note over User: User clicks "Sign in with SSO"
+    
+    Client->>User: Redirect to IDP for authentication<br/>GET idp.example.com/authorize?<br/>client_id=legitimate_client&<br/>redirect_uri=app.company.com/callback&<br/>state=xyz&nonce=abc
+    
+    %% Phase 3: Attacker intercepts the redirect
+    Note over User,AitM: PHASE 2: Attacker Intercepts IDP Request
+    
+    Note over AitM: Attacker intercepts redirect via:<br/>• DNS poisoning (idp.example.com → attacker IP)<br/>• Network MitM (proxy/evil WiFi)<br/>• Browser malware redirecting requests
+    
+    User->>AitM: Request goes to attacker instead of real IDP<br/>GET (attacker captures all OIDC parameters)
+    
+    Note over AitM: ATTACKER CAPTURES:<br/>✓ client_id=legitimate_client<br/>✓ redirect_uri=app.company.com/callback<br/>✓ state=xyz<br/>✓ nonce=abc<br/>✓ All OIDC flow parameters
+    
+    %% Phase 4: Attacker proxies to real IDP
+    Note over AitM,IdP: PHASE 3: Real-Time Proxy to Legitimate IDP
+    
+    AitM->>IdP: Forwards request to REAL IDP<br/>GET idp.example.com/authorize?<br/>(same parameters captured)
+    
+    IdP->>IdP: Validates OIDC request<br/>client_id is legitimate<br/>redirect_uri is registered
+    
+    IdP->>AitM: Returns login page HTML
+    
+    %% Phase 5: Attacker presents fake IDP to user
+    Note over AitM: Attacker modifies HTML:<br/>• Changes form action to attacker endpoint<br/>• Preserves look and feel<br/>• May inject credential-stealing scripts
+    
+    AitM->>User: Presents modified "IDP" login page<br/>(looks identical to real IDP)
+    
+    Note over User: User sees legitimate-looking IDP<br/>Domain may appear correct if:<br/>• DNS poisoned<br/>• User doesn't check carefully<br/>• Browser malware hides real URL
+    
+    %% Phase 6: User enters credentials
+    Note over User,IdP: PHASE 4: Credential Capture & Real-Time Relay
+    
+    User->>AitM: Enters username + password<br/>POST credentials to attacker
+    
+    Note over AitM: ATTACKER CAPTURES:<br/>✓ Username<br/>✓ Password (plaintext)<br/>✓ Stores for later reuse
+    
+    AitM->>IdP: Immediately forwards credentials to real IDP<br/>POST /login (username, password)
+    
+    IdP->>IdP: Validates credentials<br/>Initiates MFA challenge
+    
+    IdP->>AitM: Returns MFA prompt page<br/>(SMS code, TOTP, push notification, etc.)
+    
+    AitM->>User: Proxies MFA prompt to user
+    
+    User->>AitM: Enters MFA code<br/>(time-sensitive)
+    
+    Note over AitM: ATTACKER CAPTURES:<br/>✓ MFA code (valid for ~30-60 seconds)
+    
+    AitM->>IdP: Immediately forwards MFA code<br/>POST /mfa-verify
+    
+    IdP->>IdP: Validates MFA<br/>Authentication successful!<br/>Creates IDP session
+    
+    Note over IdP: IDP SESSION CREATED<br/>Session cookie: idp_session=xyz789<br/>Domain: idp.example.com<br/>HttpOnly, Secure, SameSite=Lax<br/>Valid for ALL clients using this IDP
+    
+    %% Phase 7: IDP returns authorization code
+    Note over IdP,Client: PHASE 5: Authorization Code Interception
+    
+    IdP->>AitM: Authentication successful<br/>Set-Cookie: idp_session=xyz789<br/>Redirect with authorization code:<br/>redirect_uri=app.company.com/callback?<br/>code=AUTH_CODE_123&state=xyz
+    
+    Note over AitM: CRITICAL MOMENT:<br/>Attacker intercepts:<br/>✓ Authorization code<br/>✓ IDP session cookie (idp_session=xyz789)<br/>This cookie is the key to SSO!
+    
+    AitM->>User: Forwards redirect + session cookie<br/>User's browser now has IDP session cookie
+    
+    User->>Client: Authorization code delivered
+    Client->>IdP: Exchange code + client_secret for tokens
+    IdP->>Client: Returns tokens
+    Client->>User: User successfully logged in (Client 1)
+    
+    Note over User: User successfully logged in<br/>Unaware of compromise
+    
+    %% Phase 8: SSO Session Hijacking on Second Service
+    Note over AitM,Client: PHASE 6: SSO Session Hijacking (Second Service)
+    
+    participant Client2 as Client 2<br/>(Different Service)<br/>Same IDP
+    
+    Note over AitM: Attacker now has stolen IDP session cookie:<br/>Cookie: idp_session=xyz789<br/>Domain: idp.example.com<br/><br/>This cookie enables SSO to ANY service<br/>using the same IDP!
+    
+    AitM->>Client2: Attacker visits second service<br/>(e.g., email.company.com)
+    
+    Client2->>IdP: Initiates OIDC authentication<br/>GET /authorize?client_id=client2&<br/>redirect_uri=email.company.com/callback&<br/>state=abc&nonce=def
+    
+    Note over AitM: Attacker injects stolen IDP session cookie<br/>into the request to IDP
+    
+    AitM->>IdP: Request with stolen session cookie<br/>Cookie: idp_session=xyz789
+    
+    IdP->>IdP: Validates session cookie<br/>✓ Session valid!<br/>✓ User already authenticated<br/>No need to re-prompt for credentials
+    
+    Note over IdP: SSO IN ACTION:<br/>IDP recognizes valid session<br/>Automatically grants authorization<br/>WITHOUT re-authentication
+    
+    IdP->>AitM: Auto-approved authorization!<br/>Redirect with auth code for Client 2:<br/>email.company.com/callback?<br/>code=AUTH_CODE_456&state=abc<br/>(NO credential/MFA prompt!)
+    
+    AitM->>Client2: Delivers authorization code
+    Client2->>IdP: Exchange code + client_secret for tokens
+    IdP->>Client2: Returns access_token, id_token<br/>for the VICTIM user
+    
+    Client2->>AitM: ✓ Attacker logged in as victim!
+    
+    Note over AitM: SSO HIJACK SUCCESSFUL!<br/>✓ Logged into Client 2 as victim<br/>✓ No credentials needed<br/>✓ No MFA challenge<br/>✓ Completely silent attack<br/>✓ Can repeat for ANY service using this IDP
+    
+    Note over AitM,Client2: Attacker can now:<br/>• Access victim's email<br/>• Access all SSO-connected services<br/>• Maintain access until session expires<br/>• Exfiltrate data across all services
+    
+    %% Alternative attack paths for cookie interception
+    Note over AitM: COOKIE INTERCEPTION METHODS:
+    
+    Note over AitM: Method 1: Browser Extension Malware<br/>• Directly access cookies via browser APIs<br/>• Can read even HttpOnly cookies<br/>• Exfiltrates all session cookies<br/>• Can monitor all traffic
+    
+    Note over AitM: Method 2: Network-Level MitM<br/>• Evil WiFi intercepts Set-Cookie headers<br/>• SSL strip attack (if HSTS not enforced)<br/>• Present fake certificate<br/>• User may ignore warnings
+    
+    Note over AitM: Method 3: DNS Poisoning<br/>• Redirect idp.example.com to attacker<br/>• Attacker has valid SSL certificate<br/>• Capture cookies in clear text<br/>• User may not notice redirect
+
+    %% Summary
+    Note over User,Client2: KEY ATTACK CHARACTERISTICS:<br/><br/>WHY ATTACKER DOESN'T NEED TO BE REGISTERED CLIENT:<br/>• Piggybacks on legitimate client's OIDC flow<br/>• Acts as transparent proxy between user and IDP<br/>• Captures parameters from legitimate client's request<br/>• Uses real client_id and redirect_uri<br/><br/>WHAT ATTACKER GAINS:<br/>✓ User credentials (username + password)<br/>✓ MFA codes (time-limited but captured in real-time)<br/>✓ Authorization codes (one-time use, limited value)<br/>✓ IDP SESSION COOKIE (high-value target!)<br/><br/>WHY IDP SESSION COOKIE IS CRITICAL:<br/>🎯 Single cookie grants access to ALL SSO services<br/>🎯 Long-lived (often hours to days)<br/>🎯 Bypasses ALL authentication (credentials + MFA)<br/>🎯 Works across different clients using same IDP<br/>🎯 Silent attack - no alerts triggered<br/><br/>LIMITATIONS:<br/>❌ Requires successful cookie interception<br/>❌ Cookie may have HttpOnly/Secure/SameSite protections<br/>❌ Session may have IP/device binding<br/>❌ Limited to session lifetime (but often 8-24 hours)<br/><br/>DETECTION & MITIGATION:<br/>• Short IDP session timeouts (1-2 hours max)<br/>• Device fingerprinting and binding<br/>• IP geolocation monitoring (impossible travel)<br/>• Certificate pinning (prevents proxy)<br/>• DNSSEC (prevents DNS poisoning)<br/>• HSTS with preload (prevents SSL strip)<br/>• WebAuthn/FIDO2 (phishing-resistant MFA)<br/>• Step-up authentication for sensitive operations<br/>• Continuous authentication/risk signals<br/>• SameSite=Strict cookies (limits cross-site usage)<br/>• Monitor for multiple concurrent sessions<br/>• Require re-authentication for new devices
