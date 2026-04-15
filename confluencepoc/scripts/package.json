@@ -1,0 +1,18 @@
+{
+  "name": "confluencepoc-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Confluence API helper scripts",
+  "type": "module",
+  "main": "readconfluence.mjs",
+  "scripts": {
+    "start": "node readconfluence.mjs",
+    "read": "node readconfluence.mjs"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
