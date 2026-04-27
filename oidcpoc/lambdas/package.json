@@ -1,0 +1,19 @@
+{
+  "private": true,
+  "name": "oidcpoc-lambdas",
+  "description": "Lambda functions for OIDC Provider POC",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "npx jasmine --config=\"../tests/spec/support/jasmine.json\""
+  },
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.583.0",
+    "jsonwebtoken": "^9.0.2",
+    "uuid": "^9.0.0",
+    "cookie": "^0.7.2",
+    "xml-crypto": "^6.0.0"
+  },
+  "devDependencies": {
+    "jasmine": "^5.4.0"
+  }
+}

@@ -1,0 +1,5 @@
+# Integration environment parameters for OIDC POC
+# Format: PARAMETERNAME=value (for CloudFormation deploy --parameter-overrides)
+# Domain will be: oidcpoc-int.nhsdta.com
+
+APIENVIRONMENT=int CERTIFICATEARN=arn:aws:acm:eu-west-2:865198111306:certificate/c4bf4fbf-7440-4345-8720-eff73b19bcce HARDCODEDCLIENTID=int-client-123

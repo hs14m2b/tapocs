@@ -1,0 +1,18 @@
+ignore_checks:
+  - W3002  # Template description warnings
+  - W2001  # Parameter not used warnings 
+  - I3013  # Availability zone warnings
+  - W2507  # Check if Parameters are configured correctly
+  - W3005  # Check DependsOn values for Resources
+  - E3001  # Basic CloudFormation Resource Check
+  - W2030  # Check if Outputs are only strings, numbers, or references
+
+ignore_templates:
+  - "build/*.json"
+  - "infrastructure/build/*.json"
+  - "**/build/*.json"
+
+include_checks:
+  - I  # Include info
+  - W  # Include warnings  
+  - E  # Include errors

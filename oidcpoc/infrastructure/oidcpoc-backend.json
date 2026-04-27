@@ -1,0 +1,458 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Parameters": {
+    "AWSREGIONNAME": {
+      "Type": "String",
+      "Default": "eu-west-2",
+      "Description": "The AWS region name"
+    },
+    "APIENVIRONMENT": {
+      "Type": "String",
+      "Description": "The deployment environment - values are dev, int, prod"
+    },
+    "PROJECTNAME": {
+      "Type": "String",
+      "Default": "oidcpoc",
+      "Description": "Project name for the deployment"
+    },
+    "SHORTCODE": {
+      "Type": "String",
+      "Default": "oidc1",
+      "Description": "The shortcode for tags and resource names"
+    },
+    "BEDOMAIN": {
+      "Type": "String",
+      "Default": "oidcpoc",
+      "Description": "Backend domain identifier"
+    },
+    "CERTIFICATEARN": {
+      "Type": "String",
+      "Default": "arn:aws:acm:eu-west-2:865198111306:certificate/c4bf4fbf-7440-4345-8720-eff73b19bcce",
+      "Description": "The certificate ARN for the nhsdta.com domain"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String",
+      "Default": "Z1075FNTZPAM5I",
+      "Description": "The ID of the Route53 hosted zone for nhsdta.com"
+    },
+    "ROOTDOMAIN": {
+      "Type": "String",
+      "Default": "nhsdta.com",
+      "Description": "The root domain name"
+    },
+    "HARDCODEDCLIENTID": {
+      "Type": "String",
+      "Default": "test-client-123",
+      "Description": "The hardcoded client ID for testing"
+    }
+  },
+  "Globals": {
+    "Function": {
+      "AutoPublishAlias": "live",
+      "Tags": {
+        "shortcode": { "Ref": "SHORTCODE" },
+        "environment": { "Ref": "APIENVIRONMENT" }
+      },
+      "Environment": {
+        "Variables": {
+          "APIENVIRONMENT": {"Ref": "APIENVIRONMENT"},
+          "OIDCDOMAIN": {"Fn::Join": ["", [{"Ref": "BEDOMAIN"}, "-", {"Ref": "APIENVIRONMENT"}, ".", {"Ref": "ROOTDOMAIN"}]]},
+          "PRIVATEKEYSECRET": {"Fn::Join": ["-",[{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "private-key"]]},
+          "HARDCODEDCLIENTID": {"Ref": "HARDCODEDCLIENTID"},
+          "ISSUER": {"Fn::Join": ["", ["https://", {"Ref": "BEDOMAIN"}, "-", {"Ref": "APIENVIRONMENT"}, ".", {"Ref": "ROOTDOMAIN"}]]},
+          "ROOTDOMAIN": {"Ref": "ROOTDOMAIN"},
+          "BEDOMAIN": {"Ref": "BEDOMAIN"}
+        }
+      },
+      "Timeout": 30
+    }
+  },
+  "Resources": {
+    "oidcpocLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+        ],
+        "Path": "/service-role/",
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "-",
+                [{ "Ref": "APIENVIRONMENT" }, "oidcpocLambdaRole", "secretsread"]
+              ]
+            },
+            "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Sid": "SecretsRead",
+                        "Effect": "Allow",
+                        "Action": [
+                            "secretsmanager:GetSecretValue"
+                        ],
+                        "Resource": [
+                            {"Fn::Sub": "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:*"}
+                        ]
+                    }
+                ]
+            }
+          }
+        ],
+        "RoleName": {
+          "Fn::Join": ["-", [{ "Ref": "APIENVIRONMENT" }, "oidcpoc", "lambda", "role"]]
+        },
+        "Tags": [
+          {"Key": "shortcode", "Value": {"Ref": "SHORTCODE"}},
+          {"Key": "environment", "Value": {"Ref": "APIENVIRONMENT"}}
+        ]
+      }
+    },
+    "DiscoveryFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "oidcpocapilambdas.zip",
+        "Description": "OIDC Discovery endpoint - serves .well-known/openid-configuration",
+        "Events": {
+          "DiscoveryApi": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "oidcHttpApi" },
+              "Method": "GET",
+              "Path": "/.well-known/openid-configuration",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-oidc-DiscoveryFunction"]]
+        },
+        "Handler": "DiscoveryFactory.handler",
+        "Role": { "Fn::GetAtt": ["oidcpocLambdaRole", "Arn"] },
+        "Runtime": "nodejs24.x"
+      },
+      "DependsOn": ["oidcpocLambdaRole"]
+    },
+    "AuthorizeFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "oidcpocapilambdas.zip",
+        "Description": "OIDC Authorization endpoint - handles authorization code flow",
+        "Events": {
+          "AuthorizeApi": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "oidcHttpApi" },
+              "Method": "GET",
+              "Path": "/oauth2/authorize",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-oidc-AuthorizeFunction"]]
+        },
+        "Handler": "AuthorizeFactory.handler",
+        "Role": { "Fn::GetAtt": ["oidcpocLambdaRole", "Arn"] },
+        "Runtime": "nodejs24.x"
+      },
+      "DependsOn": ["oidcpocLambdaRole"]
+    },
+    "TokenFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "oidcpocapilambdas.zip",
+        "Description": "OIDC Token endpoint - exchanges auth codes for access and ID tokens",
+        "Events": {
+          "TokenApi": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "oidcHttpApi" },
+              "Method": "POST",
+              "Path": "/oauth2/token",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-oidc-TokenFunction"]]
+        },
+        "Handler": "TokenFactory.handler",
+        "Role": { "Fn::GetAtt": ["oidcpocLambdaRole", "Arn"] },
+        "Runtime": "nodejs24.x"
+      },
+      "DependsOn": ["oidcpocLambdaRole"]
+    },
+    "UserInfoFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "oidcpocapilambdas.zip",
+        "Description": "OIDC UserInfo endpoint - returns user claims for valid access tokens",
+        "Events": {
+          "UserInfoApi": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "oidcHttpApi" },
+              "Method": "GET",
+              "Path": "/oauth2/userinfo",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-oidc-UserInfoFunction"]]
+        },
+        "Handler": "UserInfoFactory.handler",
+        "Role": { "Fn::GetAtt": ["oidcpocLambdaRole", "Arn"] },
+        "Runtime": "nodejs24.x"
+      },
+      "DependsOn": ["oidcpocLambdaRole"]
+    },
+    "JWKSFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "oidcpocapilambdas.zip",
+        "Description": "OIDC JWKS endpoint - serves JSON Web Key Set for token validation",
+        "Events": {
+          "JWKSApi": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "oidcHttpApi" },
+              "Method": "GET",
+              "Path": "/oauth2/jwks",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-oidc-JWKSFunction"]]
+        },
+        "Handler": "JWKSFactory.handler",
+        "Role": { "Fn::GetAtt": ["oidcpocLambdaRole", "Arn"] },
+        "Runtime": "nodejs24.x"
+      },
+      "DependsOn": ["oidcpocLambdaRole"]
+    },
+    "SAMLMetadataFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "oidcpocapilambdas.zip",
+        "Description": "SAML Metadata endpoint - serves SAML IdP metadata",
+        "Events": {
+          "SAMLMetadataApi": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "oidcHttpApi" },
+              "Method": "GET",
+              "Path": "/saml2/metadata",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-saml-MetadataFunction"]]
+        },
+        "Handler": "SAMLMetadataFactory.handler",
+        "Role": { "Fn::GetAtt": ["oidcpocLambdaRole", "Arn"] },
+        "Runtime": "nodejs24.x"
+      },
+      "DependsOn": ["oidcpocLambdaRole"]
+    },
+    "SAMLSSOFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "oidcpocapilambdas.zip",
+        "Description": "SAML SSO endpoint - handles SAML authentication requests",
+        "Events": {
+          "SAMLSSOGetApi": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "oidcHttpApi" },
+              "Method": "GET",
+              "Path": "/saml2/sso",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "SAMLSSOPostApi": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "oidcHttpApi" },
+              "Method": "POST",
+              "Path": "/saml2/sso",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-saml-SSOFunction"]]
+        },
+        "Handler": "SAMLSSOFactory.handler",
+        "Role": { "Fn::GetAtt": ["oidcpocLambdaRole", "Arn"] },
+        "Runtime": "nodejs24.x"
+      },
+      "DependsOn": ["oidcpocLambdaRole"]
+    },
+    "SAMLACSFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "oidcpocapilambdas.zip",
+        "Description": "SAML ACS endpoint - handles SAML assertion consumption",
+        "Events": {
+          "SAMLACSGetApi": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "oidcHttpApi" },
+              "Method": "GET",
+              "Path": "/saml2/acs",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          },
+          "SAMLACSPostApi": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "oidcHttpApi" },
+              "Method": "POST",
+              "Path": "/saml2/acs",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-saml-ACSFunction"]]
+        },
+        "Handler": "SAMLACSFactory.handler",
+        "Role": { "Fn::GetAtt": ["oidcpocLambdaRole", "Arn"] },
+        "Runtime": "nodejs24.x"
+      },
+      "DependsOn": ["oidcpocLambdaRole"]
+    },
+    "DefaultRouteFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "oidcpocapilambdas.zip",
+        "Description": "Default route handler for unmapped requests",
+        "Events": {
+          "DefaultApi": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "oidcHttpApi" },
+              "Method": "ANY",
+              "Path": "$default",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
+          }
+        },
+        "FunctionName": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-oidc-DefaultRouteFunction"]]
+        },
+        "Handler": "DefaultRouteFactory.handler",
+        "Role": { "Fn::GetAtt": ["oidcpocLambdaRole", "Arn"] },
+        "Runtime": "nodejs24.x"
+      },
+      "DependsOn": ["oidcpocLambdaRole"]
+    },
+    "oidcHttpApi": {
+      "Type": "AWS::Serverless::HttpApi",
+      "Properties": {
+        "Description": "HTTP API for the OIDC provider endpoints",
+        "Domain": {
+          "BasePath": ["/"],
+          "CertificateArn": {"Ref": "CERTIFICATEARN"},
+          "DomainName": {"Fn::Join": ["", [{"Ref": "BEDOMAIN"}, "-", {"Ref": "APIENVIRONMENT"}, ".", {"Ref": "ROOTDOMAIN"}]]},
+          "EndpointConfiguration": "REGIONAL",
+          "Route53": {
+            "HostedZoneId": {"Ref": "HOSTEDZONEID"}
+          },
+          "SecurityPolicy": "TLS_1_2"
+        },
+        "Name": {
+          "Fn::Join": ["", [{ "Ref": "APIENVIRONMENT" }, "-oidcHttpApi"]]
+        },
+        "StageName": "$default",
+        "CorsConfiguration": {
+          "AllowCredentials": false,
+          "AllowHeaders": ["authorization", "content-type"],
+          "AllowMethods": ["GET", "POST", "OPTIONS"],
+          "AllowOrigins": ["*"],
+          "MaxAge": 300
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "OIDCApiGatewayURL": {
+      "Description": "URL for OIDC API Gateway",
+      "Value": {
+        "Fn::Sub": "https://${oidcHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+      }
+    },
+    "OIDCDomain": {
+      "Description": "Custom domain for OIDC provider",
+      "Value": {
+        "Fn::Join": ["", ["https://", {"Ref": "BEDOMAIN"}, "-", {"Ref": "APIENVIRONMENT"}, ".", {"Ref": "ROOTDOMAIN"}]]
+      }
+    },
+    "OIDCIssuer": {
+      "Description": "OIDC Issuer URL",
+      "Value": {
+        "Fn::Join": ["", ["https://", {"Ref": "BEDOMAIN"}, "-", {"Ref": "APIENVIRONMENT"}, ".", {"Ref": "ROOTDOMAIN"}]]
+      }
+    },
+    "DiscoveryEndpoint": {
+      "Description": "OIDC Discovery endpoint",
+      "Value": {
+        "Fn::Join": ["", ["https://", {"Ref": "BEDOMAIN"}, "-", {"Ref": "APIENVIRONMENT"}, ".", {"Ref": "ROOTDOMAIN"}, "/.well-known/openid-configuration"]]
+      }
+    },
+    "SAMLMetadataEndpoint": {
+      "Description": "SAML Metadata endpoint",
+      "Value": {
+        "Fn::Join": ["", ["https://", {"Ref": "BEDOMAIN"}, "-", {"Ref": "APIENVIRONMENT"}, ".", {"Ref": "ROOTDOMAIN"}, "/saml2/metadata"]]
+      }
+    },
+    "SAMLSSOEndpoint": {
+      "Description": "SAML SSO endpoint",
+      "Value": {
+        "Fn::Join": ["", ["https://", {"Ref": "BEDOMAIN"}, "-", {"Ref": "APIENVIRONMENT"}, ".", {"Ref": "ROOTDOMAIN"}, "/saml2/sso"]]
+      }
+    },
+    "SAMLACSEndpoint": {
+      "Description": "SAML ACS endpoint",
+      "Value": {
+        "Fn::Join": ["", ["https://", {"Ref": "BEDOMAIN"}, "-", {"Ref": "APIENVIRONMENT"}, ".", {"Ref": "ROOTDOMAIN"}, "/saml2/acs"]]
+      }
+    },
+    "OIDCDomainName": {
+      "Description": "OIDC Domain Name (for testing)",
+      "Value": {
+        "Fn::Join": ["", [{"Ref": "BEDOMAIN"}, "-", {"Ref": "APIENVIRONMENT"}, ".", {"Ref": "ROOTDOMAIN"}]]
+      }
+    }
+  }
+}
