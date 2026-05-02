@@ -152,27 +152,43 @@ export const handler = async (event) => {
     
     // Get signing keys
     const keys = await getSigningKeys();
-    const issuer = process.env.ISSUER;
+    const issuer = process.env.ISSUER || 'https://oidcpoc-int.nhsdta.com';
     
     // Create access token
     const accessToken = createAccessToken(
       finalClientId,
-      "subject123", // In a real implementation, this would come from the authorization code data
+      "sctest20260108@NHSIAMLab.onmicrosoft.com", // In a real implementation, this would come from the authorization code data
       issuer,
       finalClientId,
       keys.privateKey,
       keys.kid
     );
-    
+
+        // create additional arbitrary claims to include in the ID token for testing purposes
+    const additionalClaims = {
+      // Standard OIDC claims for hardcoded user
+      name: 'Smartcard User',
+      given_name: 'Smartcard',
+      family_name: 'User',
+      email: 'sctest20260108@NHSIAMLab.onmicrosoft.com',
+      email_verified: true,
+      preferred_username: 'smartcarduser',
+      picture: 'https://via.placeholder.com/150',
+      oid: 'ac0653ac-8673-4632-bd68-0aca826e65fc',
+      acr: 'possessionorinherence',
+      amr: ['otp']
+    };
+
     // Create ID token (if openid scope was requested)
     let idToken = null;
     idToken = createIdToken(
       finalClientId,
-      "subject123", // In a real implementation, this would come from the authorization code data
+      "sctest20260108@NHSIAMLab.onmicrosoft.com", // In a real implementation, this would come from the authorization code data
       issuer,
       tokenRequest.nonce,
       keys.privateKey,
-      keys.kid
+      keys.kid,
+      additionalClaims
     );
     
     
@@ -188,7 +204,7 @@ export const handler = async (event) => {
       tokenResponse.id_token = idToken;
     }
     
-    console.log('Token exchange successful for subject:', "subject123");
+    console.log('Token exchange successful for subject:', "sctest20260108@NHSIAMLab.onmicrosoft.com");
     
     return createResponse(200, tokenResponse, {
       'Cache-Control': 'no-store',

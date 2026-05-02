@@ -164,6 +164,16 @@
               "TimeoutInMillis": 29000,
               "PayloadFormatVersion": "2.0"
             }
+          },
+          "AuthorizeApiPOST": {
+            "Type": "HttpApi",
+            "Properties": {
+              "ApiId": { "Ref": "oidcHttpApi" },
+              "Method": "POST",
+              "Path": "/oauth2/authorize",
+              "TimeoutInMillis": 29000,
+              "PayloadFormatVersion": "2.0"
+            }
           }
         },
         "FunctionName": {

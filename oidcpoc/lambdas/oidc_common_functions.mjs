@@ -24,7 +24,8 @@ export const getSigningKeys = async () => {
     return {
       privateKey: secret.private_key,
       publicKey: secret.public_key, 
-      kid: secret.kid
+      kid: secret.kid,
+      certificate: secret.public_cert || secret.certificate
     };
   } catch (error) {
     console.error('Error retrieving signing keys:', error);
@@ -61,9 +62,9 @@ export const createAccessToken = (clientId, subject, issuer, audience, privateKe
 /**
  * Create a signed JWT ID token for OIDC  
  */
-export const createIdToken = (clientId, subject, issuer, nonce, privateKey, kid) => {
+export const createIdToken = (clientId, subject, issuer, nonce, privateKey, kid, additionalClaims = {}) => {
   const now = Math.floor(Date.now() / 1000);
-  const expiresIn = 3600; // 1 hour
+  const expiresIn = 300; //5 minutes 3600; // 1 hour
 
   // Hardcoded user claims
   const payload = {
@@ -73,14 +74,7 @@ export const createIdToken = (clientId, subject, issuer, nonce, privateKey, kid)
     exp: now + expiresIn,
     iat: now,
     nonce: nonce,
-    // Standard OIDC claims for hardcoded user
-    name: 'Test User',
-    given_name: 'Test',
-    family_name: 'User',
-    email: 'test@example.com',
-    email_verified: true,
-    preferred_username: 'testuser',
-    picture: 'https://via.placeholder.com/150'
+    ...additionalClaims
   };
 
   const options = {
@@ -197,8 +191,8 @@ export const validateAuthorizationRequest = (params) => {
   
   if (!params.response_type) {
     errors.push('response_type is required');
-  } else if (params.response_type !== 'code') {
-    errors.push('Only authorization code flow (response_type=code) is supported');
+  } else if (!['code', 'id_token'].includes(params.response_type)) {
+    errors.push('response_type must be either "code" or "id_token"');
   }
   
   if (!params.client_id) {
@@ -207,6 +201,16 @@ export const validateAuthorizationRequest = (params) => {
   
   if (!params.redirect_uri) {
     errors.push('redirect_uri is required');
+  }
+  
+  // Validate response_mode if provided (defaults to 'query' if not specified)
+  if (params.response_mode && !['query', 'fragment', 'form_post'].includes(params.response_mode)) {
+    errors.push('response_mode must be "query", "fragment", or "form_post"');
+  }
+  
+  // For id_token response type, nonce is required for security
+  if (params.response_type === 'id_token' && !params.nonce) {
+    errors.push('nonce is required when response_type is "id_token"');
   }
   
   return errors;

@@ -69,11 +69,23 @@ describe("OIDC Common Functions", function() {
   });
   
   describe("validateAuthorizationRequest", function() {
-    it("should validate required parameters", function() {
+    it("should validate required parameters for code flow", function() {
       const validParams = {
         response_type: "code",
         client_id: "test-client",
         redirect_uri: "https://example.com/callback"
+      };
+      
+      const errors = validateAuthorizationRequest(validParams);
+      expect(errors).toEqual([]);
+    });
+    
+    it("should validate required parameters for id_token flow", function() {
+      const validParams = {
+        response_type: "id_token",
+        client_id: "test-client",
+        redirect_uri: "https://example.com/callback",
+        nonce: "test-nonce"
       };
       
       const errors = validateAuthorizationRequest(validParams);
@@ -110,7 +122,27 @@ describe("OIDC Common Functions", function() {
       expect(errors).toContain("redirect_uri is required");
     });
     
-    it("should only support authorization code flow", function() {
+    it("should support both code and id_token response types", function() {
+      // Test valid response types
+      const codeParams = {
+        response_type: "code",
+        client_id: "test-client", 
+        redirect_uri: "https://example.com/callback"
+      };
+      const codeErrors = validateAuthorizationRequest(codeParams);
+      expect(codeErrors).toEqual([]);
+      
+      const idTokenParams = {
+        response_type: "id_token",
+        client_id: "test-client", 
+        redirect_uri: "https://example.com/callback",
+        nonce: "test-nonce"
+      };
+      const idTokenErrors = validateAuthorizationRequest(idTokenParams);
+      expect(idTokenErrors).toEqual([]);
+    });
+    
+    it("should reject unsupported response types", function() {
       const params = {
         response_type: "token",
         client_id: "test-client", 
@@ -118,7 +150,56 @@ describe("OIDC Common Functions", function() {
       };
       
       const errors = validateAuthorizationRequest(params);
-      expect(errors).toContain("Only authorization code flow (response_type=code) is supported");
+      expect(errors).toContain('response_type must be either "code" or "id_token"');
+    });
+    
+    it("should require nonce for id_token response type", function() {
+      const params = {
+        response_type: "id_token",
+        client_id: "test-client", 
+        redirect_uri: "https://example.com/callback"
+      };
+      
+      const errors = validateAuthorizationRequest(params);
+      expect(errors).toContain('nonce is required when response_type is "id_token"');
+    });
+    
+    it("should validate response_mode when provided", function() {
+      // Valid response modes
+      const validModes = ["query", "fragment", "form_post"];
+      validModes.forEach(mode => {
+        const params = {
+          response_type: "code",
+          client_id: "test-client",
+          redirect_uri: "https://example.com/callback",
+          response_mode: mode
+        };
+        
+        const errors = validateAuthorizationRequest(params);
+        expect(errors).toEqual([]);
+      });
+      
+      // Invalid response mode
+      const invalidParams = {
+        response_type: "code",
+        client_id: "test-client",
+        redirect_uri: "https://example.com/callback",
+        response_mode: "invalid_mode"
+      };
+      
+      const errors = validateAuthorizationRequest(invalidParams);
+      expect(errors).toContain('response_mode must be "query", "fragment", or "form_post"');
+    });
+    
+    it("should allow missing response_mode (defaults to query)", function() {
+      const params = {
+        response_type: "code",
+        client_id: "test-client",
+        redirect_uri: "https://example.com/callback"
+      };
+      
+      const errors = validateAuthorizationRequest(params);
+      expect(errors).toEqual([]);
     });
   });
   

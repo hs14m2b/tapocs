@@ -16,10 +16,10 @@ export const handler = async (event) => {
     revocation_endpoint: null, // Not supported in this POC
     
     // Supported response types
-    response_types_supported: ['code'],
+    response_types_supported: ['code', 'id_token'],
     
     // Supported response modes
-    response_modes_supported: ['query', 'fragment'],
+    response_modes_supported: ['query', 'fragment', 'form_post'],
     
     // Supported grant types
     grant_types_supported: ['authorization_code'],
