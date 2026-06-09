@@ -1,0 +1,69 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Parameters": {
+    "AWSREGIONNAME": {
+      "Type": "String",
+      "Default": "eu-west-2",
+      "Description": "The AWS region name"
+    },
+    "APIENVIRONMENT": {
+      "Type": "String",
+      "Description": "The deployment environment - values are dev, int, prod"
+    },
+    "PROJECTNAME": {
+      "Type": "String",
+      "Default": "oidcpoc",
+      "Description": "Project name for the deployment"
+    },
+    "SHORTCODE": {
+      "Type": "String",
+      "Default": "oidc1",
+      "Description": "The shortcode for tags and resource names"
+    },
+    "OIDCDOMAIN": {
+      "Type": "String",
+      "Default": "oidc-poc.example.com",
+      "Description": "The OIDC provider domain name"
+    },
+    "CERTIFICATEARN": {
+      "Type": "String",
+      "Default": "arn:aws:acm:eu-west-2:123456789012:certificate/example-cert-id",
+      "Description": "The certificate ARN for the OIDC domain"
+    },
+    "HOSTEDZONEID": {
+      "Type": "String", 
+      "Default": "Z1234567890ABC",
+      "Description": "The ID of the Route53 hosted zone"
+    }
+  },
+  "Resources": {
+    "OIDCSecretsManagerKey": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Name": {
+          "Fn::Join": ["-", [{ "Ref": "APIENVIRONMENT" }, { "Ref": "PROJECTNAME" }, { "Ref": "SHORTCODE" }, "private-key"]]
+        },
+        "Description": "Private key for signing JWT tokens in OIDC provider",
+        "SecretString": {
+          "Fn::Sub": "{\"private_key\":\"PLACEHOLDER_RSA_PRIVATE_KEY\",\"public_key\":\"PLACEHOLDER_RSA_PUBLIC_KEY\",\"kid\":\"oidc-key-1\"}"
+        },
+        "Tags": [
+          {"Key": "shortcode", "Value": {"Ref": "SHORTCODE"}},
+          {"Key": "environment", "Value": {"Ref": "APIENVIRONMENT"}}
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "PrivateKeySecret": {
+      "Description": "Secret ARN containing RSA private/public keys for JWT signing",
+      "Value": { "Ref": "OIDCSecretsManagerKey" },
+      "Export": {
+        "Name": {
+          "Fn::Join": ["-", [{ "Ref": "APIENVIRONMENT" }, "oidc-private-key-secret"]]
+        }
+      }
+    }
+  }
+}

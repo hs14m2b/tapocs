@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "name": "oidcpoc-tests",
+  "description": "Test suite for OIDC Provider POC",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "npx jasmine --config=support/jasmine.json"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2",
+    "jasmine": "^5.4.0"
+  }
+}
