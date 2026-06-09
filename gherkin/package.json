@@ -16,6 +16,6 @@
   },
   "homepage": "https://github.com/hs14m2b/tapocs#readme",
   "devDependencies": {
-    "@cucumber/cucumber": "^8.6.0"
+    "@cucumber/cucumber": "^13.0.0"
   }
 }
